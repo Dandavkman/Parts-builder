@@ -9,7 +9,13 @@
     "lint": "eslint .",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "generate": "pnpm --filter @parts-builder/part-spec generate"
+    "generate": "pnpm --filter @parts-builder/part-spec generate",
+    "dev:up": "bash infra/dev.sh up",
+    "dev:down": "bash infra/dev.sh down",
+    "dev:reset": "bash infra/dev.sh reset",
+    "dev:seed": "bash infra/dev.sh seed",
+    "dev:check": "bash infra/dev.sh check",
+    "dev:setup": "bash infra/dev.sh setup"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -215,7 +215,7 @@ Phase 0 sets up the accounts, the repo and the first real scan, and the Owner pi
 | ID | Task | Done when | Needs |
 | --- | --- | --- | --- |
 | B0.1 | Scaffold the monorepo using the layout above. Add GitHub Actions for lint, type checks and tests on every pull request. Add `CLAUDE.md` from the handoff protocol. | A fresh clone passes CI | O0.3 |
-| B0.2 | Local dev setup: `docker compose up` starts Postgres, Redis and MinIO (local S3). One command seeds the database. | A new machine runs the app locally in under 10 minutes by following the README | B0.1 |
+| B0.2 | Local dev setup: `docker compose up` starts Postgres and Redis; development files go to a dev bucket on Cloudflare R2 (MinIO is no longer distributed). One command seeds the database. | A new machine runs the app locally in under 10 minutes by following the README | B0.1 |
 | B0.3 | Geometry service skeleton: FastAPI `/health` and a `/build` endpoint that builds a hard-coded 50 × 30 × 4 mm plate with two 6.5 mm holes and returns STEP, STL and GLB. | Test checks the hole diameter in the STEP file within 0.01 mm | B0.1 |
 | B0.4 | Web skeleton: Next.js with Clerk sign-in, an empty dashboard, and a 3D viewer page that loads the plate from B0.3. | Signed-in user sees and orbits the plate | B0.3, O0.3 |
 | B0.5 | Test fixtures: a synthetic "scan" made in code (a box with known holes and known noise added) so anchor fitting has an exact right answer. Store the Owner's real scans in R2 with a fixtures manifest. | Fixture loader test passes | O0.5 for real scans |

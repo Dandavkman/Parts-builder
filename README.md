@@ -14,6 +14,18 @@ pnpm lint && pnpm typecheck && pnpm test            # TypeScript (Node 22, pnpm 
 cd services/geometry && uv sync && uv run pytest     # Python (3.12+, uv)
 ```
 
+## Local development
+
+Needs Docker, Node 22, pnpm 10 and uv.
+
+```
+pnpm install
+cp .env.example .env.local      # fill in keys as you create the accounts
+pnpm dev:setup                  # starts Postgres and Redis, seeds, checks
+```
+
+`pnpm dev:down` stops the services. `pnpm dev:reset` stops them and deletes all local data. Development file storage uses the `parts-builder-dev` bucket on Cloudflare R2 (see `.env.example`).
+
 ## Where things are
 
 - [`docs/plan.md`](docs/plan.md): the master plan. It covers the business model, architecture, data model, and every task by phase.
