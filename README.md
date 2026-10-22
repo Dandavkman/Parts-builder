@@ -4,7 +4,15 @@ Design custom car parts that fit your exact car. Upload a 3D scan (or rent one f
 
 ## Status
 
-Phase 0: Foundations. No code yet.
+Phase 0: Foundations. The monorepo scaffold is in place.
+
+## Checks
+
+```
+pnpm install
+pnpm lint && pnpm typecheck && pnpm test            # TypeScript (Node 22, pnpm 10)
+cd services/geometry && uv sync && uv run pytest     # Python (3.12+, uv)
+```
 
 ## Where things are
 
