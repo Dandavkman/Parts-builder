@@ -1,0 +1,45 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with polygon outline",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "polygon",
+        "points_mm": [
+          [
+            -30,
+            -20
+          ],
+          [
+            30,
+            -20
+          ],
+          [
+            30,
+            10
+          ],
+          [
+            10,
+            20
+          ],
+          [
+            -30,
+            20
+          ]
+        ]
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "fender_bolt",
+        "offset_mm": [
+          0,
+          0,
+          2
+        ],
+        "rotation_deg": 15
+      }
+    }
+  ]
+}

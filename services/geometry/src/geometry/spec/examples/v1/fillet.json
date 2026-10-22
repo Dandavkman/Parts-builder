@@ -1,0 +1,26 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with filleted corners",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "fillet_1",
+      "type": "fillet",
+      "plate": "base",
+      "edges": "vertical",
+      "radius_mm": 5
+    }
+  ]
+}

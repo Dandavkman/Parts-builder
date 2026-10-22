@@ -1,0 +1,31 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a standoff",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "post_1",
+      "type": "standoff",
+      "plate": "base",
+      "position_mm": [
+        10,
+        0
+      ],
+      "outer_diameter_mm": 8,
+      "height_mm": 10,
+      "hole_diameter_mm": 3.2
+    }
+  ]
+}

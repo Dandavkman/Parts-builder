@@ -1,0 +1,31 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a countersink",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "cs_1",
+      "type": "countersink",
+      "plate": "base",
+      "position_mm": [
+        0,
+        0
+      ],
+      "diameter_mm": 5,
+      "sink_diameter_mm": 10,
+      "sink_angle_deg": 90
+    }
+  ]
+}

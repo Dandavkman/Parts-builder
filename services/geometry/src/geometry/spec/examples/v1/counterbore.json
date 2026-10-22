@@ -1,0 +1,31 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a counterbore",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "cb_1",
+      "type": "counterbore",
+      "plate": "base",
+      "position_mm": [
+        0,
+        0
+      ],
+      "diameter_mm": 5.5,
+      "bore_diameter_mm": 10,
+      "bore_depth_mm": 3
+    }
+  ]
+}

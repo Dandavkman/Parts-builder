@@ -1,0 +1,31 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with an adjustment slot",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "slot_1",
+      "type": "slot",
+      "plate": "base",
+      "position_mm": [
+        0,
+        0
+      ],
+      "length_mm": 24,
+      "width_mm": 6.5,
+      "angle_deg": 0
+    }
+  ]
+}
