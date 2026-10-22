@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "name": "synthetic-plate-v1",
+      "kind": "synthetic",
+      "description": "100 x 60 x 8 mm plate, three holes (6.5, 8.0, 10.5 mm), 0.05 mm Gaussian noise, seed 0. Ground truth is exact."
+    }
+  ]
+}
