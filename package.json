@@ -7,7 +7,8 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && pnpm --filter @parts-builder/web typecheck",
+    "build": "pnpm --filter @parts-builder/web build",
     "test": "vitest run",
     "generate": "pnpm --filter @parts-builder/part-spec generate",
     "dev:up": "bash infra/dev.sh up",
