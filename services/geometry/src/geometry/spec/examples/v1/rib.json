@@ -1,0 +1,34 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a rib",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "rib_1",
+      "type": "rib",
+      "plate": "base",
+      "start_mm": [
+        -20,
+        0
+      ],
+      "end_mm": [
+        20,
+        0
+      ],
+      "thickness_mm": 2,
+      "height_mm": 8
+    }
+  ]
+}

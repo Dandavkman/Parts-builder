@@ -1,0 +1,26 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with chamfered top edge",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "chamfer_1",
+      "type": "chamfer",
+      "plate": "base",
+      "edges": "top",
+      "distance_mm": 1
+    }
+  ]
+}
