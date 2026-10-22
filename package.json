@@ -8,11 +8,14 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate": "pnpm --filter @parts-builder/part-spec generate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "ajv": "^8.20.0",
     "eslint": "^10.13.0",
+    "json-schema-to-typescript": "^16.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0",
     "vitest": "^5.0.5"

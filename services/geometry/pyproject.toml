@@ -3,10 +3,10 @@ name = "geometry"
 version = "0.0.0"
 description = "Stateless geometry service for Parts Builder: scan processing, Part Spec builds, checks."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["jsonschema"]
 
 [dependency-groups]
-dev = ["pytest", "ruff", "mypy"]
+dev = ["pytest", "ruff", "mypy", "types-jsonschema"]
 
 [build-system]
 requires = ["hatchling"]

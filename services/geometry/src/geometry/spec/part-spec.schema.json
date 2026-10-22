@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://parts-builder.local/schemas/part-spec.v0.1.json",
+  "title": "PartSpec",
+  "description": "Part Spec v0.1 (draft). A part described as features positioned against anchors. All lengths are in millimeters.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "spec_version",
+    "name",
+    "features"
+  ],
+  "properties": {
+    "spec_version": {
+      "const": "0.1"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/feature"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "description": "Unique feature id within the spec, referenced by other features.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,39}$"
+    },
+    "length_mm": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 2000
+    },
+    "point_mm": {
+      "description": "A point [x, y] in millimeters in the plate's local frame, origin at the plate center.",
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number"
+      }
+    },
+    "placement": {
+      "description": "Where a feature sits. 'anchor' is an anchor id picked on the scan, or 'origin' for the part's own local origin. Offsets are relative to that anchor, never absolute.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "anchor"
+      ],
+      "properties": {
+        "anchor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "offset_mm": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "default": [
+            0,
+            0,
+            0
+          ],
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "feature": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/plate"
+        },
+        {
+          "$ref": "#/$defs/hole"
+        },
+        {
+          "$ref": "#/$defs/hole_pattern"
+        }
+      ]
+    },
+    "plate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "width_mm",
+        "length_mm",
+        "thickness_mm",
+        "placement"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "plate"
+        },
+        "width_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "length_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "thickness_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "placement": {
+          "$ref": "#/$defs/placement"
+        }
+      }
+    },
+    "hole": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "diameter_mm",
+        "position_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "hole"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        }
+      }
+    },
+    "hole_pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "diameter_mm",
+        "pattern"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "hole_pattern"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "pattern": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "count_x",
+                "count_y",
+                "spacing_x_mm",
+                "spacing_y_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "rectangular"
+                },
+                "center_mm": {
+                  "$ref": "#/$defs/point_mm"
+                },
+                "count_x": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50
+                },
+                "count_y": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50
+                },
+                "spacing_x_mm": {
+                  "$ref": "#/$defs/length_mm"
+                },
+                "spacing_y_mm": {
+                  "$ref": "#/$defs/length_mm"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "count",
+                "radius_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "circular"
+                },
+                "center_mm": {
+                  "$ref": "#/$defs/point_mm"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 50
+                },
+                "radius_mm": {
+                  "$ref": "#/$defs/length_mm"
+                },
+                "start_angle_deg": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

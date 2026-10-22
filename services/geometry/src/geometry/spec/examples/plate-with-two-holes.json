@@ -1,0 +1,28 @@
+{
+  "spec_version": "0.1",
+  "name": "Plate with two mounting holes",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 50,
+      "length_mm": 30,
+      "thickness_mm": 4,
+      "placement": { "anchor": "origin" }
+    },
+    {
+      "id": "hole_left",
+      "type": "hole",
+      "plate": "base",
+      "diameter_mm": 6.5,
+      "position_mm": [-15, 0]
+    },
+    {
+      "id": "hole_right",
+      "type": "hole",
+      "plate": "base",
+      "diameter_mm": 6.5,
+      "position_mm": [15, 0]
+    }
+  ]
+}

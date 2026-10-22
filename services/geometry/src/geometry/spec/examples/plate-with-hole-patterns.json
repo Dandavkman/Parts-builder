@@ -1,0 +1,28 @@
+{
+  "spec_version": "0.1",
+  "name": "Plate with grid and bolt circle",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 80,
+      "length_mm": 60,
+      "thickness_mm": 5,
+      "placement": { "anchor": "origin" }
+    },
+    {
+      "id": "corners",
+      "type": "hole_pattern",
+      "plate": "base",
+      "diameter_mm": 5,
+      "pattern": { "kind": "rectangular", "count_x": 2, "count_y": 2, "spacing_x_mm": 70, "spacing_y_mm": 50 }
+    },
+    {
+      "id": "center_ring",
+      "type": "hole_pattern",
+      "plate": "base",
+      "diameter_mm": 4,
+      "pattern": { "kind": "circular", "count": 6, "radius_mm": 15 }
+    }
+  ]
+}
