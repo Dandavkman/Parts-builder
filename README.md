@@ -20,11 +20,11 @@ Needs Docker, Node 22, pnpm 10 and uv.
 
 ```
 pnpm install
-cp .env.example .env.local      # fill in keys as you create the accounts
+cp apps/web/.env.example apps/web/.env.local   # keys go here; see docs/accounts-and-keys.md
 pnpm dev:setup                  # starts Postgres and Redis, seeds, checks
 ```
 
-`pnpm dev:down` stops the services. `pnpm dev:reset` stops them and deletes all local data. Development file storage uses the `parts-builder-dev` bucket on Cloudflare R2 (see `.env.example`).
+`pnpm dev:down` stops the services. `pnpm dev:reset` stops them and deletes all local data. Development file storage uses the `parts-builder-dev` bucket on Cloudflare R2. Next.js only reads `.env` files from `apps/web/`, so every key the web app needs goes in `apps/web/.env.local`. The root `.env.example` is the full list of variable names for reference.
 
 ## Where things are
 
