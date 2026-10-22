@@ -3,10 +3,24 @@ name = "geometry"
 version = "0.0.0"
 description = "Stateless geometry service for Parts Builder: scan processing, Part Spec builds, checks."
 requires-python = ">=3.12"
-dependencies = ["jsonschema"]
+dependencies = [
+    "cadquery>=2.8.0",
+    "fastapi>=0.161.0",
+    "jsonschema",
+    "numpy>=2.5.4",
+    "trimesh>=5.1.1",
+    "uvicorn[standard]>=0.54.0",
+]
 
 [dependency-groups]
-dev = ["pytest", "ruff", "mypy", "types-jsonschema"]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+    "types-jsonschema",
+    "httpx>=0.28.1",
+    "httpx2>=2.16.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -25,6 +39,10 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.mypy]
 strict = true
 mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["cadquery.*", "OCP.*", "trimesh.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
