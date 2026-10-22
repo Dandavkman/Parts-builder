@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-22: TypeScript pinned to 6.x
+
+`typescript-eslint` does not support TypeScript 7 yet, so the root `package.json` pins TypeScript to the 6 line. Move to 7 once `typescript-eslint` supports it.
+
 ## 2026-10-22: Host on Vercel and Fly.io, not Render
 
 The web app runs on Vercel and the geometry workers on Fly.io, as in the plan. Render was considered because it would put everything on one platform, but its workers bill while idle. Fly.io workers can scale to zero, which keeps costs lowest before there are users. Vercel limits how long a server request can run, so the design agent's chat route (B1.8) must stream its response and set a higher maximum run time in its config. Heavy 3D work stays on the Fly.io workers. Decided by the Owner to start as lean as possible.
