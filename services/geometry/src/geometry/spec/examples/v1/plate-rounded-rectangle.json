@@ -1,0 +1,20 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with rounded corners",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40,
+        "corner_radius_mm": 6
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    }
+  ]
+}

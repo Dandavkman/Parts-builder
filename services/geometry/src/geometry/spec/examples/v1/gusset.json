@@ -1,0 +1,35 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a gusset",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "gusset_1",
+      "type": "rib",
+      "plate": "base",
+      "start_mm": [
+        0,
+        -15
+      ],
+      "end_mm": [
+        0,
+        15
+      ],
+      "thickness_mm": 3,
+      "height_mm": 12,
+      "profile": "triangular"
+    }
+  ]
+}
