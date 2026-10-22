@@ -1,3 +1,3 @@
 # Infrastructure
 
-`docker-compose.yml` for local Postgres, Redis and MinIO arrives in B0.2. Fly.io and Vercel config comes with deployment.
+`docker-compose.yml` runs local Postgres and Redis (`pnpm dev:setup`). Fly.io and Vercel config comes with deployment.
