@@ -21,6 +21,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm build
 
   geometry:
     name: Python geometry service (lint, types, tests)
