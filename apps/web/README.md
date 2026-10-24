@@ -2,7 +2,11 @@
 
 Next.js 16 (App Router), Tailwind 4, Clerk 7 for sign-in, three.js (react-three-fiber) for the viewer.
 
-## Run
+## Deploy
+
+The app deploys to Vercel from this folder. See `docs/deploy-vercel.md`. Every environment variable the app reads must be listed in `apps/web/.env.example` and in that guide.
+
+## Run locally (optional)
 
 ```
 cp apps/web/.env.example apps/web/.env.local   # add the Clerk development keys

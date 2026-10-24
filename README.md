@@ -4,7 +4,7 @@ Design custom car parts that fit your exact car. Upload a 3D scan (or rent one f
 
 ## Status
 
-Phase 0: Foundations. The monorepo scaffold is in place.
+Phase 0: Foundations. The monorepo scaffold is in place. Next: deploy the web app to Vercel, then the geometry service to Fly.io.
 
 ## Checks
 
@@ -14,9 +14,13 @@ pnpm lint && pnpm typecheck && pnpm test            # TypeScript (Node 22, pnpm 
 cd services/geometry && uv sync && uv run pytest     # Python (3.12+, uv)
 ```
 
-## Local development
+## Deploying
 
-Needs Docker, Node 22, pnpm 10 and uv.
+The web app deploys to Vercel straight from this repo (root directory `apps/web`), and the geometry service will deploy to Fly.io. Every push to `main` goes live and every pull request gets a preview link. Step by step: [`docs/deploy-vercel.md`](docs/deploy-vercel.md). Where each key goes: [`docs/accounts-and-keys.md`](docs/accounts-and-keys.md).
+
+## Local development (optional)
+
+You do not need this to review the app: use the Vercel link. Run it locally only if you want to work offline. Needs Docker, Node 22, pnpm 10 and uv.
 
 ```
 pnpm install
@@ -30,6 +34,7 @@ pnpm dev:setup                  # starts Postgres and Redis, seeds, checks
 
 - [`docs/plan.md`](docs/plan.md): the master plan. It covers the business model, architecture, data model, and every task by phase.
 - [`docs/decisions.md`](docs/decisions.md): log of design decisions.
+- [`docs/deploy-vercel.md`](docs/deploy-vercel.md) and [`docs/accounts-and-keys.md`](docs/accounts-and-keys.md): hosting and keys.
 - [`CLAUDE.md`](CLAUDE.md): rules for the AI Builder that writes the code.
 
 ## Starting a Builder session

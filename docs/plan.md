@@ -231,7 +231,13 @@ Phase 0 sets up the accounts, the repo and the first real scan, and the Owner pi
 - [ ] **O0.6** Contact 3–5 print services, such as Xometry, Protolabs Network, Craftcloud, JLC3DP or a local SLS shop. For each, get the rate card or sample quotes, material specs (minimum wall, tolerance, build size), lead times, whether they have an ordering API, and whether they allow reselling.
 - [ ] **O0.7** Talk to 10–15 owners of the launch car (forums, Discord, Reddit, local car meets). Collect at least 30 part ideas and pick **5 benchmark parts** that span the launch categories. Write each as one sentence a user would type, plus the critical measurements.
 
-**Gate G0.** The repo runs locally with one command. The plate from B0.3 shows in the viewer. The Owner has delivered at least one real scan with caliper measurements, the 5 benchmark parts, and partner data from at least 2 print services.
+**Gate G0.** The web app is deployed on Vercel and the Owner can sign in to it. The plate from B0.3 shows in the viewer on the live site (needs B0.7). The Owner has delivered at least one real scan with caliper measurements, the 5 benchmark parts, and partner data from at least 2 print services.
+
+**Plan change (2026-10-24): Vercel first.** The web app deploys to Vercel from the start instead of being run locally first. See `docs/deploy-vercel.md` and `docs/decisions.md`. Local running is optional, so B0.2 is no longer on the critical path. New Phase 0 tasks:
+
+- **B0.7** (Builder) Deploy the geometry service to Fly.io: a Dockerfile, `fly.toml` and a health check. Done when the viewer on the live site shows the plate. Needs B0.3 and O0.10.
+- **O0.8** (Owner) Deploy the web app to Vercel and test the sign-in on the live site. Needs O0.3. Done when you can sign up and reach the dashboard.
+- **O0.10** (Owner) Create the Fly.io account and add a card. Needed before B0.7. (O0.9 was the one-off "merge PR #7", tracked only in the progress tracker.)
 
 ## Phase 1: Prototype (about 8 weeks)
 

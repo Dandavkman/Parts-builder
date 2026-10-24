@@ -2,32 +2,42 @@
 
 Create only what the current phase needs. Save every key in a password manager first, then put it in the places listed in "Where keys go". Never paste a key into a chat, an issue, a pull request or a commit.
 
+The web app runs on Vercel, so **Vercel's Environment Variables screen is where the keys live** (see `docs/deploy-vercel.md`). A local file is only needed if you also run the app on your own computer.
+
 ## Where keys go
 
 | Place | What goes there | When |
 | --- | --- | --- |
 | Password manager | Every key, as you create it. Several services show a secret only once. | Always |
-| `apps/web/.env.local` on your computer | Keys the web app reads while you run it locally. Git ignores this file. Next.js only reads env files inside `apps/web/`, not the repo root. | When you run the app |
-| Claude Code environment (title bar menu, then Edit, then Network secrets or environment variables) | Test and development keys the Builder needs to run things in its own session. Use the exact variable names. New sessions pick them up. | Only when a task needs them (see below) |
-| Vercel and Fly.io dashboards | Production keys, pasted by you into their own settings | At deployment |
+| **Vercel** (project, Settings, Environment Variables) | Every key the web app reads. This is the main place. | Now |
+| Fly.io secrets | Keys the geometry service reads | When B0.7 deploys it |
+| `apps/web/.env.local` on your computer | Same keys, only if you run the app locally. Git ignores this file. Next.js only reads env files inside `apps/web/`, not the repo root. | Optional |
+| Claude Code environment (title bar menu, then Edit, then Network secrets or environment variables) | Test and development keys the Builder needs in its own session. Use the exact variable names. New sessions pick them up. | Only when a task needs them |
 
 Never put live (production) Stripe keys in the Claude Code environment.
 
 ## Order
 
 1. **GitHub**: turn on two-factor login (Settings, Password and authentication).
-2. **Clerk** (sign-in), needed now for B0.4. Sign up at dashboard.clerk.com, create an application called "Parts Builder", turn on Email and Google, then open API keys and copy the Publishable key (`pk_test_...`) and Secret key (`sk_test_...`). Put them in `apps/web/.env.local` as `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`.
-3. **Anthropic Console** (the AI), needed from B1.8. At console.anthropic.com add prepaid credits under Billing, **set a monthly spend limit** under Limits, then create an API key called `parts-builder-dev`. Variable: `ANTHROPIC_API_KEY`. Local file and Claude environment.
-4. **Vercel** (hosting): sign up with GitHub. Do not import the repo yet.
-5. **Cloudflare R2** (file storage), needed from B1.1. Enable R2 (it asks for a card; there is a free allowance), create a bucket called `parts-builder-dev`, then create an R2 API token with Object Read & Write limited to that bucket. Copy the Access Key ID, Secret Access Key and your Account ID. Variables: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET=parts-builder-dev`. Local file and Claude environment.
-6. **Fly.io** (geometry workers): later, when deployment is set up.
+2. **Clerk** (sign-in), needed now. Sign up at dashboard.clerk.com, create an application called "Parts Builder", turn on Email and Google, then open **API keys** and copy the Publishable key (`pk_test_...`) and Secret key (`sk_test_...`). They go into Vercel as `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` (step 3). Do not run any `clerk init` command from Clerk's setup prompt: the app already has Clerk built in.
+3. **Vercel** (hosting), needed now. Follow `docs/deploy-vercel.md`.
+4. **Anthropic Console** (the AI), needed from B1.8. At console.anthropic.com add prepaid credits under Billing, **set a monthly spend limit** under Limits, then create an API key called `parts-builder-dev`. Variable: `ANTHROPIC_API_KEY`. Add it to Vercel and the Claude environment.
+5. **Fly.io** (geometry service), needed for B0.7 so the viewer can show the plate. Sign up and add a card. It is pay as you go, and the service can scale to zero when idle. You will paste one more key into Vercel afterward (`GEOMETRY_SERVICE_URL`).
+6. **Cloudflare R2** (file storage), needed from B1.1. Enable R2 (it asks for a card; there is a free allowance), create a bucket called `parts-builder-dev`, then create an R2 API token with Object Read & Write limited to that bucket. Copy the Access Key ID, Secret Access Key and your Account ID. Variables: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET=parts-builder-dev`. Add them to Vercel and the Claude environment.
 7. **Stripe** (payments), Phase 2. Test mode only until owner task O2.4.
 
 ## Check that it works
 
+Open your Vercel link, then **Dashboard**. You should be sent to sign in, then land on the dashboard. The **Viewer** shows "Could not load the plate" until the geometry service is deployed (B0.7).
+
+### Optional: run it on your own computer
+
+Needs Node 22, pnpm 10 and uv.
+
 ```
-(cd services/geometry && uv run uvicorn geometry.api:app --port 8000)   # terminal 1
-pnpm --filter @parts-builder/web dev                                    # terminal 2
+cp apps/web/.env.example apps/web/.env.local     # paste the keys into it
+(cd services/geometry && uv sync && uv run uvicorn geometry.api:app --port 8000)   # terminal 1
+pnpm install && pnpm --filter @parts-builder/web dev                               # terminal 2
 ```
 
-Open http://localhost:3000/dashboard. You should be sent to sign in, then land on the dashboard. Open `/viewer`: the plate should appear and orbit when dragged.
+Open http://localhost:3000/dashboard. The Viewer shows the plate in this setup, because the geometry service runs on your computer.
