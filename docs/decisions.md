@@ -2,6 +2,17 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Design agent (B1.8) split into B1.8a loop and B1.8b saving; Sonnet 5.5, fixture anchors
+
+B1.8a is the tool-use loop and a streaming route, `POST /api/agent`. B1.8b adds the database and saves every spec version and message with token counts, and needs Postgres (Neon free tier, Owner approved). The loop runs on the web server, calls Claude through the official SDK and never runs AI-written code: `propose_spec` sends the JSON to the geometry service's `/build`, which either builds it or returns plain-sentence errors. Defaults and limits:
+
+- Model `claude-sonnet-5-5`, changeable with `DESIGN_AGENT_MODEL`. Server-side refusal fallback is on (`fallbacks: "default"`).
+- At most 6 `propose_spec` attempts per user message. After the sixth failed one the agent gets one more turn with tools off, to show its best result and the remaining issues. Total model calls per message are capped at 14.
+- `ask_user` ends the turn. Chat history is plain text for now; B1.8b will store tool calls so a question can be answered in context.
+- Anchors are fixtures (`fixture-anchors.ts`) until anchor fitting (B1.5). `measure` only does anchor to anchor distances; clearance to the scan surface and the fit check inside `propose_spec` wait for scan upload.
+- The safety rules are prompt text taken from the plan. The real classifier is B2.4 and was not touched.
+- Events stream as one JSON object per line: text, tool, spec, question, usage, done, error.
+
 ## 2026-10-25: Shared bearer token between web app and geometry service
 
 The Fly service is on the public internet, so `POST /build` requires `Authorization: Bearer <GEOMETRY_SERVICE_TOKEN>`, compared in constant time. `/health` stays open because Fly's health check cannot send headers. The service fails closed: no token configured gives 503, a wrong or missing one gives 401. `GEOMETRY_AUTH_DISABLED=1` skips the check for local development and tests and must never be set on Fly. The token is read at request time, never at build time, and lives only in Fly secrets and Vercel server-side variables. Rotating it means setting the new value on both, then redeploying the web app. No cost, no architecture change.
