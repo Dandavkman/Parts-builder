@@ -686,6 +686,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "jsonschema" },
     { name = "numpy" },
+    { name = "scipy" },
     { name = "trimesh" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -706,6 +707,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.161.0" },
     { name = "jsonschema" },
     { name = "numpy", specifier = ">=2.5.4" },
+    { name = "scipy", specifier = ">=1.18.1" },
     { name = "trimesh", specifier = ">=5.1.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
 ]
