@@ -49,6 +49,10 @@ A Part Spec is the JSON document the design agent writes and our geometry servic
   - **cutout:** its `placement` is in the same anchor space as plate placements, cuts straight through the plate along the anchor normal, and fails with "does not touch plate" if the zone misses it.
   - **emboss_text:** uses the bundled DejaVu Sans Bold. `height_mm` is the capital letter height. Text is checked to lie inside the plate. `angle_deg` turns the text from the plate's +X toward +Y, seen from the face it is on.
 
+## Building over HTTP
+
+`POST /build?format=step|stl|glb` on the geometry service takes `{"spec": ..., "anchors": {"id": {"point_mm": [x, y, z], "normal": [x, y, z]}}}` and returns the file with `Content-Disposition: attachment` and a filename made from the spec name. A spec that cannot be built returns 422 with `{"errors": ["..."]}`, one plain sentence per problem. The web app calls this; browsers never do.
+
 ## Changing the schema
 
 Any change bumps `spec_version` and adds a new schema file next to the old ones. Never edit a released schema, so older specs stay buildable. Add an example for every new feature, run `pnpm generate`, and add a line to `docs/decisions.md`.
