@@ -1,0 +1,56 @@
+import { describe, expect, it } from "vitest";
+import { applyEvent, initialChat, parseLines, sendMessage } from "./chat-state";
+import type { AgentEvent } from "./types";
+
+const play = (events: AgentEvent[]) => events.reduce(applyEvent, sendMessage(initialChat, "make a plate"));
+
+describe("chat state", () => {
+  it("joins streamed text into one assistant message and ends not busy", () => {
+    const s = play([
+      { type: "design", design_id: "d1" },
+      { type: "text", delta: "Hello " },
+      { type: "text", delta: "there" },
+      { type: "done", outcome: "answered", attempts: 0 },
+    ]);
+    expect(s.designId).toBe("d1");
+    expect(s.busy).toBe(false);
+    expect(s.items).toEqual([
+      { kind: "user", text: "make a plate" },
+      { kind: "assistant", text: "Hello there" },
+    ]);
+  });
+
+  it("shows failed attempts with their errors and counts built ones", () => {
+    const spec = { name: "x" };
+    const s = play([
+      { type: "spec", attempt: 1, ok: false, errors: ["hole 'h' is outside plate 'base'"], spec },
+      { type: "spec", attempt: 2, ok: true, errors: [], spec },
+    ]);
+    expect(s.builtCount).toBe(1);
+    expect(s.items.slice(1).map((i) => i.kind === "status" && i.text)).toEqual([
+      "Attempt 1: 1 problem, fixing: hole 'h' is outside plate 'base'",
+      "Attempt 2: the part built",
+    ]);
+  });
+
+  it("shows questions, errors and the stop notes", () => {
+    expect(play([{ type: "question", question: "Which material?" }]).items.at(-1)).toEqual({
+      kind: "assistant",
+      text: "Which material?",
+    });
+    const failed = play([{ type: "error", message: "Try again" }]);
+    expect(failed.busy).toBe(false);
+    expect(failed.items.at(-1)).toEqual({ kind: "error", text: "Try again" });
+    expect(play([{ type: "done", outcome: "refused", attempts: 0 }]).items.at(-1)).toMatchObject({ kind: "status" });
+  });
+});
+
+describe("parseLines", () => {
+  it("keeps a partial last line for the next chunk and skips bad lines", () => {
+    const first = parseLines('{"type":"text","delta":"a"}\nnot json\n{"type":"te');
+    expect(first.events).toEqual([{ type: "text", delta: "a" }]);
+    const second = parseLines(first.rest + 'xt","delta":"b"}\n');
+    expect(second.events).toEqual([{ type: "text", delta: "b" }]);
+    expect(second.rest).toBe("");
+  });
+});
