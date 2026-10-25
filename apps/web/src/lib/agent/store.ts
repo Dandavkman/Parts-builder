@@ -45,13 +45,14 @@ export function recorderFor(db: Db, designId: string): Recorder {
         seq: sql`(SELECT coalesce(max(seq), 0) + 1 FROM chat_messages WHERE design_id = ${designId})`,
       });
     },
-    async version({ spec, ok, errors, createdBy }) {
+    async version({ spec, anchors, ok, errors, createdBy }) {
       const [row] = await db
         .insert(designVersions)
         .values({
           designId,
           spec,
           specSchemaVersion: String(spec.spec_version ?? "unknown"),
+          anchors,
           createdBy,
           buildOk: ok,
           buildErrors: errors,
@@ -61,6 +62,19 @@ export function recorderFor(db: Db, designId: string): Recorder {
       if (ok) await db.update(designs).set({ currentVersion: row.version }).where(eq(designs.id, designId));
     },
   };
+}
+
+/** A saved version of a design the user owns: a number, or "current" for the latest that built. */
+export async function getOwnedVersion(db: Db, designId: string, ownerId: string, which: number | "current") {
+  const design = await getOwnedDesign(db, designId, ownerId);
+  if (!design) return null;
+  const number = which === "current" ? design.currentVersion : which;
+  if (number === null) return null;
+  const [row] = await db
+    .select()
+    .from(designVersions)
+    .where(and(eq(designVersions.designId, designId), eq(designVersions.version, number)));
+  return row ?? null;
 }
 
 /**

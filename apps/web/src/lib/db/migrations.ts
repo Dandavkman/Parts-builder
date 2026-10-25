@@ -44,6 +44,10 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `CREATE INDEX IF NOT EXISTS designs_owner_idx ON designs (owner_id)`,
     ],
   },
+  {
+    id: "0002_version_anchors",
+    sql: [`ALTER TABLE design_versions ADD COLUMN IF NOT EXISTS anchors jsonb NOT NULL DEFAULT '[]'::jsonb`],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

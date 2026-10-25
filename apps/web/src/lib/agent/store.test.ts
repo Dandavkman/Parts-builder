@@ -7,7 +7,7 @@ import { migrate } from "../db/migrations";
 import * as schema from "../db/schema";
 import { runAgent, type RunTurn } from "./loop";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { createDesign, getOwnedDesign, loadHistory, recorderFor, withUserMessage } from "./store";
+import { createDesign, getOwnedDesign, getOwnedVersion, loadHistory, recorderFor, withUserMessage } from "./store";
 
 let db: Db;
 
@@ -36,8 +36,8 @@ describe("design store", () => {
     const rec = recorderFor(db, id);
     await rec.message({ role: "user", content: "make a plate" });
     await rec.message({ role: "assistant", content: [{ type: "text", text: "ok" }], model: "m", usage });
-    await rec.version({ spec: { spec_version: "1.0", v: 1 }, ok: false, errors: ["too small"], createdBy: "agent" });
-    await rec.version({ spec: { spec_version: "1.0", v: 2 }, ok: true, errors: [], createdBy: "agent" });
+    await rec.version({ spec: { spec_version: "1.0", v: 1 }, ok: false, errors: ["too small"], createdBy: "agent", anchors: [] });
+    await rec.version({ spec: { spec_version: "1.0", v: 2 }, ok: true, errors: [], createdBy: "agent", anchors: FIXTURE_ANCHORS });
 
     expect(await loadHistory(db, id)).toEqual([
       { role: "user", content: "make a plate" },
@@ -51,6 +51,18 @@ describe("design store", () => {
       [2, true, [], "1.0"],
     ]);
     expect((await getOwnedDesign(db, id, "user_a"))?.currentVersion).toBe(2);
+
+    // Downloads: a version by number or "current", with the anchors it was built against, owner only.
+    expect((await getOwnedVersion(db, id, "user_a", "current"))?.version).toBe(2);
+    expect((await getOwnedVersion(db, id, "user_a", 2))?.anchors).toEqual(FIXTURE_ANCHORS);
+    expect((await getOwnedVersion(db, id, "user_a", 1))?.buildOk).toBe(false);
+    expect(await getOwnedVersion(db, id, "user_a", 3)).toBeNull();
+    expect(await getOwnedVersion(db, id, "user_b", 2)).toBeNull();
+  });
+
+  it("has no current version until one builds", async () => {
+    const id = await createDesign(db, "user_a", "t");
+    expect(await getOwnedVersion(db, id, "user_a", "current")).toBeNull();
   });
 
   it("saves a whole agent run: every attempt and message", async () => {

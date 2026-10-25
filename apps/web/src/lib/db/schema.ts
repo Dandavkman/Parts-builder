@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { AgentAnchor } from "../agent/types";
 import { boolean, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 /** Owner is the Clerk user id (or "dev" in the local bypass). A users table arrives with plans in Phase 2. */
@@ -26,6 +27,8 @@ export const designVersions = pgTable(
     spec: jsonb("spec").$type<Record<string, unknown>>().notNull(),
     specSchemaVersion: text("spec_schema_version").notNull(),
     createdBy: text("created_by").notNull(),
+    /** Anchors the spec was built against, copied so later anchor edits cannot change an old version. */
+    anchors: jsonb("anchors").$type<AgentAnchor[]>().notNull().default(sql`'[]'::jsonb`),
     buildOk: boolean("build_ok").notNull(),
     buildErrors: jsonb("build_errors").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
