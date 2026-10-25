@@ -1,0 +1,23 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with rounded corners",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 50,
+      "length_mm": 30,
+      "thickness_mm": 5,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "fl",
+      "type": "fillet",
+      "plate": "base",
+      "radius_mm": 4,
+      "edges": "vertical"
+    }
+  ]
+}

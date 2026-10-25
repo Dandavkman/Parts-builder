@@ -1,0 +1,50 @@
+{
+  "spec_version": "1.0",
+  "name": "L-shaped plate with a hole",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      },
+      "outline_mm": [
+        [
+          -30,
+          -20
+        ],
+        [
+          30,
+          -20
+        ],
+        [
+          30,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          20
+        ],
+        [
+          -30,
+          20
+        ]
+      ]
+    },
+    {
+      "id": "mount",
+      "type": "hole",
+      "plate": "base",
+      "diameter_mm": 5,
+      "position_mm": [
+        -15,
+        0
+      ]
+    }
+  ]
+}

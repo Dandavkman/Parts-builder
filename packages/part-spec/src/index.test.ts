@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020";
 import { describe, expect, it } from "vitest";
-import { PACKAGE_NAME, PART_SPEC_VERSION } from "./index";
+import { PACKAGE_NAME, PART_SPEC_VERSION, SUPPORTED_SPEC_VERSIONS } from "./index";
 
 const specDir = fileURLToPath(
   new URL("../../../services/geometry/src/geometry/spec/", import.meta.url),
@@ -16,8 +16,9 @@ describe("part-spec package", () => {
     expect(PACKAGE_NAME).toBe("@parts-builder/part-spec");
   });
 
-  it("matches the schema version", () => {
-    expect(schema.properties.spec_version.const).toBe(PART_SPEC_VERSION);
+  it("matches the schema versions", () => {
+    expect(schema.properties.spec_version.enum).toEqual([...SUPPORTED_SPEC_VERSIONS]);
+    expect(SUPPORTED_SPEC_VERSIONS.at(-1)).toBe(PART_SPEC_VERSION);
   });
 
   it.each(examples)("example %s is valid", (file) => {
@@ -26,7 +27,7 @@ describe("part-spec package", () => {
   });
 
   it("rejects a plate with negative thickness", () => {
-    const spec = JSON.parse(readFileSync(`${specDir}examples/${examples[0]}`, "utf8"));
+    const spec = JSON.parse(readFileSync(`${specDir}examples/plate-with-two-holes.json`, "utf8"));
     spec.features[0].thickness_mm = -1;
     expect(validate(spec)).toBe(false);
   });

@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Part Spec v1 adds 10 features and keeps v0.1 specs valid
+
+One schema file lists both versions (`spec_version` is `"0.1"` or `"1.0"`), and a `"0.1"` spec may only use `plate` (rectangle), `hole` and `hole_pattern`. New features: polygon plates, `counterbore`, `countersink`, `slot`, `standoff`, `rib` (with a triangle profile for gussets), `bend` (90 degrees only), `fillet`, `chamfer`, `cutout` and `text`. A hole can name a scan anchor to line up with (`align_anchor`), which the fit check uses. `fillet` and `chamfer` act only on a plate's outline and are applied before other features, so they never round hole edges. Other features apply in listed order. Bends other than 90 degrees, sheet-metal unfolding and a separate gusset type are left for later. The schema cannot check that referenced ids exist or that features fit inside the plate, so the spec builder (B1.7) must. Details are in `docs/part-spec.md`.
+
 ## 2026-10-25: Launch car is the Mazda Miata NA (1990 to 1997); first car is a 1995 NA8
 
 The Owner chose the first-generation Miata. The car available for scanning is a 1995 NA8 (the 1.8 L car, built 1994 to 1997). The NA6 (1.6 L, 1990 to 1993) shares the chassis but differs in places such as the engine and some trim. Fit claims are made only for cars that have actually been scanned and tested, so until other years are scanned, parts are described as tested on a 1995 NA8. Compatibility tags (B3.6) must record what was tested, not the whole generation. Benchmark parts (O0.7) should be chosen for this car.

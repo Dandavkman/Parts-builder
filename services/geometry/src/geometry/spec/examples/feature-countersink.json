@@ -1,0 +1,28 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a countersunk hole",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 60,
+      "length_mm": 40,
+      "thickness_mm": 5,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "cs",
+      "type": "countersink",
+      "plate": "base",
+      "diameter_mm": 5,
+      "csk_diameter_mm": 10,
+      "csk_angle_deg": 90,
+      "position_mm": [
+        10,
+        0
+      ]
+    }
+  ]
+}

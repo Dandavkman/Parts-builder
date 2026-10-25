@@ -1,0 +1,24 @@
+{
+  "spec_version": "1.0",
+  "name": "L bracket",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 50,
+      "length_mm": 30,
+      "thickness_mm": 3,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "bd",
+      "type": "bend",
+      "plate": "base",
+      "edge": "+y",
+      "flange_length_mm": 20,
+      "inner_radius_mm": 3
+    }
+  ]
+}

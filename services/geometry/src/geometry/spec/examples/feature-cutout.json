@@ -1,0 +1,70 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with three cutouts",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 60,
+      "length_mm": 40,
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "c1",
+      "type": "cutout",
+      "plate": "base",
+      "shape": {
+        "kind": "circle",
+        "diameter_mm": 8
+      },
+      "position_mm": [
+        20,
+        10
+      ]
+    },
+    {
+      "id": "c2",
+      "type": "cutout",
+      "plate": "base",
+      "shape": {
+        "kind": "rectangle",
+        "width_mm": 20,
+        "length_mm": 10
+      },
+      "angle_deg": 15,
+      "position_mm": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "c3",
+      "type": "cutout",
+      "plate": "base",
+      "shape": {
+        "kind": "polygon",
+        "points_mm": [
+          [
+            -5,
+            -5
+          ],
+          [
+            5,
+            -5
+          ],
+          [
+            0,
+            6
+          ]
+        ]
+      },
+      "position_mm": [
+        -20,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a drilled standoff",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 60,
+      "length_mm": 40,
+      "thickness_mm": 3,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "so",
+      "type": "standoff",
+      "plate": "base",
+      "outer_diameter_mm": 8,
+      "height_mm": 10,
+      "hole_diameter_mm": 3.2,
+      "position_mm": [
+        15,
+        10
+      ]
+    }
+  ]
+}

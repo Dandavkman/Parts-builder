@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://parts-builder.local/schemas/part-spec.v0.1.json",
+  "$id": "https://parts-builder.local/schemas/part-spec.v1.json",
   "title": "PartSpec",
-  "description": "Part Spec v0.1 (draft). A part described as features positioned against anchors. All lengths are in millimeters.",
+  "description": "Part Spec v1.0. A part described as features positioned against anchors. All lengths are in millimeters. Specs written for v0.1 stay valid and buildable.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,7 +12,10 @@
   ],
   "properties": {
     "spec_version": {
-      "const": "0.1"
+      "enum": [
+        "0.1",
+        "1.0"
+      ]
     },
     "name": {
       "type": "string",
@@ -85,6 +88,36 @@
         },
         {
           "$ref": "#/$defs/hole_pattern"
+        },
+        {
+          "$ref": "#/$defs/counterbore"
+        },
+        {
+          "$ref": "#/$defs/countersink"
+        },
+        {
+          "$ref": "#/$defs/slot"
+        },
+        {
+          "$ref": "#/$defs/standoff"
+        },
+        {
+          "$ref": "#/$defs/rib"
+        },
+        {
+          "$ref": "#/$defs/bend"
+        },
+        {
+          "$ref": "#/$defs/fillet"
+        },
+        {
+          "$ref": "#/$defs/chamfer"
+        },
+        {
+          "$ref": "#/$defs/cutout"
+        },
+        {
+          "$ref": "#/$defs/text"
         }
       ]
     },
@@ -94,8 +127,6 @@
       "required": [
         "id",
         "type",
-        "width_mm",
-        "length_mm",
         "thickness_mm",
         "placement"
       ],
@@ -117,8 +148,43 @@
         },
         "placement": {
           "$ref": "#/$defs/placement"
+        },
+        "outline_mm": {
+          "$ref": "#/$defs/points_mm"
         }
-      }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "width_mm",
+            "length_mm"
+          ],
+          "not": {
+            "required": [
+              "outline_mm"
+            ]
+          }
+        },
+        {
+          "required": [
+            "outline_mm"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "width_mm"
+                ]
+              },
+              {
+                "required": [
+                  "length_mm"
+                ]
+              }
+            ]
+          }
+        }
+      ]
     },
     "hole": {
       "type": "object",
@@ -145,6 +211,12 @@
         },
         "position_mm": {
           "$ref": "#/$defs/point_mm"
+        },
+        "align_anchor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Id of a hole anchor on the scan that this hole should line up with. Used by the fit check."
         }
       }
     },
@@ -238,6 +310,486 @@
               }
             }
           ]
+        }
+      }
+    },
+    "angle_deg": {
+      "type": "number",
+      "minimum": -360,
+      "maximum": 360,
+      "default": 0
+    },
+    "points_mm": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/point_mm"
+      },
+      "minItems": 3,
+      "maxItems": 64
+    },
+    "outline_edges": {
+      "enum": [
+        "vertical",
+        "top",
+        "bottom",
+        "all"
+      ],
+      "default": "vertical"
+    },
+    "counterbore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "diameter_mm",
+        "cbore_diameter_mm",
+        "cbore_depth_mm",
+        "position_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "counterbore"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "cbore_diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "cbore_depth_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "align_anchor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Id of a hole anchor on the scan that this hole should line up with. Used by the fit check."
+        }
+      }
+    },
+    "countersink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "diameter_mm",
+        "csk_diameter_mm",
+        "position_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "countersink"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "csk_diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "csk_angle_deg": {
+          "type": "number",
+          "minimum": 60,
+          "maximum": 120,
+          "default": 90
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "align_anchor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Id of a hole anchor on the scan that this hole should line up with. Used by the fit check."
+        }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "width_mm",
+        "length_mm",
+        "position_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "slot"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "width_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "length_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "angle_deg": {
+          "$ref": "#/$defs/angle_deg"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        }
+      }
+    },
+    "standoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "outer_diameter_mm",
+        "height_mm",
+        "position_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "standoff"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "outer_diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "height_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "hole_diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        }
+      }
+    },
+    "rib": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "thickness_mm",
+        "height_mm",
+        "from_mm",
+        "to_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "rib"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "thickness_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "height_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "from_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "to_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "profile": {
+          "enum": [
+            "rectangle",
+            "triangle"
+          ],
+          "default": "rectangle"
+        }
+      }
+    },
+    "bend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "edge",
+        "flange_length_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "bend"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "edge": {
+          "enum": [
+            "+x",
+            "-x",
+            "+y",
+            "-y"
+          ]
+        },
+        "flange_length_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "inner_radius_mm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 50,
+          "default": 2
+        },
+        "angle_deg": {
+          "const": 90,
+          "default": 90
+        }
+      }
+    },
+    "fillet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "radius_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "fillet"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "radius_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "edges": {
+          "$ref": "#/$defs/outline_edges"
+        }
+      }
+    },
+    "chamfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "size_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "chamfer"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "size_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "edges": {
+          "$ref": "#/$defs/outline_edges"
+        }
+      }
+    },
+    "cutout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "shape",
+        "position_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "cutout"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "shape": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "diameter_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "circle"
+                },
+                "diameter_mm": {
+                  "$ref": "#/$defs/length_mm"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "width_mm",
+                "length_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "rectangle"
+                },
+                "width_mm": {
+                  "$ref": "#/$defs/length_mm"
+                },
+                "length_mm": {
+                  "$ref": "#/$defs/length_mm"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "points_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "polygon"
+                },
+                "points_mm": {
+                  "$ref": "#/$defs/points_mm"
+                }
+              }
+            }
+          ]
+        },
+        "angle_deg": {
+          "$ref": "#/$defs/angle_deg"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        }
+      }
+    },
+    "text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "text",
+        "size_mm",
+        "depth_mm",
+        "position_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "text"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^[ -~]+$"
+        },
+        "size_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        },
+        "depth_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20
+        },
+        "mode": {
+          "enum": [
+            "emboss",
+            "engrave"
+          ],
+          "default": "emboss"
+        },
+        "angle_deg": {
+          "$ref": "#/$defs/angle_deg"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        }
+      }
+    }
+  },
+  "if": {
+    "properties": {
+      "spec_version": {
+        "const": "0.1"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "features": {
+        "items": {
+          "properties": {
+            "type": {
+              "enum": [
+                "plate",
+                "hole",
+                "hole_pattern"
+              ]
+            }
+          }
         }
       }
     }

@@ -1,0 +1,28 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with an angled slot",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 60,
+      "length_mm": 40,
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "sl",
+      "type": "slot",
+      "plate": "base",
+      "width_mm": 6,
+      "length_mm": 24,
+      "angle_deg": 30,
+      "position_mm": [
+        0,
+        0
+      ]
+    }
+  ]
+}

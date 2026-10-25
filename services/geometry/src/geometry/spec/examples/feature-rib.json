@@ -1,0 +1,47 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a rib and a gusset",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "width_mm": 60,
+      "length_mm": 40,
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "rb",
+      "type": "rib",
+      "plate": "base",
+      "thickness_mm": 3,
+      "height_mm": 8,
+      "from_mm": [
+        -25,
+        -10
+      ],
+      "to_mm": [
+        25,
+        -10
+      ]
+    },
+    {
+      "id": "gu",
+      "type": "rib",
+      "plate": "base",
+      "thickness_mm": 3,
+      "height_mm": 15,
+      "from_mm": [
+        -25,
+        10
+      ],
+      "to_mm": [
+        25,
+        10
+      ],
+      "profile": "triangle"
+    }
+  ]
+}
