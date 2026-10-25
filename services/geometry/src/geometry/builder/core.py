@@ -1,6 +1,7 @@
 """Turn a Part Spec into CadQuery geometry."""
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 import cadquery as cq
 
@@ -57,6 +58,54 @@ def _build_plate(
         if f["type"] == "emboss_text":
             solid = apply_text(solid, plate, f, outline)
     return solid
+
+
+@dataclass(frozen=True)
+class HolePosition:
+    """Where a drilled hole is on the placed part: center on the plate's top face, and its axis."""
+
+    feature_id: str
+    index: int
+    center_mm: tuple[float, float, float]
+    axis: tuple[float, float, float]
+    diameter_mm: float
+
+
+def hole_positions(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> list[HolePosition]:
+    """Positions of every hole, pattern hole, counterbore, countersink and standoff bore.
+
+    Holes on a plate that is bent on are left out for now (their frame depends on the bend).
+    """
+    anchors = dict(anchors or {})
+    validate_schema(spec)
+    v1 = to_v1(spec)
+    check_spec(v1, anchors)
+    plates = {f["id"]: f for f in v1["features"] if f["type"] == "plate"}
+    bent_on = {f["to_plate"] for f in v1["features"] if f["type"] == "bend"}
+    found: list[HolePosition] = []
+    for f in v1["features"]:
+        if f.get("plate") not in plates or f["plate"] in bent_on:
+            continue
+        if f["type"] in ("hole", "hole_pattern"):
+            points, diameter = fx.hole_points(f), f["diameter_mm"]
+        elif f["type"] in ("counterbore", "countersink"):
+            points, diameter = [tuple(f["position_mm"])], f["diameter_mm"]
+        elif f["type"] == "standoff" and f.get("hole_diameter_mm"):
+            points, diameter = [tuple(f["position_mm"])], f["hole_diameter_mm"]
+        else:
+            continue
+        plate = plates[f["plate"]]
+        loc = _location(plate["placement"], anchors)
+        top = float(plate["thickness_mm"]) / 2
+        for i, (x, y) in enumerate(points, start=1):
+            c = cq.Vertex.makeVertex(x, y, top).moved(loc).Center()
+            tip = cq.Vertex.makeVertex(x, y, top + 1).moved(loc).Center()
+            found.append(
+                HolePosition(
+                    f["id"], i, (c.x, c.y, c.z), (tip.x - c.x, tip.y - c.y, tip.z - c.z), diameter
+                )
+            )
+    return found
 
 
 def build_part(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> cq.Compound:
