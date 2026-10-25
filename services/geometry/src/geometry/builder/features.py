@@ -24,6 +24,12 @@ def build_plate(feature: Feature) -> cq.Workplane:
         if outline.get("corner_radius_mm", 0) > 0:
             solid = solid.edges("|Z").fillet(outline["corner_radius_mm"])
         return solid
+    if outline["kind"] == "circle":
+        return (
+            cq.Workplane("XY", origin=(0, 0, -t / 2))
+            .circle(float(outline["diameter_mm"]) / 2)
+            .extrude(t)
+        )
     points = [tuple(p) for p in outline["points_mm"]]
     return cq.Workplane("XY", origin=(0, 0, -t / 2)).polyline(points).close().extrude(t)
 

@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Part Spec 1.1 adds a circle outline (B1.6b)
+
+The first live shift-knob run showed the agent had no way to say "round": v1 plates are a rectangle or a polygon, so it had to fake circles with many-sided polygons. Spec 1.1 adds `{"kind": "circle", "diameter_mm": n}`, centered on the plate origin, and nothing else (rule 6: version bumped, and 1.0 and 0.1 specs stay valid and buildable). It is a new schema file (`part-spec.v1_1.schema.json`) beside the 1.0 one, the same way 1.0 sits beside 0.1, so every released version keeps its own source of truth. The builder extrudes a true circle. Fit checks (holes inside the plate, edge distance) treat a circle as a 128-sided polygon, which is off by under 0.04% of the radius. Bends still need plain rectangle plates. `PartSpec` in `packages/part-spec` now means 1.1 and `PartSpecV1` is 1.0. The design agent now writes `spec_version` "1.1" and is told to use `circle` for anything round. Shapes such as ellipses and rounded polygons are not added until a real design needs them.
+
 ## 2026-10-25: The agent's prompt quotes the real schema and every example (B1.8c)
 
 The first live try (an NA Miata shift knob) used all 6 build attempts on guessed field names: the prompt only had a prose summary of the spec, so the agent invented `height_mm` and left out the outline `kind`. The system prompt now contains the v1 JSON Schema and every example spec verbatim, plus the rule to copy the shape from them when a schema error comes back. They are copied into `apps/web/src/lib/agent/generated/` by `pnpm generate` (the web app cannot read files outside `apps/web` at run time), and CI fails if the copy is stale. The prompt is about 5,000 tokens, so it is cached across turns. Cost: roughly 1 cent more on the first message of a conversation, less on later ones.

@@ -1,9 +1,9 @@
-/* Generated from services/geometry/src/geometry/spec (part-spec.v1.schema.json and examples/v1). Do not edit. Run `pnpm generate`. */
+/* Generated from services/geometry/src/geometry/spec (part-spec.v1_1.schema.json and examples). Do not edit. Run `pnpm generate`. */
 export const PART_SPEC_V1_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://parts-builder.local/schemas/part-spec.v1.json",
-  "title": "PartSpecV1",
-  "description": "Part Spec v1. A part described as features positioned against anchors. All lengths are in millimeters and all angles in degrees. Features other than plates refer to a plate by id; the spec builder checks that the ids exist.",
+  "$id": "https://parts-builder.local/schemas/part-spec.v1_1.json",
+  "title": "PartSpecV1_1",
+  "description": "Part Spec v1.1 (v1 plus a circle outline). A part described as features positioned against anchors. All lengths are in millimeters and all angles in degrees. Features other than plates refer to a plate by id; the spec builder checks that the ids exist.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,7 +13,7 @@ export const PART_SPEC_V1_SCHEMA: Record<string, unknown> = {
   ],
   "properties": {
     "spec_version": {
-      "const": "1.0"
+      "const": "1.1"
     },
     "name": {
       "type": "string",
@@ -171,6 +171,23 @@ export const PART_SPEC_V1_SCHEMA: Record<string, unknown> = {
                   "minimum": 0,
                   "maximum": 1000,
                   "default": 0
+                }
+              }
+            },
+            {
+              "description": "A round plate centered on the plate origin. The edge is a true circle.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "diameter_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "circle"
+                },
+                "diameter_mm": {
+                  "$ref": "#/$defs/length_mm"
                 }
               }
             },
@@ -794,7 +811,7 @@ export const PART_SPEC_V1_SCHEMA: Record<string, unknown> = {
 
 export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "L-bracket",
     "features": [
       {
@@ -836,7 +853,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with chamfered top edge",
     "features": [
       {
@@ -862,7 +879,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with a counterbore",
     "features": [
       {
@@ -893,7 +910,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with a countersink",
     "features": [
       {
@@ -924,7 +941,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with a clearance cutout",
     "features": [
       {
@@ -961,7 +978,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with raised text",
     "features": [
       {
@@ -993,7 +1010,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with filleted corners",
     "features": [
       {
@@ -1019,7 +1036,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with a gusset",
     "features": [
       {
@@ -1054,7 +1071,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with a bolt circle",
     "features": [
       {
@@ -1084,7 +1101,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with a hole",
     "features": [
       {
@@ -1113,7 +1130,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with polygon outline",
     "features": [
       {
@@ -1158,7 +1175,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with rounded corners",
     "features": [
       {
@@ -1178,7 +1195,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with a rib",
     "features": [
       {
@@ -1212,7 +1229,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with an adjustment slot",
     "features": [
       {
@@ -1243,7 +1260,7 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "1.0",
+    "spec_version": "1.1",
     "name": "Plate with a standoff",
     "features": [
       {
@@ -1270,6 +1287,34 @@ export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = [
         "outer_diameter_mm": 8,
         "height_mm": 10,
         "hole_diameter_mm": 3.2
+      }
+    ]
+  },
+  {
+    "spec_version": "1.1",
+    "name": "Round plate with center hole",
+    "features": [
+      {
+        "id": "base",
+        "type": "plate",
+        "outline": {
+          "kind": "circle",
+          "diameter_mm": 50
+        },
+        "thickness_mm": 5,
+        "placement": {
+          "anchor": "origin"
+        }
+      },
+      {
+        "id": "center_hole",
+        "type": "hole",
+        "plate": "base",
+        "position_mm": [
+          0,
+          0
+        ],
+        "diameter_mm": 12
       }
     ]
   }

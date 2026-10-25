@@ -4,12 +4,22 @@ import math
 
 Point = tuple[float, float]
 EPS_MM = 1e-6
+CIRCLE_CHECK_STEPS = (
+    128  # a circle is checked as a 128-sided polygon, off by under 0.04% of its radius
+)
 
 
 def outline_points(outline: dict[str, object]) -> list[Point]:
     if outline["kind"] == "rectangle":
         w, l = float(outline["width_mm"]) / 2, float(outline["length_mm"]) / 2  # type: ignore[arg-type]  # noqa: E741
         return [(-w, -l), (w, -l), (w, l), (-w, l)]
+    if outline["kind"] == "circle":
+        r = float(outline["diameter_mm"]) / 2  # type: ignore[arg-type]
+        steps = CIRCLE_CHECK_STEPS
+        return [
+            (r * math.cos(2 * math.pi * i / steps), r * math.sin(2 * math.pi * i / steps))
+            for i in range(steps)
+        ]
     return [(float(p[0]), float(p[1])) for p in outline["points_mm"]]  # type: ignore[attr-defined]
 
 
