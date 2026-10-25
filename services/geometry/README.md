@@ -4,9 +4,11 @@ Stateless Python service for scan processing, Part Spec builds and checks. All u
 
 ## Run
 
+`POST /build` needs `Authorization: Bearer $GEOMETRY_SERVICE_TOKEN`; `/health` is open. For local runs without a token, start with `GEOMETRY_AUTH_DISABLED=1` (the curl examples below assume it). With neither set, `/build` returns 503.
+
 ```
 uv sync
-uv run uvicorn geometry.api:app --port 8000
+GEOMETRY_AUTH_DISABLED=1 uv run uvicorn geometry.api:app --port 8000
 curl http://localhost:8000/health
 curl -X POST "http://localhost:8000/build?format=step" -o plate.step   # demo plate; also stl, glb
 python -c "import json,sys; print(json.dumps({'spec': json.load(open('src/geometry/spec/examples/v1/hole.json'))}))" \

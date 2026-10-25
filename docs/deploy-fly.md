@@ -1,6 +1,6 @@
 # Deploy the geometry service to Fly.io
 
-The geometry service is the Python app that builds 3D parts. It is too big for Vercel, so it runs on Fly.io. The web app on Vercel only needs its address (`GEOMETRY_SERVICE_URL`).
+The geometry service is the Python app that builds 3D parts. It is too big for Vercel, so it runs on Fly.io. The web app on Vercel only needs its address (`GEOMETRY_SERVICE_URL`) and a generated secret (`GEOMETRY_SERVICE_TOKEN`).
 
 Commands below are for PowerShell on Windows. They work the same in a Mac or Linux terminal, except for the folder path.
 
@@ -43,7 +43,19 @@ Commands below are for PowerShell on Windows. They work the same in a Mac or Lin
    fly deploy
    ```
 
-5. Check it. This should print `status` `ok`:
+5. Set the shared secret, so only our web app can build parts. In PowerShell, generate a random value, store it on Fly, and keep it in the clipboard for Vercel (never paste it in chat or commit it):
+
+   ```powershell
+   $b = New-Object byte[] 32
+   [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b)
+   $token = ([BitConverter]::ToString($b) -replace "-","").ToLower()
+   fly secrets set GEOMETRY_SERVICE_TOKEN=$token
+   $token | Set-Clipboard
+   ```
+
+   In Vercel add `GEOMETRY_SERVICE_TOKEN` with the clipboard value for Production and Preview (server-side only). The service refuses `/build` with 503 until the secret exists and 401 on a wrong one; `/health` stays open for Fly's check.
+
+6. Check it. This should print `status` `ok`:
 
    ```powershell
    Invoke-RestMethod https://parts-builder-geometry.fly.dev/health
@@ -51,9 +63,9 @@ Commands below are for PowerShell on Windows. They work the same in a Mac or Lin
 
    If the address does not load but `fly status` shows the machine as started, run `fly ips list`. If there are no addresses, run `fly ips allocate-v4 --shared` (free) and `fly ips allocate-v6`.
 
-6. Copy the address (`https://parts-builder-geometry.fly.dev`, no slash at the end). In Vercel open the project, **Settings**, **Environment Variables**, and add `GEOMETRY_SERVICE_URL` with that address for Production and Preview. Then **Deployments**, the three dots on the latest one, **Redeploy**.
+7. Copy the address (`https://parts-builder-geometry.fly.dev`, no slash at the end). In Vercel open the project, **Settings**, **Environment Variables**, and add `GEOMETRY_SERVICE_URL` with that address for Production and Preview. Then **Deployments**, the three dots on the latest one, **Redeploy** (do this after adding the token too).
 
-7. Open the live site, then **Viewer**. The plate should now draw.
+8. Open the live site, then **Viewer**. The plate should now draw.
 
 ## Day to day
 
