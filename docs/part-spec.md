@@ -39,9 +39,15 @@ A Part Spec is the JSON document the design agent writes and our geometry servic
 
 - **Plate frame:** a plate is centered on its local origin in X and Y, with its mid-plane at Z = 0 (top face at +thickness/2).
 - **Placement:** the plate's Z axis is set to the anchor normal, then `rotation_deg` turns it about that normal, then `offset_mm` is applied along the rotated axes. `anchors` maps anchor ids to `Anchor(point_mm, normal)`; `origin` is built in.
-- **Order:** per plate, fillets and chamfers first, then cuts (holes, patterns, slots), each in spec order. Edge finishes come first so they only see outline edges.
+- **Order:** per plate, fillets and chamfers first (so they only see outline edges), then additions (standoffs, ribs), then cuts (holes, patterns, slots, counterbores, countersinks, standoff bores, cutouts), then text, each group in spec order. Then bends fuse plates together and each plate moves onto its anchor.
 - **Fit checks:** holes and slots must lie fully inside the plate outline. Rounded rectangle corners are treated as square for this check.
-- **Buildable now (B1.7a):** plate, hole, hole_pattern, slot, fillet, chamfer. The rest give "not buildable yet" until B1.7b.
+- **Features that need a note:**
+  - **countersink:** `sink_angle_deg` is the full cone angle; the cone must be shallower than the plate.
+  - **counterbore:** `bore_depth_mm` must be less than the plate thickness.
+  - **standoff / rib:** grow from the chosen face and are fused to the plate. A standoff bore goes through the post and the plate.
+  - **bend:** both plates must be plain rectangles of the same thickness, and the two joined edges must be the same length. The to-plate is placed by the bend (its own placement is ignored), the bend curves toward the from-plate's top face, and `angle_deg` is the turn (90 = an L). A plate can be bent on once, and a bent-on plate cannot start another bend (no chains yet). Cutouts are not supported on a bent-on plate.
+  - **cutout:** its `placement` is in the same anchor space as plate placements, cuts straight through the plate along the anchor normal, and fails with "does not touch plate" if the zone misses it.
+  - **emboss_text:** uses the bundled DejaVu Sans Bold. `height_mm` is the capital letter height. Text is checked to lie inside the plate. `angle_deg` turns the text from the plate's +X toward +Y, seen from the face it is on.
 
 ## Changing the schema
 
