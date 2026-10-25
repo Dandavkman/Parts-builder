@@ -81,7 +81,8 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   const params = (extra: Partial<TurnParams> = {}): TurnParams => ({
     model: options.model ?? DEFAULT_MODEL,
     max_tokens: 16000,
-    system,
+    // The system prompt is large and identical across turns, so cache it.
+    system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
     tools: TOOLS,
     messages,
     betas: ["server-side-fallback-2026-07-01"],

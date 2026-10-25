@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: The agent's prompt quotes the real schema and every example (B1.8c)
+
+The first live try (an NA Miata shift knob) used all 6 build attempts on guessed field names: the prompt only had a prose summary of the spec, so the agent invented `height_mm` and left out the outline `kind`. The system prompt now contains the v1 JSON Schema and every example spec verbatim, plus the rule to copy the shape from them when a schema error comes back. They are copied into `apps/web/src/lib/agent/generated/` by `pnpm generate` (the web app cannot read files outside `apps/web` at run time), and CI fails if the copy is stale. The prompt is about 5,000 tokens, so it is cached across turns. Cost: roughly 1 cent more on the first message of a conversation, less on later ones.
+
 ## 2026-10-25: Workspace starts as one page, `/design`, split into B1.9a and B1.9b
 
 B1.9a is chat on the left and the part on the right, with STEP and STL download links for the latest version that built. Chat state lives in a small pure reducer (`lib/agent/chat-state.ts`) over the agent's event stream, so it is unit tested without a browser. The viewer is the existing three.js viewer, now taking any GLB URL; the page reloads it from `/api/designs/<id>/versions/current/download?format=glb` after each spec that builds. The page works on the fixture panel until anchors come from real scans. B1.9b (left for later): see-through toggle with the scan, auto-generated sliders for every number in the spec, version history with undo, and listing earlier designs. Sliders must make a new version without calling the AI (`created_by` = `slider`), so they need a small edit-and-rebuild route first.

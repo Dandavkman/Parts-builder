@@ -1,26 +1,24 @@
+import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
 import type { AgentAnchor } from "./types";
 
-/** Short reference of every Part Spec v1 feature. `docs/part-spec.md` is the full version. */
-export const SPEC_REFERENCE = `
+/** How a spec is put together. The exact fields come from the schema and examples quoted below. */
+export const SPEC_CONVENTIONS = `
 Part Spec v1 is JSON: {"spec_version": "1.0", "name": "...", "features": [...]}.
 Lengths are millimeters (_mm), angles degrees (_deg). Every feature has a unique "id" (lowercase letters, digits, underscore) and a "type".
 Only a plate has a "placement": {"anchor": "<anchor id or origin>", "offset_mm": [x, y, z], "rotation_deg": n}. Never write absolute positions.
 Every other feature names its plate in "plate" and uses "position_mm": [x, y] in that plate's frame, origin at the plate center.
-Feature types:
-- plate: "outline" (rectangle with width_mm, height_mm, optional corner_radius_mm, or polygon with points_mm), "thickness_mm", "placement".
-- hole: diameter_mm, position_mm.
-- hole_pattern: diameter_mm, pattern (rectangular grid or circular bolt circle).
-- counterbore: diameter_mm, bore_diameter_mm, bore_depth_mm, position_mm.
-- countersink: diameter_mm, sink_diameter_mm, sink_angle_deg (default 90), position_mm.
-- slot: length_mm (end to end), width_mm, angle_deg, position_mm.
-- standoff: outer_diameter_mm, height_mm, hole_diameter_mm, face, position_mm.
-- rib: start_mm, end_mm, thickness_mm, height_mm, profile (rectangular or triangular gusset), face.
-- bend: from_plate, from_edge, to_plate, to_edge, angle_deg, inner_radius_mm. The second plate's own placement is ignored.
-- fillet: edges (vertical, top, bottom, all), radius_mm. chamfer: same edges, distance_mm.
-- cutout: placement, zone (circle or rectangle), margin_mm. Clears a zone on the scan.
-- emboss_text: text (up to 40 characters), height_mm, depth_mm, mode (emboss or engrave), face, angle_deg.
-The builder reports every problem in plain sentences, for example "hole 'hole_2' ... is outside plate 'base'". Read them and fix the spec.
+A rectangular plate is {"kind": "rectangle", "width_mm": ..., "length_mm": ...}; a polygon plate is {"kind": "polygon", "points_mm": [[x, y], ...]}. There is no round outline: use a polygon with many points, and fillets for rounded edges.
+Use only the fields in the schema. Never invent field names. The schema rejects extra fields.
+The builder reports every problem in plain sentences, for example "hole 'hole_2' ... is outside plate 'base'". Schema errors name the field path, such as "features/0/outline: 'kind' is a required property". When you get one, find that field in the schema and the examples below and copy the shape exactly. Do not guess again.
 `.trim();
+
+export function specReference(): string {
+  return [
+    SPEC_CONVENTIONS,
+    `JSON Schema for Part Spec v1 (authoritative):\n${JSON.stringify(PART_SPEC_V1_SCHEMA)}`,
+    `Valid example specs, one or more per feature:\n${PART_SPEC_V1_EXAMPLES.map((e) => JSON.stringify(e)).join("\n")}`,
+  ].join("\n\n");
+}
 
 export const SAFETY_RULES = `
 Allowed: mounts and brackets, interior parts (gauge pods, switch panels, trim, cup holders), covers and trim (blanking plates, badges, grommets).
@@ -41,7 +39,7 @@ export function buildSystemPrompt(anchors: AgentAnchor[]): string {
     "You design custom car parts for people. You do it by writing a Part Spec (JSON) with the propose_spec tool. Our own code builds the geometry. Never write code, meshes or CAD files.",
     "Work in this order: understand the request, call list_anchors, measure what you need, ask one short question with ask_user if something important is unknown (material, thickness, which hole), then call propose_spec. If propose_spec returns errors, fix them and call it again. When it succeeds, say in two or three sentences what you made and the key dimensions in millimeters.",
     "You have at most 6 propose_spec attempts per user message.",
-    `## Part Spec reference\n${SPEC_REFERENCE}`,
+    `## Part Spec reference\n${specReference()}`,
     `## Safety rules\n${SAFETY_RULES}`,
     `## Materials\n${MATERIAL_LIMITS}`,
     `## Anchors on the scan (millimeters)\n${anchorLines}\nCall list_anchors for full details.`,
