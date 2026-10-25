@@ -1,0 +1,133 @@
+import { describe, expect, it } from "vitest";
+import { FIXTURE_ANCHORS } from "./fixture-anchors";
+import { MAX_BUILD_ATTEMPTS, runAgent, type RunTurn } from "./loop";
+import type { AgentEvent, BuildSpec } from "./types";
+
+type Block = Record<string, unknown>;
+
+const usage = { input_tokens: 10, output_tokens: 5, cache_creation_input_tokens: 0, cache_read_input_tokens: 2 };
+const reply = (content: Block[], stop_reason = "tool_use") => ({ content, stop_reason, usage });
+const call = (id: string, name: string, input: Block = {}) => ({ type: "tool_use", id, name, input });
+const text = (t: string) => ({ type: "text", text: t });
+
+/** A model that plays back a script, recording every request it was sent. */
+function scripted(replies: ReturnType<typeof reply>[]) {
+  const requests: Block[] = [];
+  let i = 0;
+  const turn = (async (params: unknown, onText: (d: string) => void) => {
+    requests.push(JSON.parse(JSON.stringify(params)));
+    const r = replies[i++];
+    for (const b of r.content) if (b.type === "text") onText(String(b.text));
+    return r;
+  }) as unknown as RunTurn;
+  return { turn, requests };
+}
+
+const run = (replies: ReturnType<typeof reply>[], build: BuildSpec, maxAttempts?: number) => {
+  const model = scripted(replies);
+  const events: AgentEvent[] = [];
+  const result = runAgent({
+    turn: model.turn,
+    system: "sys",
+    history: [{ role: "user", content: "make a bracket" }],
+    anchors: FIXTURE_ANCHORS,
+    build,
+    emit: (e) => events.push(e),
+    maxAttempts,
+  });
+  return { result, events, requests: model.requests };
+};
+
+const ok: BuildSpec = async () => ({ ok: true });
+const bad: BuildSpec = async () => ({ ok: false, errors: ["hole 'h' is outside plate 'base'"] });
+
+describe("runAgent", () => {
+  it("answers without tools", async () => {
+    const { result, events } = run([reply([text("Hi")], "end_turn")], ok);
+    expect((await result).outcome).toBe("answered");
+    expect(events.some((e) => e.type === "text")).toBe(true);
+  });
+
+  it("uses list_anchors and measure, then builds a spec", async () => {
+    const { result, requests } = run(
+      [
+        reply([call("a", "list_anchors"), call("b", "measure", { from: "hole_a", to: "hole_b" })]),
+        reply([call("c", "propose_spec", { spec: { name: "x" } })]),
+        reply([text("Done")], "end_turn"),
+      ],
+      ok,
+    );
+    const r = await result;
+    expect(r.outcome).toBe("answered");
+    expect(r.attempts).toBe(1);
+    expect(r.bestSpec).toEqual({ name: "x" });
+    const results = (requests[1].messages as Block[]).at(-1)?.content as Block[];
+    expect(results.map((b) => b.content)).toEqual([JSON.stringify(FIXTURE_ANCHORS), "80.00 mm"]);
+    expect(results.every((b) => b.is_error === false)).toBe(true);
+  });
+
+  it("feeds builder errors back so the agent can fix the spec", async () => {
+    let n = 0;
+    const flaky: BuildSpec = async () => (n++ === 0 ? bad(null as never, []) : ok(null as never, []));
+    const { result, requests } = run(
+      [
+        reply([call("a", "propose_spec", { spec: { v: 1 } })]),
+        reply([call("b", "propose_spec", { spec: { v: 2 } })]),
+        reply([text("Fixed")], "end_turn"),
+      ],
+      flaky,
+    );
+    const r = await result;
+    expect(r.attempts).toBe(2);
+    expect(r.bestSpec).toEqual({ v: 2 });
+    const first = (requests[1].messages as Block[]).at(-1)?.content as Block[];
+    expect(first[0].is_error).toBe(true);
+    expect(String(first[0].content)).toContain("outside plate 'base'");
+  });
+
+  it("stops after the attempt limit and asks for a summary without tools", async () => {
+    const replies = Array.from({ length: MAX_BUILD_ATTEMPTS }, (_, i) =>
+      reply([call(`c${i}`, "propose_spec", { spec: { v: i } })]),
+    );
+    replies.push(reply([text("Best effort, with issues")], "end_turn"));
+    const { result, requests } = run(replies, bad);
+    const r = await result;
+    expect(r.outcome).toBe("attempts_exhausted");
+    expect(r.attempts).toBe(MAX_BUILD_ATTEMPTS);
+    expect(requests.at(-1)?.tool_choice).toEqual({ type: "none" });
+  });
+
+  it("ends the turn when the agent asks the user", async () => {
+    const { result, events } = run([reply([call("q", "ask_user", { question: "Which material?" })])], ok);
+    expect((await result).outcome).toBe("asked");
+    expect(events).toContainEqual({ type: "question", question: "Which material?" });
+  });
+
+  it("reports a refusal", async () => {
+    const { result } = run([reply([], "refusal")], ok);
+    expect((await result).outcome).toBe("refused");
+  });
+
+  it("adds up token counts", async () => {
+    const { result } = run([reply([call("a", "list_anchors")]), reply([text("ok")], "end_turn")], ok);
+    expect((await result).usage).toEqual({
+      input_tokens: 20,
+      output_tokens: 10,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 4,
+    });
+  });
+
+  it("returns an error result for unknown anchors and non-object specs", async () => {
+    const { result, requests } = run(
+      [
+        reply([call("a", "measure", { from: "nope", to: "hole_b" }), call("b", "propose_spec", { spec: "text" })]),
+        reply([text("ok")], "end_turn"),
+      ],
+      ok,
+    );
+    await result;
+    const results = (requests[1].messages as Block[]).at(-1)?.content as Block[];
+    expect(results.map((b) => b.is_error)).toEqual([true, true]);
+  });
+});
