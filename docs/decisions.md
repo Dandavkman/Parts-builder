@@ -2,6 +2,16 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Database layer: Drizzle on Neon, migrations as bundled SQL, one row per model message
+
+B1.8b adds `designs`, `design_versions` and `chat_messages` (new tables only, nothing existing is touched). Drizzle gives the typed queries, over Neon's HTTP driver, which suits Vercel functions. Migrations are numbered, idempotent SQL strings in `src/lib/db/migrations.ts`, applied on first use per server instance and recorded in `_migrations`. We chose this over drizzle-kit migration files because the SQL ships inside the server bundle (no file paths to trace on Vercel), needs no deploy step and reads `DATABASE_URL` only at request time, per the no-secrets-at-build rule. Never edit an applied migration; add a new one. Tests run the same SQL on PGlite (in-process Postgres), so CI needs no database.
+
+- Every `propose_spec` attempt is a version, including ones that failed to build, with its errors. `designs.current_version` points at the latest that built. Slider and user edits (B1.9) will use `created_by` `slider` or `user`.
+- Messages keep the exact content blocks (tool calls, results, thinking) so a conversation replays correctly, with token counts on assistant messages. Cost reporting (B2.11) sums these.
+- A question from `ask_user` leaves a tool call open; the next user message answers it as the tool result.
+- Owner is the Clerk user id, so a user can only read or continue their own designs (404 otherwise). A users table comes with plans in Phase 2.
+- Two requests at the same instant on one design could race on message numbers; the unique constraint makes the loser fail rather than corrupt. One chat per design at a time is the expected use.
+
 ## 2026-10-25: Design agent (B1.8) split into B1.8a loop and B1.8b saving; Sonnet 5.5, fixture anchors
 
 B1.8a is the tool-use loop and a streaming route, `POST /api/agent`. B1.8b adds the database and saves every spec version and message with token counts, and needs Postgres (Neon free tier, Owner approved). The loop runs on the web server, calls Claude through the official SDK and never runs AI-written code: `propose_spec` sends the JSON to the geometry service's `/build`, which either builds it or returns plain-sentence errors. Defaults and limits:

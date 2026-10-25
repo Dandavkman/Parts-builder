@@ -4,10 +4,11 @@ The design agent turns a chat request into a Part Spec. Code lives in `apps/web/
 
 ## Request and stream
 
-Send `{"messages": [{"role": "user", "content": "..."}, ...]}`: plain text turns that alternate and end with the user (20 messages, 4,000 characters each). Sign-in is required. The reply is NDJSON, one event per line:
+Send `{"message": "...", "design_id": "<uuid, optional>"}` (up to 4,000 characters). Without `design_id` a new design starts; with it, the saved conversation continues (only the owner can; anyone else gets 404). Sign-in is required. The first event tells you the design id. The reply is NDJSON, one event per line:
 
 | Event | Meaning |
 | --- | --- |
+| `design` | `design_id` of the design this message belongs to. |
 | `text` | A piece of the reply text. |
 | `tool` | The agent used `list_anchors` or `measure`. |
 | `spec` | A `propose_spec` attempt: `attempt` (1 to 6), `ok`, `errors`, and the `spec`. |
@@ -15,6 +16,10 @@ Send `{"messages": [{"role": "user", "content": "..."}, ...]}`: plain text turns
 | `usage` | Running token totals for this message (input, output, cache). |
 | `done` | `outcome` is `answered`, `asked`, `attempts_exhausted`, `refused` or `step_limit`. |
 | `error` | Something failed; the text is safe to show. |
+
+## What is saved
+
+Every model message goes in `chat_messages` with token counts, and every `propose_spec` attempt in `design_versions` (failed ones too, with their errors). `designs.current_version` is the latest version that built. See `docs/decisions.md` for the table design. Needs `DATABASE_URL`; without it the route answers 503.
 
 ## Tools
 
@@ -29,4 +34,4 @@ Send `{"messages": [{"role": "user", "content": "..."}, ...]}`: plain text turns
 
 ## Trying it
 
-Set `ANTHROPIC_API_KEY` and `GEOMETRY_SERVICE_URL` (and `GEOMETRY_SERVICE_TOKEN`, or run the geometry service with `GEOMETRY_AUTH_DISABLED=1`) in `apps/web/.env.local`, sign in, and POST to `/api/agent`. Running it costs API tokens.
+Set `ANTHROPIC_API_KEY`, `DATABASE_URL` and `GEOMETRY_SERVICE_URL` (and `GEOMETRY_SERVICE_TOKEN`, or run the geometry service with `GEOMETRY_AUTH_DISABLED=1`) in `apps/web/.env.local`, sign in, and POST to `/api/agent`. Running it costs API tokens.
