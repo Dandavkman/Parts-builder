@@ -11,7 +11,7 @@ curl http://localhost:8000/health
 curl -X POST "http://localhost:8000/build?format=step" -o plate.step   # also stl, glb
 ```
 
-`/build` currently returns a hard-coded 50 x 30 x 4 mm plate with two 6.5 mm holes. B1.7 replaces it with a builder that reads a Part Spec.
+`/build` currently returns a hard-coded 50 x 30 x 4 mm plate with two 6.5 mm holes. The Part Spec builder lives in `geometry.builder` (see `docs/part-spec.md`) and is not wired to the API yet.
 
 ## Checks
 
