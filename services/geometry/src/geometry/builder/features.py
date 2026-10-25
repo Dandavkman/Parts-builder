@@ -14,6 +14,7 @@ from geometry.builder.errors import SpecError
 
 Feature = dict[str, Any]
 OVERCUT_MM = 1.0
+CUTOUT_REACH_MM = 500.0
 
 
 def build_plate(feature: Feature) -> cq.Workplane:
@@ -114,3 +115,111 @@ def apply_edge_finish(solid: cq.Workplane, feature: Feature) -> cq.Workplane:
                 f"'{feature['plate']}'; use a smaller value ({exc})"
             ]
         ) from exc
+
+
+def apply_counterbore(solid: cq.Workplane, plate: Feature, f: Feature) -> cq.Workplane:
+    t, (x, y) = float(plate["thickness_mm"]), f["position_mm"]
+    solid = apply_holes(solid, plate, {**f, "type": "hole"})
+    bore = (
+        cq.Workplane("XY", origin=(x, y, t / 2 - f["bore_depth_mm"]))
+        .circle(f["bore_diameter_mm"] / 2)
+        .extrude(f["bore_depth_mm"] + OVERCUT_MM)
+    )
+    return solid.cut(bore)
+
+
+def countersink_depth_mm(f: Feature) -> float:
+    half_angle = math.radians(f.get("sink_angle_deg", 90) / 2)
+    return float((f["sink_diameter_mm"] - f["diameter_mm"]) / 2 / math.tan(half_angle))
+
+
+def apply_countersink(solid: cq.Workplane, plate: Feature, f: Feature) -> cq.Workplane:
+    t, (x, y) = float(plate["thickness_mm"]), f["position_mm"]
+    solid = apply_holes(solid, plate, {**f, "type": "hole"})
+    depth = countersink_depth_mm(f)
+    half_angle = math.radians(f.get("sink_angle_deg", 90) / 2)
+    # Run the cone one overcut past the top face so the cut leaves no coplanar sliver.
+    cone = cq.Solid.makeCone(
+        f["diameter_mm"] / 2,
+        f["sink_diameter_mm"] / 2 + OVERCUT_MM * math.tan(half_angle),
+        depth + OVERCUT_MM,
+        cq.Vector(x, y, t / 2 - depth),
+        cq.Vector(0, 0, 1),
+    )
+    return solid.cut(cone)
+
+
+def _face_z_mm(plate: Feature, face: str) -> tuple[float, float]:
+    """Plate face height and the direction (+1 up, -1 down) a feature on it grows."""
+    half = float(plate["thickness_mm"]) / 2
+    return (half, 1.0) if face == "top" else (-half, -1.0)
+
+
+def _embed_mm(plate: Feature) -> float:
+    return min(float(plate["thickness_mm"]) / 2, 0.5)
+
+
+def apply_standoff_body(solid: cq.Workplane, plate: Feature, f: Feature) -> cq.Workplane:
+    z, up = _face_z_mm(plate, f.get("face", "top"))
+    embed = _embed_mm(plate)
+    x, y = f["position_mm"]
+    post = (
+        cq.Workplane("XY", origin=(x, y, z - up * embed))
+        .circle(f["outer_diameter_mm"] / 2)
+        .extrude(up * (f["height_mm"] + embed))
+    )
+    return solid.union(post)
+
+
+def apply_standoff_hole(solid: cq.Workplane, plate: Feature, f: Feature) -> cq.Workplane:
+    """Drill a standoff's bore through the post and the plate."""
+    if not f.get("hole_diameter_mm"):
+        return solid
+    x, y = f["position_mm"]
+    half = float(plate["thickness_mm"]) / 2
+    z, up = _face_z_mm(plate, f.get("face", "top"))
+    post_end = z + up * f["height_mm"]
+    low, high = min(-half, post_end), max(half, post_end)
+    bore = (
+        cq.Workplane("XY", origin=(x, y, low - OVERCUT_MM))
+        .circle(f["hole_diameter_mm"] / 2)
+        .extrude(high - low + 2 * OVERCUT_MM)
+    )
+    return solid.cut(bore)
+
+
+def apply_rib(solid: cq.Workplane, plate: Feature, f: Feature) -> cq.Workplane:
+    (x1, y1), (x2, y2) = f["start_mm"], f["end_mm"]
+    length, h, thick = math.hypot(x2 - x1, y2 - y1), float(f["height_mm"]), float(f["thickness_mm"])
+    embed = _embed_mm(plate)
+    if f.get("profile", "rectangular") == "rectangular":
+        profile = [(-length / 2, -embed), (length / 2, -embed), (length / 2, h), (-length / 2, h)]
+    else:  # a gusset: full height at the start, zero at the end
+        profile = [(-length / 2, -embed), (length / 2, -embed), (length / 2, 0), (-length / 2, h)]
+    body = cq.Workplane("XZ").polyline(profile).close().extrude(thick / 2, both=True)
+    z, up = _face_z_mm(plate, f.get("face", "top"))
+    if up < 0:
+        body = body.mirror("XY")
+    body = body.rotate((0, 0, 0), (0, 0, 1), math.degrees(math.atan2(y2 - y1, x2 - x1)))
+    body = body.translate(((x1 + x2) / 2, (y1 + y2) / 2, z))
+    return solid.union(body)
+
+
+def apply_cutout(
+    solid: cq.Workplane, f: Feature, cutter_loc: cq.Location, plate_loc: cq.Location
+) -> cq.Workplane:
+    """Cut a clearance zone given in the cutter's anchor frame; `plate_loc` places the plate."""
+    zone, margin = f["zone"], float(f.get("margin_mm", 0))
+    wp = cq.Workplane("XY")
+    if zone["kind"] == "circle":
+        wp = wp.circle(zone["diameter_mm"] / 2 + margin)
+    else:
+        wp = wp.rect(zone["width_mm"] + 2 * margin, zone["length_mm"] + 2 * margin)
+    cutter = wp.extrude(CUTOUT_REACH_MM, both=True).val()
+    assert isinstance(cutter, cq.Shape)
+    cutter = cutter.moved(cutter_loc).moved(plate_loc.inverse)
+    before = solid.val().Volume()  # type: ignore[union-attr]
+    cut = solid.cut(cq.Workplane("XY").newObject([cutter]))
+    if abs(before - cut.val().Volume()) < 1e-6:  # type: ignore[union-attr]
+        raise SpecError([f"cutout '{f['id']}' does not touch plate '{f['plate']}'"])
+    return cut
