@@ -12,7 +12,11 @@ from jsonschema.exceptions import ValidationError, best_match
 from geometry.builder.errors import SpecError
 
 SPEC_DIR = Path(__file__).parent.parent / "spec"
-SCHEMA_FILES = {"0.1": "part-spec.schema.json", "1.0": "part-spec.v1.schema.json"}
+SCHEMA_FILES = {
+    "0.1": "part-spec.schema.json",
+    "1.0": "part-spec.v1.schema.json",
+    "1.1": "part-spec.v1_1.schema.json",
+}
 
 Spec = dict[str, Any]
 

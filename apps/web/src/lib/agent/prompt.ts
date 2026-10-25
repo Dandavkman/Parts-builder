@@ -3,11 +3,11 @@ import type { AgentAnchor } from "./types";
 
 /** How a spec is put together. The exact fields come from the schema and examples quoted below. */
 export const SPEC_CONVENTIONS = `
-Part Spec v1 is JSON: {"spec_version": "1.0", "name": "...", "features": [...]}.
+Part Spec is JSON: {"spec_version": "1.1", "name": "...", "features": [...]}.
 Lengths are millimeters (_mm), angles degrees (_deg). Every feature has a unique "id" (lowercase letters, digits, underscore) and a "type".
 Only a plate has a "placement": {"anchor": "<anchor id or origin>", "offset_mm": [x, y, z], "rotation_deg": n}. Never write absolute positions.
 Every other feature names its plate in "plate" and uses "position_mm": [x, y] in that plate's frame, origin at the plate center.
-A rectangular plate is {"kind": "rectangle", "width_mm": ..., "length_mm": ...}; a polygon plate is {"kind": "polygon", "points_mm": [[x, y], ...]}. There is no round outline: use a polygon with many points, and fillets for rounded edges.
+A rectangular plate is {"kind": "rectangle", "width_mm": ..., "length_mm": ...}; a round plate is {"kind": "circle", "diameter_mm": ...}, centered on the plate origin; a polygon plate is {"kind": "polygon", "points_mm": [[x, y], ...]}. Use "circle" for anything round, never a many-sided polygon.
 Use only the fields in the schema. Never invent field names. The schema rejects extra fields.
 The builder reports every problem in plain sentences, for example "hole 'hole_2' ... is outside plate 'base'". Schema errors name the field path, such as "features/0/outline: 'kind' is a required property". When you get one, find that field in the schema and the examples below and copy the shape exactly. Do not guess again.
 `.trim();
@@ -15,7 +15,7 @@ The builder reports every problem in plain sentences, for example "hole 'hole_2'
 export function specReference(): string {
   return [
     SPEC_CONVENTIONS,
-    `JSON Schema for Part Spec v1 (authoritative):\n${JSON.stringify(PART_SPEC_V1_SCHEMA)}`,
+    `JSON Schema for Part Spec 1.1 (authoritative):\n${JSON.stringify(PART_SPEC_V1_SCHEMA)}`,
     `Valid example specs, one or more per feature:\n${PART_SPEC_V1_EXAMPLES.map((e) => JSON.stringify(e)).join("\n")}`,
   ].join("\n\n");
 }

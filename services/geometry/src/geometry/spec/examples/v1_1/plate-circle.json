@@ -1,0 +1,20 @@
+{
+  "spec_version": "1.1",
+  "name": "Round plate with center hole",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": { "kind": "circle", "diameter_mm": 50 },
+      "thickness_mm": 5,
+      "placement": { "anchor": "origin" }
+    },
+    {
+      "id": "center_hole",
+      "type": "hole",
+      "plate": "base",
+      "position_mm": [0, 0],
+      "diameter_mm": 12
+    }
+  ]
+}

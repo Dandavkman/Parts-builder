@@ -6,7 +6,7 @@ import { buildSystemPrompt } from "./prompt";
 import { parseRequest } from "./request";
 
 const schemaPath = new URL(
-  "../../../../../services/geometry/src/geometry/spec/part-spec.v1.schema.json",
+  "../../../../../services/geometry/src/geometry/spec/part-spec.v1_1.schema.json",
   import.meta.url,
 );
 
@@ -22,13 +22,14 @@ function featureTypes(node: unknown, found = new Set<string>()): Set<string> {
 }
 
 describe("system prompt", () => {
-  it("quotes the v1 schema and an example for every feature type", () => {
+  it("quotes the 1.1 schema and an example for every feature type", () => {
     const prompt = buildSystemPrompt(FIXTURE_ANCHORS);
     const types = featureTypes(JSON.parse(readFileSync(schemaPath, "utf8")));
     expect(types.size).toBeGreaterThanOrEqual(13);
     for (const type of types) expect(prompt).toContain(`"type":"${type}"`);
     expect(prompt).toContain(JSON.stringify(PART_SPEC_V1_SCHEMA));
     expect(prompt).toContain('"kind":"polygon"');
+    expect(prompt).toContain('"kind":"circle"');
   });
 
   it("uses the schema and examples as they are in the repo (run pnpm generate if this fails)", () => {
