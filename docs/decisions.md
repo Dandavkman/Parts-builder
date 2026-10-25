@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Downloads are built on demand by `/build`, split into B1.11a and B1.11b
+
+"STL and STEP download for any version" needs saved part versions, which the plan only creates in B1.8, and there is no versions table yet. B1.11a makes the geometry service's `POST /build` take a Part Spec plus anchors and return STEP, STL or GLB (a request with no body still returns the demo plate, so the live viewer keeps working). B1.11b, after B1.8, adds the web route and button that look up a saved version and call it. Files are rebuilt each time rather than stored: the same spec always gives the same bytes (tested), so nothing needs saving, and the web app stays the only service that writes. Unbuildable specs return 422 with the builder's plain-language error list. Download filenames are made from the spec name reduced to `a-z`, `0-9` and `-`, so a name cannot inject header text. Known gap: the service has no sign-in, so once it is on the public internet anyone could ask it to build parts. Before real users, add a shared secret between Vercel and Fly (a follow-up task, flagged to the Owner).
+
 ## 2026-10-25: Spec builder (B1.7) is split in two and reads both spec versions
 
 B1.7a ships the builder framework, validation, export and plate, hole, hole_pattern, slot, fillet and chamfer. B1.7b adds counterbore, countersink, standoff, rib, bend, cutout and emboss_text. This keeps each pull request under about 600 lines. The builder reads v0.1 and v1.0 specs directly (v0.1 is converted in memory), with no stored converter. Anchors are passed in as data (`Anchor(point_mm, normal)`) until scan anchors exist (B1.3/B1.4). Golden-file tests store a geometry summary (volume, bounding box, face and solid counts) per spec, not binary CAD files, so they survive CAD-kernel upgrades; regenerate with `UPDATE_GOLDEN=1`. STEP files carry an export time and a per-process counter, so `export_bytes` pins both to make output byte-identical. The `/build` API still serves the demo plate; wiring it to the builder comes with the work that needs it.
