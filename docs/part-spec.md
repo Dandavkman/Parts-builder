@@ -33,6 +33,16 @@ A Part Spec is the JSON document the design agent writes and our geometry servic
 | `cutout` | A through cut around a clearance zone on the scan, grown by `margin_mm`. `zone` is a `circle` or `rectangle`. | `placement`, `zone`, `margin_mm` | [cutout](../services/geometry/src/geometry/spec/examples/v1/cutout.json) |
 | `emboss_text` | Text raised from or engraved into a face. | `text` (up to 40 characters), `height_mm`, `depth_mm`, `mode`, `face`, `angle_deg` | [emboss-text](../services/geometry/src/geometry/spec/examples/v1/emboss-text.json) |
 
+## Building a spec
+
+`geometry.builder.build_part(spec, anchors)` turns a spec of any released version (0.1 or 1.0) into a CadQuery compound; `export_bytes(part, "step" | "stl" | "glb")` writes it. Same spec and anchors always give the same bytes. Problems come back as one `SpecError` listing every issue, such as `hole 'hole_2' at [29, 0] mm is outside plate 'base'`.
+
+- **Plate frame:** a plate is centered on its local origin in X and Y, with its mid-plane at Z = 0 (top face at +thickness/2).
+- **Placement:** the plate's Z axis is set to the anchor normal, then `rotation_deg` turns it about that normal, then `offset_mm` is applied along the rotated axes. `anchors` maps anchor ids to `Anchor(point_mm, normal)`; `origin` is built in.
+- **Order:** per plate, fillets and chamfers first, then cuts (holes, patterns, slots), each in spec order. Edge finishes come first so they only see outline edges.
+- **Fit checks:** holes and slots must lie fully inside the plate outline. Rounded rectangle corners are treated as square for this check.
+- **Buildable now (B1.7a):** plate, hole, hole_pattern, slot, fillet, chamfer. The rest give "not buildable yet" until B1.7b.
+
 ## Changing the schema
 
 Any change bumps `spec_version` and adds a new schema file next to the old ones. Never edit a released schema, so older specs stay buildable. Add an example for every new feature, run `pnpm generate`, and add a line to `docs/decisions.md`.

@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Spec builder (B1.7) is split in two and reads both spec versions
+
+B1.7a ships the builder framework, validation, export and plate, hole, hole_pattern, slot, fillet and chamfer. B1.7b adds counterbore, countersink, standoff, rib, bend, cutout and emboss_text. This keeps each pull request under about 600 lines. The builder reads v0.1 and v1.0 specs directly (v0.1 is converted in memory), with no stored converter. Anchors are passed in as data (`Anchor(point_mm, normal)`) until scan anchors exist (B1.3/B1.4). Golden-file tests store a geometry summary (volume, bounding box, face and solid counts) per spec, not binary CAD files, so they survive CAD-kernel upgrades; regenerate with `UPDATE_GOLDEN=1`. STEP files carry an export time and a per-process counter, so `export_bytes` pins both to make output byte-identical. The `/build` API still serves the demo plate; wiring it to the builder comes with the work that needs it.
+
 ## 2026-10-25: Launch car is the Mazda Miata NA (1990 to 1997); first car is a 1995 NA8
 
 The Owner chose the first-generation Miata. The car available for scanning is a 1995 NA8 (the 1.8 L car, built 1994 to 1997). The NA6 (1.6 L, 1990 to 1993) shares the chassis but differs in places such as the engine and some trim. Fit claims are made only for cars that have actually been scanned and tested, so until other years are scanned, parts are described as tested on a 1995 NA8. Compatibility tags (B3.6) must record what was tested, not the whole generation. Benchmark parts (O0.7) should be chosen for this car.
