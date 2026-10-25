@@ -1,0 +1,26 @@
+# Fly.io config for the geometry service.
+# Create the app once with `fly apps create <name>`, then run `fly deploy` from this folder.
+# `app` is set on the command line (`fly deploy --app <name>`) or below once you pick a name.
+app = "parts-builder-geometry"
+primary_region = "iad"
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Stop when idle and start on the next request, so we only pay while it is working.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "60s"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2gb"
