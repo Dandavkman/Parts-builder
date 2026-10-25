@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Workspace starts as one page, `/design`, split into B1.9a and B1.9b
+
+B1.9a is chat on the left and the part on the right, with STEP and STL download links for the latest version that built. Chat state lives in a small pure reducer (`lib/agent/chat-state.ts`) over the agent's event stream, so it is unit tested without a browser. The viewer is the existing three.js viewer, now taking any GLB URL; the page reloads it from `/api/designs/<id>/versions/current/download?format=glb` after each spec that builds. The page works on the fixture panel until anchors come from real scans. B1.9b (left for later): see-through toggle with the scan, auto-generated sliders for every number in the spec, version history with undo, and listing earlier designs. Sliders must make a new version without calling the AI (`created_by` = `slider`), so they need a small edit-and-rebuild route first.
+
 ## 2026-10-25: Downloads rebuild a saved version on demand, with the anchors it was built against (B1.11b)
 
 `GET /api/designs/<id>/versions/<n|current>/download?format=step|stl|glb` reads the saved Part Spec and asks the geometry service to build it; nothing is stored in R2 (same choice as B1.11a: builds are fast and deterministic, so the same version always gives the same file). Only the owner can download, a version that never built gives 409 with its errors, and a spec that no longer builds gives 422. Because a spec refers to anchors by name, each version now keeps a copy of the anchors it was built against (migration `0002_version_anchors`, additive); otherwise editing an anchor later would silently change an old version. If file storage turns out useful (sharing links, order files in Phase 2), that is a later change.

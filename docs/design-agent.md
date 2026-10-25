@@ -25,6 +25,10 @@ Every model message goes in `chat_messages` with token counts, and every `propos
 
 `GET /api/designs/<design id>/versions/<number or current>/download?format=step|stl|glb` (default step) builds the saved spec and returns the file with a download name. Only the owner can use it. A version that did not build gives 409 with its errors. Each version keeps the anchors it was built against.
 
+## The page
+
+`/design` (sign-in required) is the first workspace: chat, the part viewer and download links. It sends `{message, design_id}` to `/api/agent`, reads the stream and reloads the part when a spec builds. Until scans are connected it designs on a stand-in panel (`fixture-anchors.ts`).
+
 ## Tools
 
 - `list_anchors`: the anchors the user picked (fixtures until B1.5).
