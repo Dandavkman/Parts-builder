@@ -19,6 +19,7 @@ The Owner gives you one task ID per session (for example `B1.6`). Find it in `do
 9. Keep pull requests under about 600 changed lines. Split larger tasks and say so.
 10. The web app is the only service that writes to the database. The Python geometry service is stateless.
 11. Library scans are never downloadable, and the full-resolution file never reaches the browser.
+12. The web app deploys to Vercel from `apps/web`, and the geometry service to Fly.io. Keep the Vercel build working. Every new environment variable must be added to `apps/web/.env.example` and listed in `docs/deploy-vercel.md`. Never read secrets at build time.
 
 ## Stop and ask the Owner before you
 
