@@ -31,7 +31,7 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 
 ## What to expect
 
-- **The Viewer page shows "Could not load the plate."** That is correct for now. The viewer asks the geometry service for the plate, and that service is not deployed yet (task B0.7, on Fly.io). Everything else works.
+- **The Viewer page shows "Could not load the plate."** That is correct for now. The viewer asks the geometry service for the plate, and that service is not deployed yet (task B0.7, on Fly.io, which is postponed to Phase 1 so you do not need a card yet). Everything else works.
 - **Production link vs preview links.** The main link is public. Vercel puts preview links behind a Vercel login by default, so you may be asked to sign in to open one.
 - **Adding or changing a variable later** only affects the next deployment. After changing one, open **Deployments**, click the three dots on the latest one, and choose **Redeploy**.
 
