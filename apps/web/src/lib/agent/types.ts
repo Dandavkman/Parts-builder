@@ -22,6 +22,7 @@ export type BuildSpec = (spec: Record<string, unknown>, anchors: AgentAnchor[]) 
 
 /** Events streamed to the browser, one JSON object per line. */
 export type AgentEvent =
+  | { type: "design"; design_id: string }
   | { type: "text"; delta: string }
   | { type: "tool"; name: string; summary: string }
   | { type: "spec"; attempt: number; ok: boolean; errors: string[]; spec: Record<string, unknown> }

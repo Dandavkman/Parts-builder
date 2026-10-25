@@ -21,6 +21,17 @@ export function anthropicTurn(client: Anthropic): RunTurn {
   };
 }
 
+/** Where the loop reports what it saved-worthy: each model message and each spec version. */
+export interface Recorder {
+  message(m: {
+    role: "user" | "assistant";
+    content: MessageParam["content"];
+    model?: string;
+    usage?: TokenUsage;
+  }): Promise<void>;
+  version(v: { spec: Record<string, unknown>; ok: boolean; errors: string[]; createdBy: "agent" }): Promise<void>;
+}
+
 export interface AgentRun {
   outcome: AgentOutcome;
   attempts: number;
@@ -39,6 +50,8 @@ export interface AgentOptions {
   build: BuildSpec;
   emit: (event: AgentEvent) => void;
   maxAttempts?: number;
+  /** Saves messages and versions as they happen. */
+  record?: Recorder;
 }
 
 const emptyUsage = (): TokenUsage => ({
@@ -83,7 +96,19 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
     usage.cache_creation_input_tokens += u.cache_creation_input_tokens ?? 0;
     usage.cache_read_input_tokens += u.cache_read_input_tokens ?? 0;
     emit({ type: "usage", usage: { ...usage } });
-    messages.push({ role: "assistant", content: message.content as Anthropic.Beta.BetaContentBlockParam[] });
+    const content = message.content as Anthropic.Beta.BetaContentBlockParam[];
+    messages.push({ role: "assistant", content });
+    await options.record?.message({
+      role: "assistant",
+      content,
+      model: message.model,
+      usage: {
+        input_tokens: u.input_tokens,
+        output_tokens: u.output_tokens,
+        cache_creation_input_tokens: u.cache_creation_input_tokens ?? 0,
+        cache_read_input_tokens: u.cache_read_input_tokens ?? 0,
+      },
+    });
     return message;
   };
 
@@ -127,6 +152,12 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
           attempts += 1;
           const outcome = await build(spec as Record<string, unknown>, anchors);
           lastBuild = outcome;
+          await options.record?.version({
+            spec: spec as Record<string, unknown>,
+            ok: outcome.ok,
+            errors: outcome.ok ? [] : outcome.errors,
+            createdBy: "agent",
+          });
           if (outcome.ok || !bestOk) {
             bestSpec = spec as Record<string, unknown>;
             bestOk = outcome.ok;
@@ -148,6 +179,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
       results.push({ type: "tool_result", tool_use_id: call.id, content, is_error: isError });
     }
     messages.push({ role: "user", content: results });
+    await options.record?.message({ role: "user", content: results });
 
     // Out of attempts with no working spec: one last reply, without tools, listing what is left.
     if (attempts >= maxAttempts && lastBuild && !lastBuild.ok) {

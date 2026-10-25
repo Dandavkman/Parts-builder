@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import { buildSystemPrompt, SPEC_REFERENCE } from "./prompt";
-import { parseChat } from "./request";
+import { parseRequest } from "./request";
 
 const schemaPath = new URL(
   "../../../../../services/geometry/src/geometry/spec/part-spec.v1.schema.json",
@@ -34,24 +34,23 @@ describe("system prompt", () => {
   });
 });
 
-describe("parseChat", () => {
-  it("accepts alternating text turns ending with the user", () => {
-    const messages = [
-      { role: "user", content: "a" },
-      { role: "assistant", content: "b" },
-      { role: "user", content: "c" },
-    ];
-    expect(parseChat({ messages })).toEqual(messages);
+describe("parseRequest", () => {
+  const id = "123e4567-e89b-12d3-a456-426614174000";
+
+  it("accepts a message with or without a design", () => {
+    expect(parseRequest({ message: "hi" })).toEqual({ designId: null, message: "hi" });
+    expect(parseRequest({ message: "hi", design_id: id })).toEqual({ designId: id, message: "hi" });
   });
 
   it.each([
     [null],
-    [{ messages: [] }],
-    [{ messages: [{ role: "assistant", content: "x" }] }],
-    [{ messages: [{ role: "user", content: "" }] }],
-    [{ messages: [{ role: "user", content: "x".repeat(4001) }] }],
-    [{ messages: [{ role: "user", content: "a" }, { role: "assistant", content: "b" }] }],
+    [{}],
+    [{ message: "  " }],
+    [{ message: 5 }],
+    [{ message: "x".repeat(4001) }],
+    [{ message: "hi", design_id: "not-a-uuid" }],
+    [{ message: "hi", design_id: 7 }],
   ])("rejects bad input %#", (body) => {
-    expect(typeof parseChat(body)).toBe("string");
+    expect(typeof parseRequest(body)).toBe("string");
   });
 });
