@@ -10,6 +10,12 @@ The Owner chose the first-generation Miata. The car available for scanning is a 
 
 The plan had the Owner run everything locally first and deploy later. That meant installing Node, pnpm, uv and Docker, and keys went in a local file that is easy to get wrong. Instead the web app deploys to Vercel now (root directory `apps/web`), and keys go in Vercel's Environment Variables screen. Vercel also gives every pull request a preview link, so the Owner reviews work in a browser. The geometry service still needs Fly.io (new task B0.7), so until then the viewer shows "Could not load the plate". Local running stays documented but optional. Hosting stays Vercel plus Fly.io (see the earlier decision against Render). Vercel's Hobby plan is non-commercial, so move to the paid plan before taking orders (Phase 2).
 
+## 2026-10-25: Hosting the geometry service is postponed to Phase 1
+
+The Owner does not want a card on file before there is revenue. Nothing needed before Phase 1 depends on a hosted geometry service: it only powers the viewer's demo plate, and that was checked with the real services. Free hosts were checked and rejected. Vercel's Python limit (500 MB) is below the service's installed size (about 1.8 GB, mostly the 3D engine). Hugging Face Spaces and Render's free tier are unconfirmed for this use: free compute Spaces may need a paid plan, and Render's free instance is small and sleeps. Tasks B0.7 and O0.10 move to Phase 1, before scan processing (B1.2). Gate G0 now checks that the plate renders in the viewer (verified with the real services), not that it shows on the live site.
+
+When hosting is needed: Fly.io requires a card or prepaid credits. Prepaid cards reportedly cannot be the saved card but can buy credits (about $25 minimum), which also caps spending. Confirm current terms on Fly's billing page and set a billing alert.
+
 ## 2026-10-22: CadQuery gotcha: chained `.center()` accumulates
 
 Calling `faces(">Z").workplane().center(x, y).hole(d)` repeatedly on the same result moves each new hole by the previous offsets, because the workplane remembers its last center. Found while building the synthetic scan (B0.5), where the mesh disagreed with the ground truth. Spec builders (B1.7) must place each feature from a fresh workplane (for example `cq.Workplane("XY").center(x, y)` and `cut`), or pass all points to one `pushPoints` call, and tests must check feature positions against the built geometry, not just the spec.
