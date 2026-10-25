@@ -38,7 +38,7 @@ Every model message goes in `chat_messages` with token counts, and every `propos
 
 ## Keeping the prompt honest
 
-`prompt.ts` holds a short Part Spec reference. A test fails if a feature type in `part-spec.v1.schema.json` is missing from it. When the schema changes, update the reference and `docs/part-spec.md` together.
+The system prompt quotes `part-spec.v1.schema.json` and every file in `examples/v1/` verbatim, so the agent copies real field names instead of guessing. `pnpm generate` copies them into `apps/web/src/lib/agent/generated/`; CI fails if that copy is stale, and a test checks the prompt contains the schema and an example for every feature type. When the schema or an example changes, run `pnpm generate` and commit the result.
 
 ## Trying it
 

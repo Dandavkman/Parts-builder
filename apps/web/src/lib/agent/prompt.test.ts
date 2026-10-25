@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { buildSystemPrompt, SPEC_REFERENCE } from "./prompt";
+import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
+import { buildSystemPrompt } from "./prompt";
 import { parseRequest } from "./request";
 
 const schemaPath = new URL(
@@ -21,10 +22,18 @@ function featureTypes(node: unknown, found = new Set<string>()): Set<string> {
 }
 
 describe("system prompt", () => {
-  it("mentions every feature type in the v1 schema", () => {
+  it("quotes the v1 schema and an example for every feature type", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS);
     const types = featureTypes(JSON.parse(readFileSync(schemaPath, "utf8")));
     expect(types.size).toBeGreaterThanOrEqual(13);
-    for (const type of types) expect(SPEC_REFERENCE).toContain(type);
+    for (const type of types) expect(prompt).toContain(`"type":"${type}"`);
+    expect(prompt).toContain(JSON.stringify(PART_SPEC_V1_SCHEMA));
+    expect(prompt).toContain('"kind":"polygon"');
+  });
+
+  it("uses the schema and examples as they are in the repo (run pnpm generate if this fails)", () => {
+    expect(PART_SPEC_V1_SCHEMA).toEqual(JSON.parse(readFileSync(schemaPath, "utf8")));
+    expect(PART_SPEC_V1_EXAMPLES.length).toBeGreaterThanOrEqual(14);
   });
 
   it("lists the anchors and the blocked categories", () => {
