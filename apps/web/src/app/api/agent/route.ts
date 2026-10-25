@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { auth } from "@clerk/nextjs/server";
 import { FIXTURE_ANCHORS } from "../../../lib/agent/fixture-anchors";
 import { buildWithGeometryService } from "../../../lib/agent/geometry-client";
 import { anthropicTurn, DEFAULT_MODEL, runAgent } from "../../../lib/agent/loop";
@@ -7,8 +6,8 @@ import { buildSystemPrompt } from "../../../lib/agent/prompt";
 import { parseRequest } from "../../../lib/agent/request";
 import { createDesign, getOwnedDesign, loadHistory, recorderFor, withUserMessage } from "../../../lib/agent/store";
 import type { AgentEvent } from "../../../lib/agent/types";
-import { getAuthMode } from "../../../lib/auth-mode";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
+import { requireOwner } from "../../../lib/require-owner";
 
 export const maxDuration = 300;
 
@@ -18,14 +17,9 @@ export const maxDuration = 300;
  * Anchors are fixtures until anchor fitting (B1.5) exists.
  */
 export async function POST(request: Request) {
-  const mode = getAuthMode();
-  if (mode === "unconfigured") return Response.json({ error: "Auth is not configured" }, { status: 503 });
-  let ownerId = "dev";
-  if (mode === "clerk") {
-    const { userId } = await auth();
-    if (!userId) return Response.json({ error: "Sign in required" }, { status: 401 });
-    ownerId = userId;
-  }
+  const who = await requireOwner();
+  if ("response" in who) return who.response;
+  const { ownerId } = who;
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return Response.json({ error: "The design agent is not configured." }, { status: 503 });
 

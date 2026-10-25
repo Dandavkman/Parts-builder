@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Downloads rebuild a saved version on demand, with the anchors it was built against (B1.11b)
+
+`GET /api/designs/<id>/versions/<n|current>/download?format=step|stl|glb` reads the saved Part Spec and asks the geometry service to build it; nothing is stored in R2 (same choice as B1.11a: builds are fast and deterministic, so the same version always gives the same file). Only the owner can download, a version that never built gives 409 with its errors, and a spec that no longer builds gives 422. Because a spec refers to anchors by name, each version now keeps a copy of the anchors it was built against (migration `0002_version_anchors`, additive); otherwise editing an anchor later would silently change an old version. If file storage turns out useful (sharing links, order files in Phase 2), that is a later change.
+
 ## 2026-10-25: Database layer: Drizzle on Neon, migrations as bundled SQL, one row per model message
 
 B1.8b adds `designs`, `design_versions` and `chat_messages` (new tables only, nothing existing is touched). Drizzle gives the typed queries, over Neon's HTTP driver, which suits Vercel functions. Migrations are numbered, idempotent SQL strings in `src/lib/db/migrations.ts`, applied on first use per server instance and recorded in `_migrations`. We chose this over drizzle-kit migration files because the SQL ships inside the server bundle (no file paths to trace on Vercel), needs no deploy step and reads `DATABASE_URL` only at request time, per the no-secrets-at-build rule. Never edit an applied migration; add a new one. Tests run the same SQL on PGlite (in-process Postgres), so CI needs no database.

@@ -29,7 +29,13 @@ export interface Recorder {
     model?: string;
     usage?: TokenUsage;
   }): Promise<void>;
-  version(v: { spec: Record<string, unknown>; ok: boolean; errors: string[]; createdBy: "agent" }): Promise<void>;
+  version(v: {
+    spec: Record<string, unknown>;
+    anchors: AgentAnchor[];
+    ok: boolean;
+    errors: string[];
+    createdBy: "agent";
+  }): Promise<void>;
 }
 
 export interface AgentRun {
@@ -154,6 +160,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
           lastBuild = outcome;
           await options.record?.version({
             spec: spec as Record<string, unknown>,
+            anchors,
             ok: outcome.ok,
             errors: outcome.ok ? [] : outcome.errors,
             createdBy: "agent",

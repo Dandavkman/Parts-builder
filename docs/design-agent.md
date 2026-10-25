@@ -21,6 +21,10 @@ Send `{"message": "...", "design_id": "<uuid, optional>"}` (up to 4,000 characte
 
 Every model message goes in `chat_messages` with token counts, and every `propose_spec` attempt in `design_versions` (failed ones too, with their errors). `designs.current_version` is the latest version that built. See `docs/decisions.md` for the table design. Needs `DATABASE_URL`; without it the route answers 503.
 
+## Downloading a version
+
+`GET /api/designs/<design id>/versions/<number or current>/download?format=step|stl|glb` (default step) builds the saved spec and returns the file with a download name. Only the owner can use it. A version that did not build gives 409 with its errors. Each version keeps the anchors it was built against.
+
 ## Tools
 
 - `list_anchors`: the anchors the user picked (fixtures until B1.5).
