@@ -1,0 +1,37 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a clearance cutout",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "clear_1",
+      "type": "cutout",
+      "plate": "base",
+      "placement": {
+        "anchor": "hose_clamp",
+        "offset_mm": [
+          0,
+          0,
+          0
+        ]
+      },
+      "zone": {
+        "kind": "circle",
+        "diameter_mm": 16
+      },
+      "margin_mm": 2
+    }
+  ]
+}

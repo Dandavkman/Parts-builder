@@ -1,0 +1,32 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with raised text",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "label",
+      "type": "emboss_text",
+      "plate": "base",
+      "position_mm": [
+        0,
+        0
+      ],
+      "text": "OIL",
+      "height_mm": 8,
+      "depth_mm": 0.8,
+      "mode": "raised"
+    }
+  ]
+}

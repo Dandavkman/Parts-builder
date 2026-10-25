@@ -1,0 +1,29 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a hole",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "hole_1",
+      "type": "hole",
+      "plate": "base",
+      "diameter_mm": 6.5,
+      "position_mm": [
+        0,
+        0
+      ]
+    }
+  ]
+}

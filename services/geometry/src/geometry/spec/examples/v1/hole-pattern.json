@@ -1,0 +1,30 @@
+{
+  "spec_version": "1.0",
+  "name": "Plate with a bolt circle",
+  "features": [
+    {
+      "id": "base",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 40
+      },
+      "thickness_mm": 4,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "ring",
+      "type": "hole_pattern",
+      "plate": "base",
+      "diameter_mm": 4,
+      "pattern": {
+        "kind": "circular",
+        "count": 6,
+        "radius_mm": 12
+      }
+    }
+  ]
+}

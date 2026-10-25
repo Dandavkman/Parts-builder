@@ -1,0 +1,42 @@
+{
+  "spec_version": "1.0",
+  "name": "L-bracket",
+  "features": [
+    {
+      "id": "flange",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 50,
+        "length_mm": 30
+      },
+      "thickness_mm": 3,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "leg",
+      "type": "plate",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 50,
+        "length_mm": 40
+      },
+      "thickness_mm": 3,
+      "placement": {
+        "anchor": "origin"
+      }
+    },
+    {
+      "id": "bend_1",
+      "type": "bend",
+      "from_plate": "flange",
+      "from_edge": "+y",
+      "to_plate": "leg",
+      "to_edge": "-y",
+      "angle_deg": 90,
+      "inner_radius_mm": 3
+    }
+  ]
+}
