@@ -11,6 +11,16 @@ import { requireOwner } from "../../../lib/require-owner";
 
 export const maxDuration = 300;
 
+/** A short, secret-free reason for the chat. API errors carry a status and message; our own errors are plain text. */
+function describeFailure(error: unknown): string {
+  const base = "The design agent hit a problem. Please try again.";
+  if (error instanceof Anthropic.APIError) {
+    return `${base} (model API ${error.status ?? "error"}: ${error.message.slice(0, 200)})`;
+  }
+  if (error instanceof Error && error.message) return `${base} (${error.message.slice(0, 200)})`;
+  return base;
+}
+
 /**
  * Design agent. Takes `{ design_id?, message }`, continues that design's saved conversation (or starts
  * a new design) and streams one JSON event per line. Every message and spec version is saved.
@@ -70,7 +80,7 @@ export async function POST(request: Request) {
         });
       } catch (error) {
         console.error("design agent failed", error);
-        emit({ type: "error", message: "The design agent hit a problem. Please try again." });
+        emit({ type: "error", message: describeFailure(error) });
       }
       controller.close();
     },
