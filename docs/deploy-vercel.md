@@ -50,6 +50,7 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | `ANTHROPIC_API_KEY` | B1.8 (design agent) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | B1.1 (scan upload) |
 | `GEOMETRY_SERVICE_URL` | B0.7 (address of the Fly.io geometry service) |
+| `GEOMETRY_SERVICE_TOKEN` | B1.11c (shared secret; must equal the Fly secret of the same name; server-side only, never `NEXT_PUBLIC_`) |
 | Stripe keys | Phase 2 |
 
 Vercel's free Hobby plan is for non-commercial use. Move to the paid plan before taking real orders (Phase 2).

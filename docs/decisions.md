@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-25: Shared bearer token between web app and geometry service
+
+The Fly service is on the public internet, so `POST /build` requires `Authorization: Bearer <GEOMETRY_SERVICE_TOKEN>`, compared in constant time. `/health` stays open because Fly's health check cannot send headers. The service fails closed: no token configured gives 503, a wrong or missing one gives 401. `GEOMETRY_AUTH_DISABLED=1` skips the check for local development and tests and must never be set on Fly. The token is read at request time, never at build time, and lives only in Fly secrets and Vercel server-side variables. Rotating it means setting the new value on both, then redeploying the web app. No cost, no architecture change.
+
 ## 2026-10-25: Fit check v1 (B1.10) measures against sampled scan surface, not exact triangles
 
 Exact closest-point queries on a triangle mesh need a spatial index library (`rtree` or an embree wheel) that is not installed, and slow on million-triangle scans. Instead `ScanIndex` takes up to 1,000,000 seeded surface samples, finds plane normals by fitting neighbours, and uses a SciPy KD-tree. This adds `scipy` as a direct dependency (free, already pulled in by other libraries). Single-triangle normals are not trusted, because the noisy synthetic scan has sliver triangles; this was found by testing, where it gave depth errors of several millimeters. Trade-off: about 0.1 mm error on a noisy scan and up to the sample spacing near sharp edges, which the docs state. Part holes are paired with the nearest scan hole within 10 mm because the Part Spec has no field naming the intended anchor for a hole. Details in `docs/fit-check.md`.

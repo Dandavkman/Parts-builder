@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { getAuthMode } from "../../../lib/auth-mode";
-import { geometryServiceUrl } from "../../../lib/geometry";
+import { geometryAuthHeaders, geometryServiceUrl } from "../../../lib/geometry";
 
 /** Proxies the geometry service's demo plate (GLB) to signed-in users. */
 export async function GET() {
@@ -13,7 +13,10 @@ export async function GET() {
 
   let upstream: Response;
   try {
-    upstream = await fetch(`${geometryServiceUrl()}/build?format=glb`, { method: "POST" });
+    upstream = await fetch(`${geometryServiceUrl()}/build?format=glb`, {
+      method: "POST",
+      headers: geometryAuthHeaders(),
+    });
   } catch {
     return Response.json({ error: "The geometry service is not reachable." }, { status: 502 });
   }

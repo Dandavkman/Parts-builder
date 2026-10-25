@@ -1,7 +1,9 @@
+import hmac
+import os
 import re
 from typing import Annotated, Any, Literal
 
-from fastapi import Body, FastAPI, Query, Response
+from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -13,6 +15,24 @@ from geometry.demo_plate import MEDIA_TYPES, build_demo_plate, export_bytes
 app = FastAPI(title="Parts Builder geometry service", version=__version__)
 
 Format = Literal["step", "stl", "glb"]
+
+
+def require_token(authorization: Annotated[str | None, Header()] = None) -> None:
+    """Check `Authorization: Bearer <GEOMETRY_SERVICE_TOKEN>` in constant time.
+
+    Fails closed: with no token configured every call is refused (503), unless
+    `GEOMETRY_AUTH_DISABLED=1` is set, which is for local development and tests only.
+    """
+    if os.environ.get("GEOMETRY_AUTH_DISABLED") == "1":
+        return
+    expected = os.environ.get("GEOMETRY_SERVICE_TOKEN", "")
+    if not expected:
+        raise HTTPException(status_code=503, detail="GEOMETRY_SERVICE_TOKEN is not set")
+    scheme, _, given = (authorization or "").partition(" ")
+    if scheme.lower() != "bearer" or not hmac.compare_digest(given.encode(), expected.encode()):
+        raise HTTPException(
+            status_code=401, detail="Missing or wrong token", headers={"WWW-Authenticate": "Bearer"}
+        )
 
 
 class AnchorIn(BaseModel):
@@ -39,7 +59,7 @@ def _filename(spec: dict[str, Any], fmt: str) -> str:
     return f"{slug or 'part'}.{fmt}"
 
 
-@app.post("/build")
+@app.post("/build", dependencies=[Depends(require_token)])
 def build(
     request: Annotated[BuildRequest | None, Body()] = None,
     format: Annotated[Format, Query()] = "step",
