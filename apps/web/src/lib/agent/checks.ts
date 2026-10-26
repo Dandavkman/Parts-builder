@@ -3,9 +3,9 @@ import type { AgentDimension } from "./types";
 /** Thinnest wall the default material (FDM or nylon) prints reliably. Replaced by the material table in B2.3. */
 export const MIN_WALL_MM = 1.2;
 
-/** A built part may differ from a stated size by this much: 1 mm or 0.5%, whichever is more. */
+/** A built part may differ from a stated size by this much: 0.5 mm or 0.25%, whichever is more, so a part 1 mm off is flagged. */
 export function toleranceMm(value_mm: number): number {
-  return Math.max(1, value_mm * 0.005);
+  return Math.max(0.5, value_mm * 0.0025);
 }
 
 /** Which size of the built part a dimension describes. Z is up, so height is the Z extent. */

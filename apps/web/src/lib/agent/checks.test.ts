@@ -13,19 +13,23 @@ const height: AgentDimension = {
 describe("dimension check", () => {
   it("is quiet when the built size matches within tolerance", () => {
     expect(checkBuild({}, [80, 80, 200], [height])).toEqual([]);
-    expect(checkBuild({}, [80, 80, 200.9], [height])).toEqual([]);
+    expect(checkBuild({}, [80, 80, 200.4], [height])).toEqual([]);
   });
 
-  it("flags a part built 1 mm or more too tall or too short", () => {
+  it("flags a part built 1 mm too tall (the plan's example)", () => {
+    expect(checkBuild({}, [80, 80, 201], [height])[0]).toContain("1.0 mm too large");
+  });
+
+  it("flags a part built more than that too tall or too short", () => {
     const [tall] = checkBuild({}, [80, 80, 201.5], [height]);
     expect(tall).toContain("should be 200 mm but the part is 201.5 mm, 1.5 mm too large");
     const [short] = checkBuild({}, [80, 80, 190], [height]);
     expect(short).toContain("10.0 mm too small");
   });
 
-  it("uses 0.5% for large parts", () => {
-    expect(toleranceMm(100)).toBe(1);
-    expect(toleranceMm(1000)).toBe(5);
+  it("uses 0.25% for large parts", () => {
+    expect(toleranceMm(100)).toBe(0.5);
+    expect(toleranceMm(1000)).toBe(2.5);
   });
 
   it("maps width, length and diameter to the right axes and skips dimensions that measure nothing", () => {
