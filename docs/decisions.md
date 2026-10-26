@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: Revolved bodies take a [radius, z] profile with z always rising (B1.17b)
+
+`revolve` spins a list of `[radius_mm, z_mm]` points about the Z axis: the base is a flat disc out to the first point and the top a flat disc at the last. z must strictly increase, so there are no overhangs: a round vase or knob then prints without supports, and the hollow's walls can be computed by shifting each profile segment toward the axis and joining neighbours with sharp corners (`inset_profile`). That gives exact wall thickness measured square to each segment; it differs from the kernel's own shell by under 0.5% in volume on the test vase, which is checked. Smooth curves need many points for now; arcs and splines can be added later if real designs need them. Not handled: undercuts (bulbous vases that narrow then widen back would need z to rise while the profile turns back), which the schema rejects with a clear sentence.
+
 ## 2026-10-26: Part Spec 2.0 starts with `body`: extrude and hollow by cutting an inset copy (B1.17a)
 
 The plate-only feature set cannot make a vase or a box. 2.0 adds one new feature, `body`, a solid with a height built from the same outlines as plates (rectangle with rounded corners, circle, polygon). Hollowing (`shell`) cuts a copy of the outline pulled in by the wall thickness instead of using the CAD kernel's shell, which tends to fail once edges are rounded; walls are exactly the stated thickness, and the vase from the storyboard (80 mm square, 200 mm tall, 2 mm walls) matches a hand calculation within 0.1%. The cavity is not rounded inside. A closed hollow (`open: none`) is allowed but a printer cannot drain it; the agent should prefer `top`. The plan's separate "patterns" item is folded into surface texture (B1.17c), because repeating holes already exist as `hole_pattern`. The agent keeps writing 1.1 until B1.17 is complete and Danny has redeployed the Fly service (`fly deploy`), since the live service would reject a 2.0 spec.
