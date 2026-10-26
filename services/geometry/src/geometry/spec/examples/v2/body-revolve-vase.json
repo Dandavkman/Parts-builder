@@ -1,0 +1,16 @@
+{
+  "spec_version": "2.0",
+  "name": "Round vase",
+  "features": [
+    {
+      "id": "vase",
+      "type": "body",
+      "placement": { "anchor": "origin" },
+      "shape": {
+        "kind": "revolve",
+        "profile_mm": [[30, 0], [40, 60], [32, 140], [22, 190], [26, 200]]
+      },
+      "shell": { "wall_thickness_mm": 2.5, "open": "top" }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "spec_version": "2.0",
+  "name": "Ridged square vase",
+  "features": [
+    {
+      "id": "vase",
+      "type": "body",
+      "placement": {
+        "anchor": "origin"
+      },
+      "shape": {
+        "kind": "extrude",
+        "outline": {
+          "kind": "rectangle",
+          "width_mm": 80,
+          "length_mm": 80,
+          "corner_radius_mm": 6
+        },
+        "height_mm": 200
+      },
+      "shell": {
+        "wall_thickness_mm": 2.5,
+        "open": "top"
+      },
+      "texture": {
+        "kind": "ridges",
+        "width_mm": 4,
+        "depth_mm": 1,
+        "spacing_mm": 10
+      }
+    }
+  ]
+}

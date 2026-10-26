@@ -1,0 +1,13 @@
+{
+  "spec_version": "2.0",
+  "name": "Solid knob",
+  "features": [
+    {
+      "id": "knob",
+      "type": "body",
+      "placement": { "anchor": "origin" },
+      "shape": { "kind": "extrude", "outline": { "kind": "circle", "diameter_mm": 30 }, "height_mm": 20 },
+      "edge_fillet_mm": 2
+    }
+  ]
+}

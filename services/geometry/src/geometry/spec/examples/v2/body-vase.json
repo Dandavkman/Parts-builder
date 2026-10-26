@@ -1,0 +1,18 @@
+{
+  "spec_version": "2.0",
+  "name": "Square vase",
+  "features": [
+    {
+      "id": "vase",
+      "type": "body",
+      "placement": { "anchor": "origin" },
+      "shape": {
+        "kind": "extrude",
+        "outline": { "kind": "rectangle", "width_mm": 80, "length_mm": 80, "corner_radius_mm": 6 },
+        "height_mm": 200
+      },
+      "shell": { "wall_thickness_mm": 2, "open": "top" },
+      "edge_fillet_mm": 1
+    }
+  ]
+}
