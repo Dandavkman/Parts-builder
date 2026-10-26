@@ -16,6 +16,11 @@ export interface ChatState {
 
 export const initialChat: ChatState = { designId: null, items: [], builtCount: 0, busy: false };
 
+/** Reopens a saved design: its transcript replaces whatever the page showed. */
+export function openDesign(designId: string, items: ChatItem[]): ChatState {
+  return { designId, items, builtCount: 0, busy: false };
+}
+
 export function sendMessage(state: ChatState, text: string): ChatState {
   return { ...state, busy: true, items: [...state.items, { kind: "user", text }] };
 }

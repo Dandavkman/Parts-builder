@@ -7,7 +7,17 @@ import { migrate } from "../db/migrations";
 import * as schema from "../db/schema";
 import { runAgent, type RunTurn } from "./loop";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { createDesign, getOwnedDesign, getOwnedVersion, loadHistory, recorderFor, withUserMessage } from "./store";
+import {
+  createDesign,
+  getOwnedDesign,
+  getOwnedVersion,
+  listOwnedDesigns,
+  listVersions,
+  loadHistory,
+  recorderFor,
+  setCurrentVersion,
+  withUserMessage,
+} from "./store";
 
 let db: Db;
 
@@ -17,6 +27,37 @@ beforeAll(async () => {
 });
 
 const usage = { input_tokens: 100, output_tokens: 20, cache_creation_input_tokens: 3, cache_read_input_tokens: 4 };
+
+describe("design list, versions and undo", () => {
+  it("lists only the owner's designs, and every version with its build result", async () => {
+    const mine = await createDesign(db, "lister", "Mine");
+    await createDesign(db, "someone_else", "Not mine");
+    expect((await listOwnedDesigns(db, "lister")).map((d) => d.title)).toEqual(["Mine"]);
+    const rec = recorderFor(db, mine);
+    await rec.version({ spec: { spec_version: "1.1", name: "A" }, ok: true, errors: [], createdBy: "agent", anchors: [] });
+    await rec.version({ spec: { spec_version: "1.1", name: "B" }, ok: false, errors: ["bad"], createdBy: "agent", anchors: [] });
+    const versions = await listVersions(db, mine);
+    expect(versions.map((v) => [v.version, v.name, v.buildOk])).toEqual([
+      [1, "A", true],
+      [2, "B", false],
+    ]);
+  });
+
+  it("makes an earlier version that built current, and refuses others", async () => {
+    const id = await createDesign(db, "undoer", "t");
+    const rec = recorderFor(db, id);
+    await rec.version({ spec: { name: "v1" }, ok: true, errors: [], createdBy: "agent", anchors: [] });
+    await rec.version({ spec: { name: "v2" }, ok: true, errors: [], createdBy: "agent", anchors: [] });
+    await rec.version({ spec: { name: "v3" }, ok: false, errors: ["x"], createdBy: "agent", anchors: [] });
+    expect((await getOwnedDesign(db, id, "undoer"))?.currentVersion).toBe(2);
+    expect(await setCurrentVersion(db, id, "undoer", 1)).toBe("ok");
+    expect((await getOwnedDesign(db, id, "undoer"))?.currentVersion).toBe(1);
+    expect(await setCurrentVersion(db, id, "undoer", 2)).toBe("ok");
+    expect(await setCurrentVersion(db, id, "undoer", 3)).toBe("not_built");
+    expect(await setCurrentVersion(db, id, "undoer", 9)).toBe("not_found");
+    expect(await setCurrentVersion(db, id, "intruder", 1)).toBe("not_found");
+  });
+});
 
 describe("migrations", () => {
   it("can run again without changes", async () => {

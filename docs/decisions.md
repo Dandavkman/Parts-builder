@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: Earlier designs, version history and undo (B1.9b, part 1)
+
+B1.9b is split so each pull request stays small. Part 1 adds a list of earlier designs, a version list and undo; part 2 adds sliders and the edit-and-rebuild route; the see-through scan toggle waits for real scans (B1.2). Undo does not delete or rewrite anything: it moves `designs.current_version` to an earlier version that built, so any version can be made current again, and the viewer and downloads always show the current version by its number. A version that failed to build cannot be current. Reopening a design rebuilds its chat from the saved messages (what the user typed, what the agent said and asked, the user's answers to questions); tool calls are not shown. If the agent then adds a new version, it becomes current as before.
+
 ## 2026-10-25: Part Spec 1.1 adds a circle outline (B1.6b)
 
 The first live shift-knob run showed the agent had no way to say "round": v1 plates are a rectangle or a polygon, so it had to fake circles with many-sided polygons. Spec 1.1 adds `{"kind": "circle", "diameter_mm": n}`, centered on the plate origin, and nothing else (rule 6: version bumped, and 1.0 and 0.1 specs stay valid and buildable). It is a new schema file (`part-spec.v1_1.schema.json`) beside the 1.0 one, the same way 1.0 sits beside 0.1, so every released version keeps its own source of truth. The builder extrudes a true circle. Fit checks (holes inside the plate, edge distance) treat a circle as a 128-sided polygon, which is off by under 0.04% of the radius. Bends still need plain rectangle plates. `PartSpec` in `packages/part-spec` now means 1.1 and `PartSpecV1` is 1.0. The design agent now writes `spec_version` "1.1" and is told to use `circle` for anything round. Shapes such as ellipses and rounded polygons are not added until a real design needs them.

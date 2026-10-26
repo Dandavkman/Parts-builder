@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyEvent, initialChat, parseLines, sendMessage } from "./chat-state";
+import { applyEvent, initialChat, openDesign, parseLines, sendMessage } from "./chat-state";
 import type { AgentEvent } from "./types";
 
 const play = (events: AgentEvent[]) => events.reduce(applyEvent, sendMessage(initialChat, "make a plate"));
@@ -52,5 +52,12 @@ describe("parseLines", () => {
     const second = parseLines(first.rest + 'xt","delta":"b"}\n');
     expect(second.events).toEqual([{ type: "text", delta: "b" }]);
     expect(second.rest).toBe("");
+  });
+});
+
+describe("openDesign", () => {
+  it("replaces the page with a saved conversation", () => {
+    const state = openDesign("d1", [{ kind: "user", text: "hi" }]);
+    expect(state).toEqual({ designId: "d1", items: [{ kind: "user", text: "hi" }], builtCount: 0, busy: false });
   });
 });

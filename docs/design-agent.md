@@ -23,6 +23,8 @@ Every model message goes in `chat_messages` with token counts, and every `propos
 
 ## Downloading a version
 
+`GET /api/designs` lists the owner's designs (newest first, up to 50). `GET /api/designs/<id>` returns one design with all its versions (including ones that failed to build, with their errors) and its saved conversation as chat items, so the page can reopen it. `POST /api/designs/<id>/current` with `{ "version": n }` makes an earlier version that built the current one (undo); it never deletes anything, so a later version can be made current again, and a version that did not build gives 409. All three are owner-only.
+
 `GET /api/designs/<design id>/versions/<number or current>/download?format=step|stl|glb` (default step) builds the saved spec and returns the file with a download name. Only the owner can use it. A version that did not build gives 409 with its errors. Each version keeps the anchors it was built against.
 
 ## The page

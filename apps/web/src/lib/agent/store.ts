@@ -1,5 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { chatMessages, designs, designVersions } from "../db/schema";
 import type { Recorder } from "./loop";
@@ -18,6 +18,50 @@ export async function getOwnedDesign(db: Db, designId: string, ownerId: string) 
     .from(designs)
     .where(and(eq(designs.id, designId), eq(designs.ownerId, ownerId)));
   return row ?? null;
+}
+
+/** The owner's designs, newest first. */
+export async function listOwnedDesigns(db: Db, ownerId: string) {
+  return db
+    .select({ id: designs.id, title: designs.title, currentVersion: designs.currentVersion, createdAt: designs.createdAt })
+    .from(designs)
+    .where(eq(designs.ownerId, ownerId))
+    .orderBy(desc(designs.createdAt))
+    .limit(50);
+}
+
+/** Every version of a design (including ones that failed to build), oldest first. */
+export async function listVersions(db: Db, designId: string) {
+  const rows = await db
+    .select({
+      version: designVersions.version,
+      createdBy: designVersions.createdBy,
+      buildOk: designVersions.buildOk,
+      buildErrors: designVersions.buildErrors,
+      createdAt: designVersions.createdAt,
+      spec: designVersions.spec,
+    })
+    .from(designVersions)
+    .where(eq(designVersions.designId, designId))
+    .orderBy(asc(designVersions.version));
+  return rows.map(({ spec, ...row }) => ({ ...row, name: typeof spec.name === "string" ? spec.name : "" }));
+}
+
+/**
+ * Makes an earlier version that built the current one (undo). Nothing is deleted, so a later
+ * version can be made current again. Versions that failed to build cannot be current.
+ */
+export async function setCurrentVersion(
+  db: Db,
+  designId: string,
+  ownerId: string,
+  version: number,
+): Promise<"ok" | "not_found" | "not_built"> {
+  const row = await getOwnedVersion(db, designId, ownerId, version);
+  if (!row) return "not_found";
+  if (!row.buildOk) return "not_built";
+  await db.update(designs).set({ currentVersion: version }).where(eq(designs.id, designId));
+  return "ok";
 }
 
 export async function loadHistory(db: Db, designId: string): Promise<MessageParam[]> {
