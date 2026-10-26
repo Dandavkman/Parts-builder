@@ -1,0 +1,52 @@
+{
+  "spec_version": "2.0",
+  "name": "Grooved round vase",
+  "features": [
+    {
+      "id": "vase",
+      "type": "body",
+      "placement": {
+        "anchor": "origin"
+      },
+      "shape": {
+        "kind": "revolve",
+        "profile_mm": [
+          [
+            30,
+            0
+          ],
+          [
+            40,
+            60
+          ],
+          [
+            32,
+            140
+          ],
+          [
+            22,
+            190
+          ],
+          [
+            26,
+            200
+          ]
+        ]
+      },
+      "shell": {
+        "wall_thickness_mm": 3,
+        "open": "top"
+      },
+      "texture": {
+        "kind": "grooves",
+        "width_mm": 3,
+        "depth_mm": 1.5,
+        "spacing_mm": 12,
+        "z_range_mm": [
+          20,
+          170
+        ]
+      }
+    }
+  ]
+}

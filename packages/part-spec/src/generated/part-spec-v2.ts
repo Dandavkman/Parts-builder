@@ -40,7 +40,7 @@ export type Outline =
     };
 export type LengthMm = number;
 /**
- * A point [x, y] in millimeters in the plate's local frame, origin at the plate center.
+ * A point [x, y] in millimeters. In a plate or extrude outline it is in the plate's local frame, origin at the center. In a revolve profile it is [radius, z] from the axis and the base.
  *
  * @minItems 2
  * @maxItems 2
@@ -79,18 +79,19 @@ export interface Placement {
   rotation_deg?: number;
 }
 /**
- * A solid with a height, for boxes, vases, cups and knobs. The body frame has its origin at the center of the base, Z up, so the base sits at Z = 0 and the top at Z = height_mm. 'shape' says how it is made; 'shell' hollows it; 'edge_fillet_mm' rounds the outer top and bottom edges.
+ * A solid with a height, for boxes, vases, cups and knobs. The body frame has its origin at the center of the base, Z up, so the base sits at Z = 0 and the top at Z = height_mm. 'shape' says how it is made; 'shell' hollows it; 'edge_fillet_mm' rounds the outer top and bottom edges; 'texture' adds vertical ridges or grooves on the outside wall.
  */
 export interface Body {
   id: Id;
   type: "body";
-  shape: Extrude;
+  shape: Extrude | Revolve;
   shell?: Shell;
   /**
    * Radius that rounds the outer top and bottom edges. Must be smaller than the wall thickness when the body is hollow.
    */
   edge_fillet_mm?: number;
   placement: Placement;
+  texture?: Texture;
 }
 /**
  * A prism: the outline, straight up by height_mm. A rectangle outline gives a box; a circle gives a cylinder.
@@ -101,11 +102,36 @@ export interface Extrude {
   height_mm: LengthMm;
 }
 /**
+ * A solid of revolution about the body's Z axis: vases, cups, knobs, bottles. 'profile_mm' lists [radius, z] points of the outside surface from the base up to the rim, with z strictly increasing (no overhangs, so it prints without supports). The base is a flat disc from the axis out to the first point, and the top is closed flat unless the body is hollowed open at the top. Use many points for a smooth curve.
+ */
+export interface Revolve {
+  kind: "revolve";
+  /**
+   * @minItems 2
+   * @maxItems 100
+   */
+  profile_mm: [PointMm, PointMm, ...PointMm[]];
+}
+/**
  * Hollows the body, leaving walls of wall_thickness_mm. open 'top' removes the top face (a vase, cup or box); 'none' makes a closed hollow part. The base stays as thick as the walls.
  */
 export interface Shell {
   wall_thickness_mm: LengthMm;
   open: "top" | "none";
+}
+/**
+ * A repeating pattern of vertical stripes on the outside wall: 'ridges' stand out by depth_mm, 'grooves' are cut in by depth_mm (and must be shallower than the wall if the body is hollow). 'spacing_mm' is the distance between stripe centers along a flat side, or around the widest part of a round body. Stripes run the full height unless 'z_range_mm' [from, to] limits them. Supported on rectangle and circle extrusions and on revolved bodies.
+ */
+export interface Texture {
+  kind: "ridges" | "grooves";
+  width_mm: LengthMm;
+  depth_mm: LengthMm;
+  spacing_mm: LengthMm;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  z_range_mm?: [number, number];
 }
 export interface Hole {
   id: Id;

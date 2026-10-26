@@ -152,7 +152,18 @@ def test_a_plate_can_sit_beside_a_body() -> None:
     assert len(build_part(spec).Solids()) == 2
 
 
-@pytest.mark.parametrize("name", ["body-box", "body-cylinder", "body-vase"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "body-box",
+        "body-cylinder",
+        "body-vase",
+        "body-revolve-vase",
+        "body-revolve-knob",
+        "body-ridged-vase",
+        "body-grooved-vase",
+    ],
+)
 def test_golden(name: str) -> None:
     """Summaries live in tests/golden; regenerate with UPDATE_GOLDEN=1 and review the diff."""
     import os
@@ -172,3 +183,172 @@ def test_golden(name: str) -> None:
     assert summary["solids"] == expected["solids"]
     assert summary["volume_mm3"] == pytest.approx(expected["volume_mm3"], abs=0.05)
     assert summary["bbox_mm"] == pytest.approx(expected["bbox_mm"], abs=0.001)
+
+
+def _revolve_vase() -> dict[str, Any]:
+    return _example("body-revolve-vase")
+
+
+def test_revolved_knob_matches_frustum_volumes() -> None:
+    part = build_part(_example("body-revolve-knob"))
+    cylinder = math.pi * 18**2 * 4
+    lower = math.pi * 18 / 3 * (18**2 + 18 * 14 + 14**2)
+    upper = math.pi * 8 / 3 * (14**2 + 14 * 12 + 12**2)
+    # 1.5 mm fillets on the top and bottom edges take off a little under 100 mm3
+    assert part.Volume() == pytest.approx(cylinder + lower + upper, rel=6e-3)
+    bb = part.BoundingBox()
+    assert (bb.xlen, bb.zlen) == pytest.approx((36, 30), abs=1e-6)
+
+
+def test_revolved_vase_agrees_with_the_kernel_shell() -> None:
+    import cadquery as cq
+
+    spec = _revolve_vase()
+    profile = spec["features"][0]["shape"]["profile_mm"]
+    points = [(0, 0), *map(tuple, profile), (0, profile[-1][1])]
+    outer = cq.Workplane("XZ").polyline(points).close().revolve(360, (0, 0, 0), (0, 1, 0))
+    reference = outer.faces(">Z").shell(-2.5).findSolid().Volume()
+    part = build_part(spec)
+    assert part.Volume() == pytest.approx(reference, rel=1e-2)
+    bb = part.BoundingBox()
+    assert (bb.xlen, bb.zlen) == pytest.approx((80, 200), abs=1e-6)
+
+
+def test_revolved_vase_is_open_at_the_top() -> None:
+    """A thin slice at the very top has a hole in it, a slice at the base does not."""
+    import cadquery as cq
+
+    part = build_part(_revolve_vase())
+    probe = cq.Workplane("XY", origin=(0, 0, 195)).circle(5).extrude(2).findSolid()
+    assert part.intersect(probe).Volume() == pytest.approx(0, abs=1e-6)
+    base = cq.Workplane("XY", origin=(0, 0, 0.5)).circle(5).extrude(1).findSolid()
+    assert part.intersect(base).Volume() == pytest.approx(math.pi * 25, rel=1e-6)
+
+
+def test_closed_revolved_hollow_has_an_inner_void() -> None:
+    spec = _revolve_vase()
+    spec["features"][0]["shell"]["open"] = "none"
+    part = build_part(spec)
+    assert part.isValid()
+    assert part.Volume() > build_part(_revolve_vase()).Volume()
+
+
+@pytest.mark.parametrize(
+    ("profile", "message"),
+    [
+        ([[30, 0], [30, 0]], "z in profile_mm must increase"),
+        ([[30, 0], [40, 50], [30, 40]], "z in profile_mm must increase"),
+        ([[0, 0], [30, 50]], "every radius in profile_mm must be greater than 0"),
+        ([[2, 0], [2, 50]], "leave no room inside the profile"),
+    ],
+)
+def test_revolve_errors(profile: list[list[float]], message: str) -> None:
+    spec = _revolve_vase()
+    spec["features"][0]["shape"]["profile_mm"] = profile
+    with pytest.raises(SpecError) as error:
+        build_part(spec)
+    assert any(message in e for e in error.value.errors)
+
+
+def _sharp_box(texture: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "spec_version": "2.0",
+        "name": "Box",
+        "features": [
+            {
+                "id": "box",
+                "type": "body",
+                "placement": {"anchor": "origin"},
+                "shape": {
+                    "kind": "extrude",
+                    "outline": {"kind": "rectangle", "width_mm": 80, "length_mm": 80},
+                    "height_mm": 200,
+                },
+                "texture": texture,
+            }
+        ],
+    }
+
+
+def test_ridges_add_exactly_their_volume() -> None:
+    texture = {"kind": "ridges", "width_mm": 4, "depth_mm": 1, "spacing_mm": 20}
+    part = build_part(_sharp_box(texture))
+    # 4 ridges per side across 76 mm of flat wall at 20 mm spacing, 4 sides, each 4 x 1 x 200
+    assert part.Volume() == pytest.approx(80 * 80 * 200 + 16 * 4 * 1 * 200, rel=1e-9)
+    bb = part.BoundingBox()
+    assert (bb.xlen, bb.ylen) == pytest.approx((82, 82), abs=1e-6)
+
+
+def test_grooves_remove_exactly_their_volume() -> None:
+    texture = {"kind": "grooves", "width_mm": 4, "depth_mm": 1, "spacing_mm": 20}
+    part = build_part(_sharp_box(texture))
+    assert part.Volume() == pytest.approx(80 * 80 * 200 - 16 * 4 * 1 * 200, rel=1e-9)
+    bb = part.BoundingBox()
+    assert (bb.xlen, bb.ylen) == pytest.approx((80, 80), abs=1e-6)
+
+
+def test_z_range_limits_the_stripes() -> None:
+    texture = {
+        "kind": "ridges", "width_mm": 4, "depth_mm": 1, "spacing_mm": 20, "z_range_mm": [50, 100],
+    }  # fmt: skip
+    part = build_part(_sharp_box(texture))
+    assert part.Volume() == pytest.approx(80 * 80 * 200 + 16 * 4 * 1 * 50, rel=1e-9)
+
+
+def test_ridged_hollow_vase_is_one_valid_solid_with_open_top() -> None:
+    import cadquery as cq
+
+    part = build_part(_example("body-ridged-vase"))
+    assert part.isValid() and len(part.Solids()) == 1
+    assert part.BoundingBox().xlen == pytest.approx(82, abs=1e-6)
+    probe = cq.Workplane("XY", origin=(0, 0, 195)).rect(20, 20).extrude(2).findSolid()
+    assert part.intersect(probe).Volume() == pytest.approx(0, abs=1e-6)
+
+
+def test_grooved_revolved_vase_keeps_its_size() -> None:
+    grooved = build_part(_example("body-grooved-vase"))
+    plain_spec = _example("body-grooved-vase")
+    del plain_spec["features"][0]["texture"]
+    plain = build_part(plain_spec)
+    # 20 grooves (2 pi * 40 mm widest radius / 12 mm spacing), each 3 wide x 1.5 deep x 150 tall
+    assert plain.Volume() - grooved.Volume() == pytest.approx(20 * 3 * 1.5 * 150, rel=0.03)
+    assert grooved.BoundingBox().zlen == pytest.approx(200, abs=1e-6)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        ({"width_mm": 20}, "width_mm must be less than spacing_mm"),
+        ({"spacing_mm": 0.5, "width_mm": 0.2}, "too many"),
+        ({"z_range_mm": [100, 50]}, "z_range_mm must be"),
+        ({"z_range_mm": [0, 500]}, "z_range_mm must be"),
+    ],
+)
+def test_texture_errors(change: dict[str, Any], message: str) -> None:
+    texture = {"kind": "ridges", "width_mm": 4, "depth_mm": 1, "spacing_mm": 20, **change}
+    with pytest.raises(SpecError) as error:
+        build_part(_sharp_box(texture))
+    assert any(message in e for e in error.value.errors)
+
+
+def test_groove_deeper_than_the_wall_and_polygon_are_refused() -> None:
+    spec = _example("body-ridged-vase")
+    spec["features"][0]["texture"] = {
+        "kind": "grooves", "width_mm": 4, "depth_mm": 3, "spacing_mm": 10,
+    }  # fmt: skip
+    with pytest.raises(SpecError) as error:
+        build_part(spec)
+    assert any("less than the wall thickness" in e for e in error.value.errors)
+    spec = _example("body-box")
+    spec["features"][0]["shape"]["outline"] = {
+        "kind": "polygon", "points_mm": [[-20, -20], [20, -20], [0, 25]],
+    }  # fmt: skip
+    spec["features"][0]["texture"] = {
+        "kind": "ridges",
+        "width_mm": 2,
+        "depth_mm": 1,
+        "spacing_mm": 6,
+    }
+    with pytest.raises(SpecError) as error:
+        build_part(spec)
+    assert any("not supported on a polygon" in e for e in error.value.errors)
