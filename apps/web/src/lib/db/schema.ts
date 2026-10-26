@@ -71,6 +71,9 @@ export const designReferences = pgTable("design_references", {
   label: text("label").notNull(),
   anchors: jsonb("anchors").$type<AgentAnchor[]>().notNull().default(sql`'[]'::jsonb`),
   dimensions: jsonb("dimensions").$type<AgentDimension[]>().notNull().default(sql`'[]'::jsonb`),
+  /** A photo kept here until file storage exists (decision D4): shrunk in the browser, base64, under 900 KB. */
+  imageMediaType: text("image_media_type"),
+  imageBase64: text("image_base64"),
   /** Plain words on how accurate this is, shown in the workspace. */
   accuracyNote: text("accuracy_note"),
   /** Set when the user confirmed the values. Unconfirmed references are not given to the agent. */

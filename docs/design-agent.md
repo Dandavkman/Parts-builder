@@ -4,7 +4,7 @@ The design agent turns a chat request into a Part Spec. Code lives in `apps/web/
 
 ## Request and stream
 
-Send `{"message": "...", "design_id": "<uuid, optional>"}` (up to 4,000 characters). Without `design_id` a new design starts; with it, the saved conversation continues (only the owner can; anyone else gets 404). Sign-in is required. The first event tells you the design id. The reply is NDJSON, one event per line:
+Send `{"message": "...", "design_id": "<uuid, optional>", "image": {"media_type": "image/jpeg", "data": "<base64>"}}` (message up to 4,000 characters; `image` is optional, JPEG, PNG or WebP, up to 900,000 base64 characters, which is about 650 KB; the browser shrinks photos to about 300 KB first). Without `design_id` a new design starts; with it, the saved conversation continues (only the owner can; anyone else gets 404). Sign-in is required. The first event tells you the design id. The reply is NDJSON, one event per line:
 
 | Event | Meaning |
 | --- | --- |
@@ -12,6 +12,7 @@ Send `{"message": "...", "design_id": "<uuid, optional>"}` (up to 4,000 characte
 | `text` | A piece of the reply text. |
 | `tool` | The agent used `list_anchors` or `measure`. |
 | `spec` | A `propose_spec` attempt: `attempt` (1 to 6), `ok`, `errors`, and the `spec`. |
+| `dimension` | The agent recorded a dimension with `add_dimension`: `dimension` has `id`, `value_mm`, `source`, `confidence`, `note`. |
 | `question` | The agent asked the user something and stopped. |
 | `usage` | Running token totals for this message (input, output, cache). |
 | `done` | `outcome` is `answered`, `asked`, `attempts_exhausted`, `refused` or `step_limit`. |
@@ -55,3 +56,7 @@ The prompt carries two named rule sets, `VEHICLE_SAFETY_RULES` (unchanged) and `
 ## References and dimensions
 
 A design's anchors and named dimensions live in `design_references` (one row per photo, lookup, scan or set of typed numbers). `POST /api/agent` gives the agent the anchors and dimensions of the design's **confirmed** references, and lists dimensions in the system prompt with their source and confidence. A design with no confirmed reference still gets the fixture panel (the stand-in for a scan); the first confirmed reference replaces it. `list_anchors` returns the anchors, and when there are dimensions, `{ anchors, dimensions }`. Dimensions are never sent to the geometry service.
+
+## Photos and recorded dimensions
+
+A photo sent with a message is saved as a `design_references` row (kind `photo`, base64 in the row, until file storage exists; decision D4). A design keeps at most 4. Each request puts the design's photos at the top of the first user message for that request only; they are not stored in the saved conversation, so history stays small. A photo gives shape and proportion, not size: the prompt tells the agent to take sizes only from a stated dimension or an object of known size in the same plane (it lists card, coin and paper sizes), and to ask when it cannot. The agent records each size it relies on with `add_dimension` (`id`, `value_mm`, `confidence` stated or estimated, `note` saying how it knows). Recorded dimensions are kept in one reference per design, replace an earlier one with the same id, appear in `list_anchors` and the prompt on later turns, and are shown to the user in the chat as "Noted ...". The first photo replaces the stand-in fixture panel, so a photo-based design has no anchors except `origin`.

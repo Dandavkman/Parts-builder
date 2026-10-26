@@ -68,8 +68,29 @@ describe("parseRequest", () => {
   const id = "123e4567-e89b-12d3-a456-426614174000";
 
   it("accepts a message with or without a design", () => {
-    expect(parseRequest({ message: "hi" })).toEqual({ designId: null, message: "hi" });
-    expect(parseRequest({ message: "hi", design_id: id })).toEqual({ designId: id, message: "hi" });
+    expect(parseRequest({ message: "hi" })).toEqual({ designId: null, message: "hi", image: null });
+    expect(parseRequest({ message: "hi", design_id: id })).toEqual({ designId: id, message: "hi", image: null });
+  });
+
+  it("accepts a small image and rejects bad ones", () => {
+    const ok = parseRequest({ message: "hi", image: { media_type: "image/jpeg", data: "QUJD" } });
+    expect(ok).toEqual({ designId: null, message: "hi", image: { mediaType: "image/jpeg", base64: "QUJD" } });
+    for (const image of [
+      { media_type: "image/gif", data: "QUJD" },
+      { media_type: "image/png", data: "not base64!" },
+      { media_type: "image/png", data: "" },
+      { media_type: "image/png", data: "A".repeat(900_001) },
+      { data: "QUJD" },
+    ]) {
+      expect(typeof parseRequest({ message: "hi", image })).toBe("string");
+    }
+  });
+
+  it("explains how to scale a photo and lists reference sizes", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS);
+    expect(prompt).toContain("Photos and sizes");
+    expect(prompt).toContain("bank or credit card 85.6 x 54.0 mm");
+    expect(prompt).toContain("add_dimension");
   });
 
   it.each([

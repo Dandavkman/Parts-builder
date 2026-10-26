@@ -1,5 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { distanceMm, formatBuildOutcome, TOOLS } from "./tools";
+import { distanceMm, formatBuildOutcome, parseDimension, TOOLS } from "./tools";
 import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
 
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
@@ -60,6 +60,8 @@ export interface AgentOptions {
   maxAttempts?: number;
   /** Saves messages and versions as they happen. */
   record?: Recorder;
+  /** Remembers a dimension the agent recorded with `add_dimension`. */
+  saveDimension?: (dimension: AgentDimension) => Promise<void>;
 }
 
 const emptyUsage = (): TokenUsage => ({
@@ -72,7 +74,7 @@ const emptyUsage = (): TokenUsage => ({
 /** Tool-use loop for one user message. The agent only ever produces Part Spec JSON. */
 export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   const { turn, system, anchors, build, emit } = options;
-  const dimensions = options.dimensions ?? [];
+  const dimensions = [...(options.dimensions ?? [])];
   const maxAttempts = options.maxAttempts ?? MAX_BUILD_ATTEMPTS;
   const messages: MessageParam[] = [...options.history];
   const usage = emptyUsage();
@@ -149,6 +151,19 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
           name: call.name,
           summary: `${anchors.length} anchors${dimensions.length ? `, ${dimensions.length} dimensions` : ""}`,
         });
+      } else if (call.name === "add_dimension") {
+        const parsed = parseDimension(input);
+        if (typeof parsed === "string") {
+          content = parsed;
+          isError = true;
+        } else {
+          const at = dimensions.findIndex((d) => d.id === parsed.id);
+          if (at >= 0) dimensions[at] = parsed;
+          else dimensions.push(parsed);
+          await options.saveDimension?.(parsed);
+          content = `Recorded ${parsed.id} = ${parsed.value_mm} mm (${parsed.confidence}).`;
+          emit({ type: "dimension", dimension: parsed });
+        }
       } else if (call.name === "measure") {
         const d = distanceMm(anchors, input.from, input.to);
         isError = typeof d === "string";

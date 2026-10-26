@@ -8,6 +8,7 @@ import * as schema from "../db/schema";
 import { runAgent, type RunTurn } from "./loop";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import {
+  addPhoto,
   addReference,
   createDesign,
   getOwnedDesign,
@@ -15,9 +16,13 @@ import {
   listOwnedDesigns,
   listVersions,
   loadHistory,
+  loadPhotos,
   loadReferences,
+  MAX_PHOTOS_PER_DESIGN,
   recorderFor,
+  saveDimension,
   setCurrentVersion,
+  withPhotos,
   withUserMessage,
 } from "./store";
 
@@ -206,5 +211,48 @@ describe("references", () => {
     await addReference(db, id, { kind: "stated", label: "x" });
     await db.delete(schema.designs).where(eq(schema.designs.id, id));
     expect(await db.select().from(schema.designReferences).where(eq(schema.designReferences.designId, id))).toEqual([]);
+  });
+});
+
+describe("photos and recorded dimensions", () => {
+  const photo = { mediaType: "image/jpeg" as const, base64: "QUJD" };
+
+  it("keeps photos with the design up to the limit", async () => {
+    const id = await createDesign(db, "photo_user", "t");
+    for (let i = 0; i < MAX_PHOTOS_PER_DESIGN; i++) expect(await addPhoto(db, id, photo)).toBe(true);
+    expect(await addPhoto(db, id, photo)).toBe(false);
+    expect(await loadPhotos(db, id)).toHaveLength(MAX_PHOTOS_PER_DESIGN);
+    const other = await createDesign(db, "photo_user", "t2");
+    expect(await loadPhotos(db, other)).toEqual([]);
+  });
+
+  it("a photo reference replaces the fixture panel for the agent", async () => {
+    const id = await createDesign(db, "photo_user2", "t");
+    await addPhoto(db, id, photo);
+    expect((await loadReferences(db, id)).anchors).toEqual([]);
+  });
+
+  it("puts photos first in the first user message, without touching the saved history", () => {
+    const history = [{ role: "user" as const, content: "make a vase" }, { role: "assistant" as const, content: "ok" }];
+    const sent = withPhotos(history, [photo]);
+    expect(sent[0].content).toEqual([
+      { type: "image", source: { type: "base64", media_type: "image/jpeg", data: "QUJD" } },
+      { type: "text", text: "make a vase" },
+    ]);
+    expect(sent[1]).toBe(history[1]);
+    expect(history[0].content).toBe("make a vase");
+    expect(withPhotos(history, [])).toBe(history);
+  });
+
+  it("saves a dimension and replaces one with the same id", async () => {
+    const id = await createDesign(db, "dim_user", "t");
+    await saveDimension(db, id, { id: "height", value_mm: 100, source: "user", confidence: "stated" });
+    await saveDimension(db, id, { id: "width", value_mm: 50, source: "user", confidence: "stated" });
+    await saveDimension(db, id, { id: "height", value_mm: 120, source: "photo", confidence: "estimated" });
+    const dims = (await loadReferences(db, id)).dimensions;
+    expect(dims.map((d) => [d.id, d.value_mm]).sort()).toEqual([
+      ["height", 120],
+      ["width", 50],
+    ]);
   });
 });
