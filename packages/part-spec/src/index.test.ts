@@ -8,8 +8,9 @@ const specDir = fileURLToPath(
   new URL("../../../services/geometry/src/geometry/spec/", import.meta.url),
 );
 const ajv = new Ajv2020({ strict: false });
-const schema = JSON.parse(readFileSync(`${specDir}part-spec.v1.schema.json`, "utf8"));
+const schema = JSON.parse(readFileSync(`${specDir}part-spec.v1_1.schema.json`, "utf8"));
 const validate = ajv.compile(schema);
+const validateV1 = ajv.compile(JSON.parse(readFileSync(`${specDir}part-spec.v1.schema.json`, "utf8")));
 const v01Schema = JSON.parse(readFileSync(`${specDir}part-spec.schema.json`, "utf8"));
 const validateV01 = ajv.compile(v01Schema);
 const examples = readdirSync(`${specDir}examples/v1`).filter((f) => f.endsWith(".json"));
@@ -24,9 +25,25 @@ describe("part-spec package", () => {
     expect(schema.properties.spec_version.const).toBe(PART_SPEC_VERSION);
   });
 
-  it.each(examples)("v1 example %s is valid", (file) => {
+  it.each(examples)("v1 example %s still validates against the v1 schema", (file) => {
     const spec = JSON.parse(readFileSync(`${specDir}examples/v1/${file}`, "utf8"));
+    expect(validateV1(spec), JSON.stringify(validateV1.errors)).toBe(true);
+  });
+
+  it.each(examples)("v1 example %s is valid as a 1.1 spec", (file) => {
+    const spec = JSON.parse(readFileSync(`${specDir}examples/v1/${file}`, "utf8"));
+    expect(validate({ ...spec, spec_version: "1.1" }), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it.each(readdirSync(`${specDir}examples/v1_1`))("1.1 example %s is valid", (file) => {
+    const spec = JSON.parse(readFileSync(`${specDir}examples/v1_1/${file}`, "utf8"));
     expect(validate(spec), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it("accepts a circle outline in 1.1 but not in 1.0", () => {
+    const spec = JSON.parse(readFileSync(`${specDir}examples/v1_1/plate-circle.json`, "utf8"));
+    expect(validate(spec)).toBe(true);
+    expect(validateV1({ ...spec, spec_version: "1.0" })).toBe(false);
   });
 
   it.each(v01Examples)("v0.1 example %s still validates against the v0.1 schema", (file) => {
@@ -36,6 +53,7 @@ describe("part-spec package", () => {
 
   it("rejects a plate with negative thickness", () => {
     const spec = JSON.parse(readFileSync(`${specDir}examples/v1/hole.json`, "utf8"));
+    spec.spec_version = "1.1";
     spec.features[0].thickness_mm = -1;
     expect(validate(spec)).toBe(false);
   });

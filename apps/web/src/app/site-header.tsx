@@ -13,6 +13,9 @@ export function SiteHeader() {
         <Link href="/dashboard" className="hover:underline">
           Dashboard
         </Link>
+        <Link href="/design" className="hover:underline">
+          Design
+        </Link>
         <Link href="/viewer" className="hover:underline">
           Viewer
         </Link>

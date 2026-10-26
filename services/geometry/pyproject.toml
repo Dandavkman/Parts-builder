@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.161.0",
     "jsonschema",
     "numpy>=2.5.4",
+    "scipy>=1.18.1",
     "trimesh>=5.1.1",
     "uvicorn[standard]>=0.54.0",
 ]
@@ -41,7 +42,7 @@ strict = true
 mypy_path = "src"
 
 [[tool.mypy.overrides]]
-module = ["cadquery.*", "OCP.*", "trimesh.*"]
+module = ["cadquery.*", "OCP.*", "trimesh.*", "scipy.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -31,7 +31,7 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 
 ## What to expect
 
-- **The Viewer page shows "Could not load the plate."** That is correct for now. The viewer asks the geometry service for the plate, and that service is not deployed yet (task B0.7, on Fly.io, which is postponed to Phase 1 so you do not need a card yet). Everything else works.
+- **The Viewer page shows "Could not load the plate."** That is correct for now. The viewer asks the geometry service for the plate, and that service is not deployed yet (task B0.7, on Fly.io; follow `docs/deploy-fly.md` when you are ready). Everything else works.
 - **Production link vs preview links.** The main link is public. Vercel puts preview links behind a Vercel login by default, so you may be asked to sign in to open one.
 - **Adding or changing a variable later** only affects the next deployment. After changing one, open **Deployments**, click the three dots on the latest one, and choose **Redeploy**.
 
@@ -48,8 +48,11 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | Variable | Needed from |
 | --- | --- |
 | `ANTHROPIC_API_KEY` | B1.8 (design agent) |
+| `DATABASE_URL` | B1.8b (Neon pooled connection string; tick Sensitive; read at request time, tables are created on first use) |
+| `DESIGN_AGENT_MODEL` | B1.8a (optional; model id for the design agent, default `claude-sonnet-5-5`) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | B1.1 (scan upload) |
 | `GEOMETRY_SERVICE_URL` | B0.7 (address of the Fly.io geometry service) |
+| `GEOMETRY_SERVICE_TOKEN` | B1.11c (shared secret; must equal the Fly secret of the same name; server-side only, never `NEXT_PUBLIC_`) |
 | Stripe keys | Phase 2 |
 
 Vercel's free Hobby plan is for non-commercial use. Move to the paid plan before taking real orders (Phase 2).
