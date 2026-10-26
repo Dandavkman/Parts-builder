@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: Part Spec 2.0 starts with `body`: extrude and hollow by cutting an inset copy (B1.17a)
+
+The plate-only feature set cannot make a vase or a box. 2.0 adds one new feature, `body`, a solid with a height built from the same outlines as plates (rectangle with rounded corners, circle, polygon). Hollowing (`shell`) cuts a copy of the outline pulled in by the wall thickness instead of using the CAD kernel's shell, which tends to fail once edges are rounded; walls are exactly the stated thickness, and the vase from the storyboard (80 mm square, 200 mm tall, 2 mm walls) matches a hand calculation within 0.1%. The cavity is not rounded inside. A closed hollow (`open: none`) is allowed but a printer cannot drain it; the agent should prefer `top`. The plan's separate "patterns" item is folded into surface texture (B1.17c), because repeating holes already exist as `hole_pattern`. The agent keeps writing 1.1 until B1.17 is complete and Danny has redeployed the Fly service (`fly deploy`), since the live service would reject a 2.0 spec.
+
 ## 2026-10-26: Safety rules become named sets; product copy says "parts" (B1.13)
 
 The prompt's safety text is split into a vehicle set (the original wording, unchanged) and an everyday set with the categories the Owner approved in D1 (blocked: weapons, medical devices, child-restraint, life-safety and climbing gear; needs review: food and drink contact, mains enclosures, load-bearing for a person). The line "non-automotive parts are out of scope" is removed. The landing page and page description no longer say car. The classifier (B2.4) is not built yet.

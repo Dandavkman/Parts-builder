@@ -7,6 +7,7 @@ import cadquery as cq
 
 from geometry.builder import features as fx
 from geometry.builder.bend import join_plates
+from geometry.builder.body import build_body
 from geometry.builder.checks import outline_points
 from geometry.builder.placement import Anchor, placement_location
 from geometry.builder.spec_io import Spec, to_v1, validate_schema
@@ -111,7 +112,8 @@ def hole_positions(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> l
 def build_part(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> cq.Compound:
     """Build the part. Same spec and anchors always give the same geometry.
 
-    Order is fixed. Per plate: fillets and chamfers, then additions (standoffs, ribs), then
+    Bodies (Part Spec 2.0) are built first: outline, edge fillet, then hollowing. Order is fixed.
+    Per plate: fillets and chamfers, then additions (standoffs, ribs), then
     cuts (holes, patterns, slots, counterbores, countersinks, standoff bores, cutouts), then text,
     each group in spec order. Then bends fuse their to-plates onto their from-plates, and each
     plate moves onto its anchor. Raises SpecError with every problem found.
@@ -141,6 +143,10 @@ def build_part(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> cq.Co
             b,
         )
     placed: list[cq.Shape] = []
+    for body in (f for f in features if f["type"] == "body"):
+        shape = build_body(body).val()
+        assert isinstance(shape, cq.Shape)
+        placed.append(shape.moved(_location(body["placement"], anchors)))
     for pid in plates:
         if pid not in bent_on:
             shape = solids[pid].val()
