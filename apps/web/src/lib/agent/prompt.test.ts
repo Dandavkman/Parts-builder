@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
-import { buildSystemPrompt } from "./prompt";
+import { buildSystemPrompt, EVERYDAY_SAFETY_RULES, VEHICLE_SAFETY_RULES } from "./prompt";
 import { parseRequest } from "./request";
 
 const schemaPath = new URL(
@@ -49,6 +49,18 @@ describe("system prompt", () => {
     const prompt = buildSystemPrompt(FIXTURE_ANCHORS);
     for (const a of FIXTURE_ANCHORS) expect(prompt).toContain(a.id);
     expect(prompt).toMatch(/Blocked.*brakes.*suspension.*steering/s);
+  });
+
+  it("keeps the vehicle rules and adds the everyday rule set", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS);
+    expect(prompt).toContain(VEHICLE_SAFETY_RULES);
+    expect(prompt).toContain(EVERYDAY_SAFETY_RULES);
+    expect(VEHICLE_SAFETY_RULES).toContain(
+      "Blocked (refuse in plain words, do not call propose_spec): brakes, suspension, steering, wheels and hubs, seat and seatbelt mounts, airbag areas, fuel system, tow points.",
+    );
+    expect(EVERYDAY_SAFETY_RULES).toMatch(/Blocked.*weapon.*medical.*child-restraint.*climbing/s);
+    expect(EVERYDAY_SAFETY_RULES).toMatch(/Needs review.*food or drink.*mains-powered/s);
+    expect(prompt).not.toMatch(/non-automotive/i);
   });
 });
 

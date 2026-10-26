@@ -7,11 +7,11 @@ export default function Home() {
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-6 py-20">
         <h1 className="text-4xl font-semibold tracking-tight">
-          Scan your car. Describe the part. We make it.
+          Describe the part. We design it with you and make it.
         </h1>
         <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400">
-          Design custom parts that fit your exact car, then order them printed in nylon, carbon
-          fiber or metal.
+          Start from a photo, published measurements or a 3D scan, refine the design in chat, then
+          order it made.
         </p>
         <Link
           href="/dashboard"
