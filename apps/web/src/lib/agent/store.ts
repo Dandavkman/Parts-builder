@@ -1,8 +1,10 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
-import { chatMessages, designs, designVersions } from "../db/schema";
+import { chatMessages, designReferences, designs, designVersions } from "../db/schema";
+import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import type { Recorder } from "./loop";
+import type { AgentAnchor, AgentDimension, DesignReferences, ReferenceKind } from "./types";
 
 type MessageParam = Anthropic.Beta.BetaMessageParam;
 
@@ -139,4 +141,51 @@ export function withUserMessage(history: MessageParam[], text: string): MessageP
       : { type: "tool_result", tool_use_id: call.id, content: "Skipped: the request was interrupted.", is_error: true },
   );
   return [...history, { role: "user", content: results }];
+}
+
+/** Saves a reference for a design. Pass `confirmed: false` for values the user has not yet accepted. */
+export async function addReference(
+  db: Db,
+  designId: string,
+  ref: {
+    kind: ReferenceKind;
+    label: string;
+    anchors?: AgentAnchor[];
+    dimensions?: AgentDimension[];
+    accuracyNote?: string;
+    confirmed?: boolean;
+  },
+): Promise<string> {
+  const [row] = await db
+    .insert(designReferences)
+    .values({
+      designId,
+      kind: ref.kind,
+      label: ref.label.slice(0, 120),
+      anchors: ref.anchors ?? [],
+      dimensions: ref.dimensions ?? [],
+      accuracyNote: ref.accuracyNote ?? null,
+      confirmedAt: ref.confirmed === false ? null : new Date(),
+    })
+    .returning({ id: designReferences.id });
+  return row.id;
+}
+
+/**
+ * What the agent may use for a design: the anchors and dimensions of its confirmed references. A
+ * design with none yet falls back to the fixture panel, the stand-in until scans exist (B1.5). The
+ * first confirmed reference replaces the fixtures, so a photo-based design never sees the panel.
+ */
+export async function loadReferences(db: Db, designId: string): Promise<DesignReferences> {
+  const rows = await db
+    .select()
+    .from(designReferences)
+    .where(eq(designReferences.designId, designId))
+    .orderBy(asc(designReferences.createdAt));
+  const confirmed = rows.filter((r) => r.confirmedAt !== null);
+  if (confirmed.length === 0) return { anchors: FIXTURE_ANCHORS, dimensions: [] };
+  return {
+    anchors: confirmed.flatMap((r) => r.anchors),
+    dimensions: confirmed.flatMap((r) => r.dimensions),
+  };
 }
