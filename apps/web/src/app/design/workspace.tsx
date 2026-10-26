@@ -1,16 +1,82 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { applyEvent, initialChat, parseLines, sendMessage } from "../../lib/agent/chat-state";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { applyEvent, initialChat, openDesign, parseLines, sendMessage, type ChatItem } from "../../lib/agent/chat-state";
 import { ModelViewer } from "../viewer/plate-viewer";
 
 const PART_ERROR =
   "Could not load the part. The geometry service may be waking up (up to 40 seconds); send another message or reload.";
 
+interface DesignRow {
+  id: string;
+  title: string;
+}
+
+interface VersionRow {
+  version: number;
+  createdBy: string;
+  buildOk: boolean;
+  name: string;
+}
+
 export function Workspace() {
   const [chat, setChat] = useState(initialChat);
   const [draft, setDraft] = useState("");
+  const [designs, setDesigns] = useState<DesignRow[]>([]);
+  const [versions, setVersions] = useState<VersionRow[]>([]);
+  const [current, setCurrent] = useState<number | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const designIdRef = useRef<string | null>(null);
+
+  const loadList = useCallback(async () => {
+    const response = await fetch("/api/designs").catch(() => null);
+    if (response?.ok) setDesigns(((await response.json()) as { designs: DesignRow[] }).designs);
+  }, []);
+
+  /** Loads a design's versions (and, when `reopen`, its conversation) from the server. */
+  const loadDesign = useCallback(async (id: string, reopen: boolean) => {
+    const response = await fetch(`/api/designs/${id}`).catch(() => null);
+    if (!response?.ok) {
+      setNotice("Could not load that design.");
+      return;
+    }
+    const data = (await response.json()) as {
+      design: { currentVersion: number | null };
+      versions: VersionRow[];
+      items: ChatItem[];
+    };
+    setNotice(null);
+    setVersions(data.versions);
+    setCurrent(data.design.currentVersion);
+    if (reopen) {
+      designIdRef.current = id;
+      setChat(openDesign(id, data.items));
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadList();
+  }, [loadList]);
+
+  function newDesign() {
+    designIdRef.current = null;
+    setChat(initialChat);
+    setVersions([]);
+    setCurrent(null);
+    setNotice(null);
+  }
+
+  async function useVersion(version: number) {
+    const id = designIdRef.current;
+    if (!id || chat.busy) return;
+    const response = await fetch(`/api/designs/${id}/current`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ version }),
+    }).catch(() => null);
+    if (response?.ok) setCurrent(version);
+    else setNotice("Could not switch versions.");
+  }
 
   async function send() {
     const text = draft.trim();
@@ -46,15 +112,38 @@ export function Workspace() {
     } catch {
       setChat((s) => applyEvent(s, { type: "error", message: "Could not reach the design agent." }));
     }
+    if (designIdRef.current) await loadDesign(designIdRef.current, false);
+    void loadList();
   }
 
   const partUrl =
-    chat.designId && chat.builtCount > 0
-      ? `/api/designs/${chat.designId}/versions/current/download?format=glb&v=${chat.builtCount}`
-      : null;
-  const download = (format: string) => `/api/designs/${chat.designId}/versions/current/download?format=${format}`;
+    chat.designId && current !== null ? `/api/designs/${chat.designId}/versions/${current}/download?format=glb` : null;
+  const download = (format: string) => `/api/designs/${chat.designId}/versions/${current}/download?format=${format}`;
 
   return (
+    <>
+    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+      <button type="button" onClick={newDesign} disabled={chat.busy} className="rounded border border-zinc-300 px-3 py-1 disabled:opacity-40 dark:border-zinc-700">
+        New design
+      </button>
+      {designs.length > 0 && (
+        <select
+          aria-label="Earlier designs"
+          value={chat.designId ?? ""}
+          disabled={chat.busy}
+          onChange={(e) => e.target.value && void loadDesign(e.target.value, true)}
+          className="max-w-xs rounded border border-zinc-300 bg-transparent px-2 py-1 dark:border-zinc-700"
+        >
+          <option value="">Earlier designs...</option>
+          {designs.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.title}
+            </option>
+          ))}
+        </select>
+      )}
+      {notice && <span className="text-red-700 dark:text-red-400">{notice}</span>}
+    </div>
     <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <section className="flex h-[560px] flex-col rounded border border-zinc-200 dark:border-zinc-800">
         <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
@@ -115,12 +204,30 @@ export function Workspace() {
         </div>
         {partUrl && (
           <div className="mt-2 flex gap-3 text-sm">
-            <span className="text-zinc-500">Download latest:</span>
+            <span className="text-zinc-500">Download version {current}:</span>
             <a className="underline" href={download("step")}>STEP</a>
             <a className="underline" href={download("stl")}>STL</a>
           </div>
         )}
+        {versions.length > 0 && (
+          <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto text-xs" aria-label="Versions">
+            {[...versions].reverse().map((v) => (
+              <li key={v.version} className="flex items-center gap-2">
+                <span className={v.version === current ? "font-semibold" : "text-zinc-500"}>
+                  v{v.version} {v.name} ({v.createdBy}, {v.buildOk ? "built" : "did not build"})
+                </span>
+                {v.buildOk && v.version !== current && (
+                  <button type="button" onClick={() => void useVersion(v.version)} disabled={chat.busy} className="underline disabled:opacity-40">
+                    Use this version
+                  </button>
+                )}
+                {v.version === current && <span className="text-zinc-500">showing</span>}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
+    </>
   );
 }
