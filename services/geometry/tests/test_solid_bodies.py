@@ -154,7 +154,15 @@ def test_a_plate_can_sit_beside_a_body() -> None:
 
 @pytest.mark.parametrize(
     "name",
-    ["body-box", "body-cylinder", "body-vase", "body-revolve-vase", "body-revolve-knob"],
+    [
+        "body-box",
+        "body-cylinder",
+        "body-vase",
+        "body-revolve-vase",
+        "body-revolve-knob",
+        "body-ridged-vase",
+        "body-grooved-vase",
+    ],
 )
 def test_golden(name: str) -> None:
     """Summaries live in tests/golden; regenerate with UPDATE_GOLDEN=1 and review the diff."""
@@ -240,3 +248,107 @@ def test_revolve_errors(profile: list[list[float]], message: str) -> None:
     with pytest.raises(SpecError) as error:
         build_part(spec)
     assert any(message in e for e in error.value.errors)
+
+
+def _sharp_box(texture: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "spec_version": "2.0",
+        "name": "Box",
+        "features": [
+            {
+                "id": "box",
+                "type": "body",
+                "placement": {"anchor": "origin"},
+                "shape": {
+                    "kind": "extrude",
+                    "outline": {"kind": "rectangle", "width_mm": 80, "length_mm": 80},
+                    "height_mm": 200,
+                },
+                "texture": texture,
+            }
+        ],
+    }
+
+
+def test_ridges_add_exactly_their_volume() -> None:
+    texture = {"kind": "ridges", "width_mm": 4, "depth_mm": 1, "spacing_mm": 20}
+    part = build_part(_sharp_box(texture))
+    # 4 ridges per side across 76 mm of flat wall at 20 mm spacing, 4 sides, each 4 x 1 x 200
+    assert part.Volume() == pytest.approx(80 * 80 * 200 + 16 * 4 * 1 * 200, rel=1e-9)
+    bb = part.BoundingBox()
+    assert (bb.xlen, bb.ylen) == pytest.approx((82, 82), abs=1e-6)
+
+
+def test_grooves_remove_exactly_their_volume() -> None:
+    texture = {"kind": "grooves", "width_mm": 4, "depth_mm": 1, "spacing_mm": 20}
+    part = build_part(_sharp_box(texture))
+    assert part.Volume() == pytest.approx(80 * 80 * 200 - 16 * 4 * 1 * 200, rel=1e-9)
+    bb = part.BoundingBox()
+    assert (bb.xlen, bb.ylen) == pytest.approx((80, 80), abs=1e-6)
+
+
+def test_z_range_limits_the_stripes() -> None:
+    texture = {
+        "kind": "ridges", "width_mm": 4, "depth_mm": 1, "spacing_mm": 20, "z_range_mm": [50, 100],
+    }  # fmt: skip
+    part = build_part(_sharp_box(texture))
+    assert part.Volume() == pytest.approx(80 * 80 * 200 + 16 * 4 * 1 * 50, rel=1e-9)
+
+
+def test_ridged_hollow_vase_is_one_valid_solid_with_open_top() -> None:
+    import cadquery as cq
+
+    part = build_part(_example("body-ridged-vase"))
+    assert part.isValid() and len(part.Solids()) == 1
+    assert part.BoundingBox().xlen == pytest.approx(82, abs=1e-6)
+    probe = cq.Workplane("XY", origin=(0, 0, 195)).rect(20, 20).extrude(2).findSolid()
+    assert part.intersect(probe).Volume() == pytest.approx(0, abs=1e-6)
+
+
+def test_grooved_revolved_vase_keeps_its_size() -> None:
+    grooved = build_part(_example("body-grooved-vase"))
+    plain_spec = _example("body-grooved-vase")
+    del plain_spec["features"][0]["texture"]
+    plain = build_part(plain_spec)
+    # 20 grooves (2 pi * 40 mm widest radius / 12 mm spacing), each 3 wide x 1.5 deep x 150 tall
+    assert plain.Volume() - grooved.Volume() == pytest.approx(20 * 3 * 1.5 * 150, rel=0.03)
+    assert grooved.BoundingBox().zlen == pytest.approx(200, abs=1e-6)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        ({"width_mm": 20}, "width_mm must be less than spacing_mm"),
+        ({"spacing_mm": 0.5, "width_mm": 0.2}, "too many"),
+        ({"z_range_mm": [100, 50]}, "z_range_mm must be"),
+        ({"z_range_mm": [0, 500]}, "z_range_mm must be"),
+    ],
+)
+def test_texture_errors(change: dict[str, Any], message: str) -> None:
+    texture = {"kind": "ridges", "width_mm": 4, "depth_mm": 1, "spacing_mm": 20, **change}
+    with pytest.raises(SpecError) as error:
+        build_part(_sharp_box(texture))
+    assert any(message in e for e in error.value.errors)
+
+
+def test_groove_deeper_than_the_wall_and_polygon_are_refused() -> None:
+    spec = _example("body-ridged-vase")
+    spec["features"][0]["texture"] = {
+        "kind": "grooves", "width_mm": 4, "depth_mm": 3, "spacing_mm": 10,
+    }  # fmt: skip
+    with pytest.raises(SpecError) as error:
+        build_part(spec)
+    assert any("less than the wall thickness" in e for e in error.value.errors)
+    spec = _example("body-box")
+    spec["features"][0]["shape"]["outline"] = {
+        "kind": "polygon", "points_mm": [[-20, -20], [20, -20], [0, 25]],
+    }  # fmt: skip
+    spec["features"][0]["texture"] = {
+        "kind": "ridges",
+        "width_mm": 2,
+        "depth_mm": 1,
+        "spacing_mm": 6,
+    }
+    with pytest.raises(SpecError) as error:
+        build_part(spec)
+    assert any("not supported on a polygon" in e for e in error.value.errors)
