@@ -20,6 +20,12 @@ describe("parseDimension", () => {
     }
   });
 
+  it("accepts a measures tag and rejects an unknown one", () => {
+    expect(parseDimension({ ...base, confidence: "stated", measures: "overall_height" })).toMatchObject({ measures: "overall_height" });
+    expect(typeof parseDimension({ ...base, confidence: "stated", measures: "weight" })).toBe("string");
+    expect(parseDimension({ ...base, confidence: "stated" })).not.toHaveProperty("measures");
+  });
+
   it("rejects bad ids, values and confidence", () => {
     expect(typeof parseDimension({ ...base, id: "Bad Id", confidence: "stated" })).toBe("string");
     expect(typeof parseDimension({ ...base, value_mm: 0, confidence: "stated" })).toBe("string");

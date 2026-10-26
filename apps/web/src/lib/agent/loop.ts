@@ -1,4 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
+import { checkBuild } from "./checks";
 import { distanceMm, formatBuildOutcome, parseDimension, TOOLS, webSearchTool } from "./tools";
 import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
 
@@ -213,7 +214,8 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
             bestSpec = spec as Record<string, unknown>;
             bestOk = outcome.ok;
           }
-          content = formatBuildOutcome(outcome);
+          const checks = outcome.ok ? checkBuild(spec as Record<string, unknown>, outcome.size_mm, dimensions) : [];
+          content = formatBuildOutcome(outcome, checks);
           isError = !outcome.ok;
           emit({
             type: "spec",
@@ -221,6 +223,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
             ok: outcome.ok,
             errors: outcome.ok ? [] : outcome.errors,
             spec: spec as Record<string, unknown>,
+            ...(checks.length ? { checks } : {}),
           });
         }
       } else {
