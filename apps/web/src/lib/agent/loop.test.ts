@@ -141,6 +141,36 @@ describe("runAgent", () => {
     expect(sentAnchors).toEqual(FIXTURE_ANCHORS);
   });
 
+  it("records a dimension the agent adds, saves it, and lists it afterwards", async () => {
+    const saved: AgentDimension[] = [];
+    const model = scripted([
+      reply([
+        call("a", "add_dimension", { id: "vase_height", value_mm: 200, confidence: "estimated", note: "scaled from the coin" }),
+        call("b", "add_dimension", { id: "Bad Id", value_mm: 5, confidence: "stated", note: "x" }),
+        call("c", "list_anchors"),
+      ]),
+      reply([text("ok")], "end_turn"),
+    ]);
+    const events: AgentEvent[] = [];
+    await runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [{ role: "user", content: "make a vase" }],
+      anchors: FIXTURE_ANCHORS,
+      build: async () => ({ ok: true }),
+      emit: (e) => events.push(e),
+      saveDimension: async (d) => void saved.push(d),
+    });
+    expect(saved).toEqual([
+      { id: "vase_height", value_mm: 200, source: "photo", confidence: "estimated", note: "scaled from the coin" },
+    ]);
+    expect(events.filter((e) => e.type === "dimension")).toHaveLength(1);
+    const results = (model.requests[1].messages as { content: Block[] }[]).at(-1)!.content;
+    expect(results[0].content).toContain("Recorded vase_height = 200 mm");
+    expect(results[1].is_error).toBe(true);
+    expect(String(results[2].content)).toContain("vase_height");
+  });
+
   it("returns an error result for unknown anchors and non-object specs", async () => {
     const { result, requests } = run(
       [

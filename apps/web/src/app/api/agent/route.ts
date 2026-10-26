@@ -3,7 +3,18 @@ import { buildWithGeometryService } from "../../../lib/agent/geometry-client";
 import { anthropicTurn, DEFAULT_MODEL, runAgent } from "../../../lib/agent/loop";
 import { buildSystemPrompt } from "../../../lib/agent/prompt";
 import { parseRequest } from "../../../lib/agent/request";
-import { createDesign, getOwnedDesign, loadHistory, loadReferences, recorderFor, withUserMessage } from "../../../lib/agent/store";
+import {
+  addPhoto,
+  createDesign,
+  getOwnedDesign,
+  loadHistory,
+  loadPhotos,
+  loadReferences,
+  recorderFor,
+  saveDimension,
+  withPhotos,
+  withUserMessage,
+} from "../../../lib/agent/store";
 import type { AgentEvent } from "../../../lib/agent/types";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { requireOwner } from "../../../lib/require-owner";
@@ -56,8 +67,12 @@ export async function POST(request: Request) {
   } else {
     designId = await createDesign(db, ownerId, parsed.message);
   }
+  if (parsed.image && !(await addPhoto(db, designId, parsed.image))) {
+    return Response.json({ error: "This design already has the most photos allowed." }, { status: 400 });
+  }
   const references = await loadReferences(db, designId);
   const history = withUserMessage(saved, parsed.message);
+  const photos = await loadPhotos(db, designId);
   const record = recorderFor(db, designId);
 
   const client = new Anthropic({ apiKey });
@@ -72,12 +87,13 @@ export async function POST(request: Request) {
           turn: anthropicTurn(client),
           model: process.env.DESIGN_AGENT_MODEL || DEFAULT_MODEL,
           system: buildSystemPrompt(references.anchors, references.dimensions),
-          history,
+          history: withPhotos(history, photos),
           anchors: references.anchors,
           dimensions: references.dimensions,
           build: buildWithGeometryService,
           emit,
           record,
+          saveDimension: (dimension) => saveDimension(db, designId, dimension),
         });
       } catch (error) {
         console.error("design agent failed", error);

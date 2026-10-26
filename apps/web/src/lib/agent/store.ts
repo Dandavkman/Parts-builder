@@ -1,9 +1,10 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { chatMessages, designReferences, designs, designVersions } from "../db/schema";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import type { Recorder } from "./loop";
+import type { AgentImage, ImageMediaType } from "./request";
 import type { AgentAnchor, AgentDimension, DesignReferences, ReferenceKind } from "./types";
 
 type MessageParam = Anthropic.Beta.BetaMessageParam;
@@ -188,4 +189,67 @@ export async function loadReferences(db: Db, designId: string): Promise<DesignRe
     anchors: confirmed.flatMap((r) => r.anchors),
     dimensions: confirmed.flatMap((r) => r.dimensions),
   };
+}
+
+export const MAX_PHOTOS_PER_DESIGN = 4;
+
+/** Keeps the user's photo with the design. Returns false when the design already has the most allowed. */
+export async function addPhoto(db: Db, designId: string, photo: AgentImage): Promise<boolean> {
+  const have = await db
+    .select({ id: designReferences.id })
+    .from(designReferences)
+    .where(and(eq(designReferences.designId, designId), isNotNull(designReferences.imageBase64)));
+  if (have.length >= MAX_PHOTOS_PER_DESIGN) return false;
+  await db.insert(designReferences).values({
+    designId,
+    kind: "photo",
+    label: "Photo",
+    imageMediaType: photo.mediaType,
+    imageBase64: photo.base64,
+    accuracyNote: "Scale comes from a stated dimension or a reference object, not from the photo alone.",
+    confirmedAt: new Date(),
+  });
+  return true;
+}
+
+export async function loadPhotos(db: Db, designId: string): Promise<AgentImage[]> {
+  const rows = await db
+    .select({ mediaType: designReferences.imageMediaType, base64: designReferences.imageBase64 })
+    .from(designReferences)
+    .where(and(eq(designReferences.designId, designId), isNotNull(designReferences.imageBase64)))
+    .orderBy(asc(designReferences.createdAt));
+  return rows.flatMap((r) => (r.mediaType && r.base64 ? [{ mediaType: r.mediaType as ImageMediaType, base64: r.base64 }] : []));
+}
+
+/**
+ * Puts the design's photos at the top of the first user message, for this request only: they are not
+ * saved in the conversation (the photo lives in `design_references`), so history stays small and every
+ * turn sees the same photos in the same place.
+ */
+export function withPhotos(history: MessageParam[], photos: AgentImage[]): MessageParam[] {
+  const first = history[0];
+  if (photos.length === 0 || !first || first.role !== "user") return history;
+  const blocks: Anthropic.Beta.BetaContentBlockParam[] = photos.map((p) => ({
+    type: "image",
+    source: { type: "base64", media_type: p.mediaType, data: p.base64 },
+  }));
+  const rest: Anthropic.Beta.BetaContentBlockParam[] =
+    typeof first.content === "string" ? [{ type: "text", text: first.content }] : first.content;
+  return [{ role: "user", content: [...blocks, ...rest] }, ...history.slice(1)];
+}
+
+const DIMENSIONS_LABEL = "Dimensions";
+
+/** Records a named length for the design, replacing any earlier one with the same id. */
+export async function saveDimension(db: Db, designId: string, dimension: AgentDimension): Promise<void> {
+  const [row] = await db
+    .select()
+    .from(designReferences)
+    .where(and(eq(designReferences.designId, designId), eq(designReferences.label, DIMENSIONS_LABEL)));
+  if (!row) {
+    await addReference(db, designId, { kind: "stated", label: DIMENSIONS_LABEL, dimensions: [dimension] });
+    return;
+  }
+  const others = row.dimensions.filter((d) => d.id !== dimension.id);
+  await db.update(designReferences).set({ dimensions: [...others, dimension] }).where(eq(designReferences.id, row.id));
 }

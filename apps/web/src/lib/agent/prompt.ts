@@ -40,6 +40,11 @@ export const MATERIAL_LIMITS = `
 Default material is PA12 nylon (SLS or MJF). Until the real material table exists, keep walls and plates at least 2 mm thick and holes at least 2 mm in diameter, and keep the whole part under 250 mm in every direction.
 `.trim();
 
+/** Everyday objects of known size, for scaling a photo. Real, standardized sizes only. */
+export const REFERENCE_OBJECTS = `
+Photos. A photo shows shape and proportion but not size. Take sizes only from (a) a dimension the user states, or (b) an object of known size in the same plane as the subject. Known sizes: bank or credit card 85.6 x 54.0 mm; US quarter 24.26 mm across; US penny 19.05 mm; Euro 1 coin 23.25 mm; A4 paper 210 x 297 mm; US letter paper 215.9 x 279.4 mm. If a photo is taken at an angle or the object is not in the same plane, say so, and ask for one measured dimension with ask_user. Record every size you rely on with add_dimension (confidence "stated" for user numbers, "estimated" for photo readings, with how in the note), and tell the user which numbers are estimates and ask them to confirm those that matter before you build.
+`.trim();
+
 export function describeDimension(d: AgentDimension): string {
   const where = d.source_url ? `, source ${d.source_url}` : "";
   return `- ${d.id} = ${d.value_mm} mm (${d.confidence}, from ${d.source}${where})${d.note ? `: ${d.note}` : ""}`;
@@ -56,6 +61,7 @@ export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimen
     `## Part Spec reference\n${specReference()}`,
     `## Safety rules\n${SAFETY_RULES}`,
     `## Materials\n${MATERIAL_LIMITS}`,
+    `## Photos and sizes\n${REFERENCE_OBJECTS}`,
     `## Anchors (millimeters)\n${anchorLines}\nCall list_anchors for full details.`,
     ...(dimensions.length
       ? [

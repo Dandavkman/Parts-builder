@@ -4,6 +4,16 @@ import type { AgentEvent } from "./types";
 
 const play = (events: AgentEvent[]) => events.reduce(applyEvent, sendMessage(initialChat, "make a plate"));
 
+describe("dimension events", () => {
+  it("shows a noted dimension with where it came from", () => {
+    const state = applyEvent(initialChat, {
+      type: "dimension",
+      dimension: { id: "vase_height", value_mm: 200, source: "photo", confidence: "estimated" },
+    });
+    expect(state.items.at(-1)).toEqual({ kind: "status", text: "Noted vase_height = 200 mm (estimated from the photo)" });
+  });
+});
+
 describe("chat state", () => {
   it("joins streamed text into one assistant message and ends not busy", () => {
     const s = play([
