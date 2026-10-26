@@ -37,6 +37,14 @@ describe("system prompt", () => {
     expect(PART_SPEC_V1_EXAMPLES.length).toBeGreaterThanOrEqual(14);
   });
 
+  it("tells the agent to look up products, cite sources and wait for confirmation", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS);
+    expect(prompt).toContain("Looking up measurements");
+    expect(prompt).toContain("web_search");
+    expect(prompt).toContain("source_url");
+    expect(prompt).toContain("Do not build with a value they have not confirmed");
+  });
+
   it("lists known dimensions with their source and confidence", () => {
     const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [
       { id: "vase_height", value_mm: 200, source: "researched", source_url: "https://example.com/spec", confidence: "published" },

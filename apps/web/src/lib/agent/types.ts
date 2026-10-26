@@ -51,7 +51,7 @@ export type AgentEvent =
   | { type: "text"; delta: string }
   | { type: "tool"; name: string; summary: string }
   | { type: "spec"; attempt: number; ok: boolean; errors: string[]; spec: Record<string, unknown> }
-  | { type: "dimension"; dimension: AgentDimension }
+  | { type: "dimension"; dimension: AgentDimension; pending?: boolean }
   | { type: "question"; question: string }
   | { type: "usage"; usage: TokenUsage }
   | { type: "done"; outcome: AgentOutcome; attempts: number }

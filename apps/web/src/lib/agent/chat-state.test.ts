@@ -5,6 +5,15 @@ import type { AgentEvent } from "./types";
 const play = (events: AgentEvent[]) => events.reduce(applyEvent, sendMessage(initialChat, "make a plate"));
 
 describe("dimension events", () => {
+  it("asks the user to confirm a value found online", () => {
+    const state = applyEvent(initialChat, {
+      type: "dimension",
+      pending: true,
+      dimension: { id: "case_width", value_mm: 74.5, source: "researched", source_url: "https://example.com/s", confidence: "published" },
+    });
+    expect(state.items.at(-1)).toMatchObject({ kind: "status", text: expect.stringContaining("Please confirm") });
+  });
+
   it("shows a noted dimension with where it came from", () => {
     const state = applyEvent(initialChat, {
       type: "dimension",

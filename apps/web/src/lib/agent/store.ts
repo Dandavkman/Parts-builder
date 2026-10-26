@@ -242,6 +242,7 @@ const DIMENSIONS_LABEL = "Dimensions";
 
 /** Records a named length for the design, replacing any earlier one with the same id. */
 export async function saveDimension(db: Db, designId: string, dimension: AgentDimension): Promise<void> {
+  if (dimension.confidence === "published") return saveSuggestion(db, designId, dimension);
   const [row] = await db
     .select()
     .from(designReferences)
@@ -252,4 +253,69 @@ export async function saveDimension(db: Db, designId: string, dimension: AgentDi
   }
   const others = row.dimensions.filter((d) => d.id !== dimension.id);
   await db.update(designReferences).set({ dimensions: [...others, dimension] }).where(eq(designReferences.id, row.id));
+}
+
+const SUGGESTION_KIND = "researched";
+
+/** A value found online. Kept unconfirmed, so `loadReferences` hides it from the agent until the user confirms. */
+async function saveSuggestion(db: Db, designId: string, dimension: AgentDimension): Promise<void> {
+  const mine = and(
+    eq(designReferences.designId, designId),
+    eq(designReferences.kind, SUGGESTION_KIND),
+    eq(designReferences.label, dimension.id),
+  );
+  await db.delete(designReferences).where(and(mine, sql`${designReferences.confirmedAt} IS NULL`));
+  await addReference(db, designId, {
+    kind: SUGGESTION_KIND,
+    label: dimension.id,
+    dimensions: [dimension],
+    accuracyNote: dimension.source_url ? `Found at ${dimension.source_url}` : undefined,
+    confirmed: false,
+  });
+}
+
+/** Values found online that the user has not yet confirmed. */
+export async function listPendingDimensions(db: Db, designId: string): Promise<AgentDimension[]> {
+  const rows = await db
+    .select({ dimensions: designReferences.dimensions })
+    .from(designReferences)
+    .where(
+      and(
+        eq(designReferences.designId, designId),
+        eq(designReferences.kind, SUGGESTION_KIND),
+        sql`${designReferences.confirmedAt} IS NULL`,
+      ),
+    )
+    .orderBy(asc(designReferences.createdAt));
+  return rows.flatMap((r) => r.dimensions);
+}
+
+/**
+ * The user's answer to a value found online. Confirming makes it available to the agent; a corrected
+ * number is stored as the user's own. Rejecting deletes it.
+ */
+export async function resolvePendingDimension(
+  db: Db,
+  designId: string,
+  id: string,
+  answer: { action: "confirm"; value_mm?: number } | { action: "reject" },
+): Promise<"ok" | "not_found"> {
+  const pending = and(
+    eq(designReferences.designId, designId),
+    eq(designReferences.kind, SUGGESTION_KIND),
+    eq(designReferences.label, id),
+    sql`${designReferences.confirmedAt} IS NULL`,
+  );
+  const [row] = await db.select().from(designReferences).where(pending);
+  if (!row) return "not_found";
+  if (answer.action === "reject") {
+    await db.delete(designReferences).where(eq(designReferences.id, row.id));
+    return "ok";
+  }
+  const corrected = answer.value_mm !== undefined && answer.value_mm !== row.dimensions[0]?.value_mm;
+  const dimensions = row.dimensions.map((d) =>
+    corrected ? { ...d, value_mm: answer.value_mm!, source: "user" as const, confidence: "stated" as const, note: `${d.note ?? ""} (corrected by the user)`.trim() } : d,
+  );
+  await db.update(designReferences).set({ dimensions, confirmedAt: new Date() }).where(eq(designReferences.id, row.id));
+  return "ok";
 }

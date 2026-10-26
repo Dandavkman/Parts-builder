@@ -34,6 +34,8 @@ export function Workspace() {
   const [photo, setPhoto] = useState<ShrunkPhoto | null>(null);
   const [photoCount, setPhotoCount] = useState(0);
   const [dimensions, setDimensions] = useState<AgentDimension[]>([]);
+  const [pending, setPending] = useState<AgentDimension[]>([]);
+  const [edits, setEdits] = useState<Record<string, string>>({});
   const designIdRef = useRef<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -78,6 +80,7 @@ export function Workspace() {
       items: ChatItem[];
       dimensions?: AgentDimension[];
       photoCount?: number;
+      pendingDimensions?: AgentDimension[];
     };
     setNotice(null);
     setVersions(data.versions);
@@ -85,6 +88,7 @@ export function Workspace() {
     setSpec(data.currentSpec);
     setDimensions(data.dimensions ?? []);
     setPhotoCount(data.photoCount ?? 0);
+    setPending(data.pendingDimensions ?? []);
     if (reopen) {
       designIdRef.current = id;
       setChat(openDesign(id, data.items));
@@ -102,6 +106,8 @@ export function Workspace() {
     setCurrent(null);
     setSpec(null);
     setDimensions([]);
+    setPending([]);
+    setEdits({});
     setPhotoCount(0);
     clearPhoto();
     setNotice(null);
@@ -117,6 +123,24 @@ export function Workspace() {
     }).catch(() => null);
     if (response?.ok) await loadDesign(id, false);
     else setNotice("Could not switch versions.");
+  }
+
+  /** The user's answer to a value found online: confirm it (optionally corrected) or reject it. */
+  async function answerSuggestion(item: AgentDimension, action: "confirm" | "reject") {
+    const id = designIdRef.current;
+    if (!id) return;
+    const typed = Number(edits[item.id]);
+    const response = await fetch(`/api/designs/${id}/dimensions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: item.id,
+        action,
+        ...(action === "confirm" && edits[item.id] !== undefined && Number.isFinite(typed) ? { value_mm: typed } : {}),
+      }),
+    }).catch(() => null);
+    if (!response?.ok) setNotice("Could not save your answer.");
+    await loadDesign(id, false);
   }
 
   /** A slider edit: rebuilt on the server without the AI; saved as a new version only if it builds. */
@@ -300,6 +324,35 @@ export function Workspace() {
             <a className="underline" href={download("step")}>STEP</a>
             <a className="underline" href={download("stl")}>STL</a>
           </div>
+        )}
+        {pending.length > 0 && (
+          <ul className="mt-2 space-y-1 rounded border border-amber-400 p-2 text-xs" aria-label="Found online">
+            {pending.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center gap-2">
+                <span>Found online: {d.id} =</span>
+                <input
+                  type="number"
+                  min={0}
+                  aria-label={`${d.id} in millimeters`}
+                  value={edits[d.id] ?? String(d.value_mm)}
+                  onChange={(e) => setEdits((s) => ({ ...s, [d.id]: e.target.value }))}
+                  className="w-20 rounded border border-zinc-300 bg-transparent px-1 py-0.5 dark:border-zinc-700"
+                />
+                <span>mm</span>
+                {d.source_url && (
+                  <a className="underline" href={d.source_url} target="_blank" rel="noreferrer noopener">
+                    source
+                  </a>
+                )}
+                <button type="button" onClick={() => void answerSuggestion(d, "confirm")} disabled={chat.busy} className="rounded bg-zinc-900 px-2 py-0.5 text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900">
+                  Confirm
+                </button>
+                <button type="button" onClick={() => void answerSuggestion(d, "reject")} disabled={chat.busy} className="underline disabled:opacity-40">
+                  Not right
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
         {dimensions.length > 0 && (
           <ul className="mt-2 space-y-0.5 text-xs" aria-label="Known sizes">

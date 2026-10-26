@@ -45,6 +45,11 @@ export const REFERENCE_OBJECTS = `
 Photos. A photo shows shape and proportion but not size. Take sizes only from (a) a dimension the user states, or (b) an object of known size in the same plane as the subject. Known sizes: bank or credit card 85.6 x 54.0 mm; US quarter 24.26 mm across; US penny 19.05 mm; Euro 1 coin 23.25 mm; A4 paper 210 x 297 mm; US letter paper 215.9 x 279.4 mm. If a photo is taken at an angle or the object is not in the same plane, say so, and ask for one measured dimension with ask_user. Record every size you rely on with add_dimension (confidence "stated" for user numbers, "estimated" for photo readings, with how in the note), and tell the user which numbers are estimates and ask them to confirm those that matter before you build.
 `.trim();
 
+/** How to look up published measurements (decision D5: a few searches per design, user confirms each value). */
+export const RESEARCH_RULES = `
+Looking things up. When the user names a real product or part ("make a case for the Acme X100") and gives no measurements, use web_search to find them. Prefer the maker's own page or spec sheet over resellers, and check that the model number matches. Record every value you will rely on with add_dimension, confidence "published", with source_url and a note naming the measurement (outer diameter, overall height). A published value is only a suggestion until the user confirms it: after recording, stop, tell them what you found with the source, and ask them to press Confirm or correct the number. Do not build with a value they have not confirmed. If two sources disagree, say so and ask. You have only a few searches per design; do not search for things you can ask the user.
+`.trim();
+
 export function describeDimension(d: AgentDimension): string {
   const where = d.source_url ? `, source ${d.source_url}` : "";
   return `- ${d.id} = ${d.value_mm} mm (${d.confidence}, from ${d.source}${where})${d.note ? `: ${d.note}` : ""}`;
@@ -62,6 +67,7 @@ export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimen
     `## Safety rules\n${SAFETY_RULES}`,
     `## Materials\n${MATERIAL_LIMITS}`,
     `## Photos and sizes\n${REFERENCE_OBJECTS}`,
+    `## Looking up measurements\n${RESEARCH_RULES}`,
     `## Anchors (millimeters)\n${anchorLines}\nCall list_anchors for full details.`,
     ...(dimensions.length
       ? [

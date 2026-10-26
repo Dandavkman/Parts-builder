@@ -50,6 +50,7 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | `ANTHROPIC_API_KEY` | B1.8 (design agent) |
 | `DATABASE_URL` | B1.8b (Neon pooled connection string; tick Sensitive; read at request time, tables are created on first use) |
 | `DESIGN_AGENT_MODEL` | B1.8a (optional; model id for the design agent, default `claude-sonnet-5-5`) |
+| `DESIGN_AGENT_WEB_SEARCH` | B1.16 (optional; `off` stops the agent searching the web for product measurements, which costs about 1 cent per search; the Anthropic Console must allow web search for it to work, and the agent carries on without it if it does not) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | B1.1 (scan upload) |
 | `GEOMETRY_SERVICE_URL` | B0.7 (address of the Fly.io geometry service) |
 | `GEOMETRY_SERVICE_TOKEN` | B1.11c (shared secret; must equal the Fly secret of the same name; server-side only, never `NEXT_PUBLIC_`) |

@@ -3,6 +3,7 @@ import {
   getOwnedVersion,
   listVersions,
   loadHistory,
+  listPendingDimensions,
   loadPhotos,
   loadReferences,
 } from "../../../../lib/agent/store";
@@ -27,12 +28,13 @@ export async function GET(
     const design = await getOwnedDesign(db, id, who.ownerId);
     if (!design)
       return Response.json({ error: "Design not found." }, { status: 404 });
-    const [versions, history, current, references, photos] = await Promise.all([
+    const [versions, history, current, references, photos, pending] = await Promise.all([
       listVersions(db, id),
       loadHistory(db, id),
       getOwnedVersion(db, id, who.ownerId, "current"),
       loadReferences(db, id),
       loadPhotos(db, id),
+      listPendingDimensions(db, id),
     ]);
     return Response.json(
       {
@@ -42,6 +44,7 @@ export async function GET(
         currentSpec: current?.spec ?? null,
         dimensions: references.dimensions,
         photoCount: photos.length,
+        pendingDimensions: pending,
       },
       { headers: { "cache-control": "private, no-store" } },
     );

@@ -54,6 +54,9 @@ export function applyEvent(state: ChatState, event: AgentEvent): ChatState {
     }
     case "dimension": {
       const d = event.dimension;
+      if (event.pending) {
+        return { ...state, items: [...state.items, { kind: "status", text: `Found ${d.id} = ${d.value_mm} mm online. Please confirm it on the right before I use it.` }] };
+      }
       const how = d.confidence === "stated" ? "from you" : d.confidence === "estimated" ? "estimated from the photo" : "published";
       return { ...state, items: [...state.items, { kind: "status", text: `Noted ${d.id} = ${d.value_mm} mm (${how})` }] };
     }
