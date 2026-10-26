@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { buildWithGeometryService } from "../../../lib/agent/geometry-client";
 import { anthropicTurn, DEFAULT_MODEL, runAgent } from "../../../lib/agent/loop";
 import { buildSystemPrompt } from "../../../lib/agent/prompt";
+import { countWebSearches, WEB_SEARCHES_PER_DESIGN } from "../../../lib/agent/tools";
 import { parseRequest } from "../../../lib/agent/request";
 import {
   addPhoto,
@@ -20,6 +21,9 @@ import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { requireOwner } from "../../../lib/require-owner";
 
 export const maxDuration = 300;
+
+/** Web lookups are on unless `DESIGN_AGENT_WEB_SEARCH=off` (for example if the Console has not enabled the tool). */
+const webSearchEnabled = () => process.env.DESIGN_AGENT_WEB_SEARCH !== "off";
 
 /** A short, secret-free reason for the chat. API errors carry a status and message; our own errors are plain text. */
 function describeFailure(error: unknown): string {
@@ -93,6 +97,7 @@ export async function POST(request: Request) {
           build: buildWithGeometryService,
           emit,
           record,
+          searchesLeft: webSearchEnabled() ? Math.max(0, WEB_SEARCHES_PER_DESIGN - countWebSearches(saved)) : 0,
           saveDimension: (dimension) => saveDimension(db, designId, dimension),
         });
       } catch (error) {

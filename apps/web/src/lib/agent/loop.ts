@@ -1,5 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { distanceMm, formatBuildOutcome, parseDimension, TOOLS } from "./tools";
+import { distanceMm, formatBuildOutcome, parseDimension, TOOLS, webSearchTool } from "./tools";
 import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
 
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
@@ -62,6 +62,8 @@ export interface AgentOptions {
   record?: Recorder;
   /** Remembers a dimension the agent recorded with `add_dimension`. */
   saveDimension?: (dimension: AgentDimension) => Promise<void>;
+  /** Web searches this design may still use; 0 or undefined turns the web search tool off. */
+  searchesLeft?: number;
 }
 
 const emptyUsage = (): TokenUsage => ({
@@ -83,12 +85,15 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   let bestOk = false;
   let lastBuild: BuildOutcome | null = null;
 
+  // Web search is a Console setting; if the API says it is not available, carry on without it.
+  let searchOn = (options.searchesLeft ?? 0) > 0;
+
   const params = (extra: Partial<TurnParams> = {}): TurnParams => ({
     model: options.model ?? DEFAULT_MODEL,
     max_tokens: 16000,
     // The system prompt is large and identical across turns, so cache it.
     system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-    tools: TOOLS,
+    tools: searchOn ? [...TOOLS, webSearchTool(options.searchesLeft!)] : TOOLS,
     messages,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
@@ -101,7 +106,14 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   };
 
   const ask = async (extra?: Partial<TurnParams>): Promise<Message> => {
-    const message = await turn(params(extra), (delta) => emit({ type: "text", delta }));
+    let message: Message;
+    try {
+      message = await turn(params(extra), (delta) => emit({ type: "text", delta }));
+    } catch (error) {
+      if (!searchOn || !/web_search|web search/i.test(String((error as Error)?.message))) throw error;
+      searchOn = false;
+      message = await turn(params(extra), (delta) => emit({ type: "text", delta }));
+    }
     const u = message.usage;
     usage.input_tokens += u.input_tokens;
     usage.output_tokens += u.output_tokens;
@@ -128,6 +140,9 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
     const message = await ask();
     if (message.stop_reason === "refusal") return finish("refused");
     if (message.stop_reason === "max_tokens") throw new Error("The reply was cut off. Try a shorter request.");
+
+    // A long web search can pause the turn; sending the conversation back as it is lets it carry on.
+    if (message.stop_reason === "pause_turn") continue;
 
     const calls = message.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
     if (calls.length === 0) return finish("answered");
@@ -157,12 +172,18 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
           content = parsed;
           isError = true;
         } else {
-          const at = dimensions.findIndex((d) => d.id === parsed.id);
-          if (at >= 0) dimensions[at] = parsed;
-          else dimensions.push(parsed);
           await options.saveDimension?.(parsed);
-          content = `Recorded ${parsed.id} = ${parsed.value_mm} mm (${parsed.confidence}).`;
-          emit({ type: "dimension", dimension: parsed });
+          if (parsed.confidence === "published") {
+            // Found online: kept as a suggestion until the user confirms it, so it cannot reach a build.
+            content = `Saved ${parsed.id} = ${parsed.value_mm} mm as a suggestion from ${parsed.source_url}. It cannot be used until the user presses Confirm. Stop here and tell them what you found, with the source, and ask them to confirm or correct it; it becomes available on your next turn.`;
+            emit({ type: "dimension", dimension: parsed, pending: true });
+          } else {
+            const at = dimensions.findIndex((d) => d.id === parsed.id);
+            if (at >= 0) dimensions[at] = parsed;
+            else dimensions.push(parsed);
+            content = `Recorded ${parsed.id} = ${parsed.value_mm} mm (${parsed.confidence}).`;
+            emit({ type: "dimension", dimension: parsed });
+          }
         }
       } else if (call.name === "measure") {
         const d = distanceMm(anchors, input.from, input.to);
