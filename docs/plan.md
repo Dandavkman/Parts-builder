@@ -4,9 +4,9 @@ Oct 22, 2026 (revised Oct 26, 2026: general market, see *Revision: a general mar
 
 > This file is the repo copy of the living plan at https://claude.ai/artifact/NXJt6oedxhYFxrPxx2j5ZN. When the plan changes, update both.
 
-## Revision: a general market (proposed 2026-10-26)
+## Revision: a general market (2026-10-26)
 
-> **Status: proposal.** Nothing below changes code. Sections marked **Owner decides** need the Owner's answer before the Builder starts the tasks they block. The original car-only text is kept where it still applies; it is now the first *vertical* (Miata NA parts), not the whole product.
+> **Status: approved by the Owner on 2026-10-26 (decisions D1 to D5 below are answered), pending merge of this pull request.** The original car-only text is kept where it still applies; it is now the first *vertical* (Miata NA parts), not the whole product.
 
 The Owner's storyboard describes six steps, and none of them is about cars:
 
@@ -39,11 +39,11 @@ The Owner's storyboard describes six steps, and none of them is about cars:
 
 **Owner decisions for the revision.**
 
-- [ ] **D1. Safety categories for non-car parts. Owner decides.** Proposed to add to **Blocked**: firearm and weapon parts, medical devices and implants, child-restraint and car-seat parts, life-safety and climbing or rigging gear. Proposed to add to **Needs review**: anything that touches food or drink for repeated use (so the vase that holds water is allowed, but a drinking cup needs a food-safe material and review), electrical enclosures on mains power, and anything that carries a person's weight. The car categories do not change. The classifier's code is not touched until the Owner answers.
-- [ ] **D2. Multi-manufacturer quotes. Owner decides.** Proposed: the quote engine asks every active partner that supports the material and shows the user the options, each with our markup applied. The Owner's stored margin rule (rule 5) still holds per quote. This touches quote math (B2.5) and partner adapters (B2.8), so the Builder will not start it without an answer.
-- [ ] **D3. Launch focus. Owner decides.** Proposed: keep the Miata NA as the first fit-tested vertical (its scan and benchmarks are in progress), and add a second benchmark set of everyday objects (vase, box, holder, knob, bracket) that needs no scan. G1 then has two parts (see Phase 1).
-- [ ] **D4. Where photos are stored.** Proposed: until R2 keys exist (O0.3, O0.5), the browser shrinks each photo to at most 1,600 px on the long side (about 300 KB) and the web app stores it in Postgres. Later, photos move to R2. This is a free change inside the current stack. If the Owner prefers to wait for R2, the photo tasks wait.
-- [ ] **D5. Cost of looking up measurements.** The agent's web lookup is billed per search by the Claude API, on top of tokens. Proposed: a per-design cap on lookups (default 5) and a line in the AI cost dashboard (B2.11). The Builder will confirm the current price before building B1.16.
+- [x] **D1. Safety categories for non-car parts. Decided: yes, as proposed.** Added to **Blocked**: firearm and weapon parts, medical devices and implants, child-restraint and car-seat parts, life-safety and climbing or rigging gear. Added to **Needs review**: anything that touches food or drink for repeated use (so the vase that holds water is allowed, but a drinking cup needs a food-safe material and review), electrical enclosures on mains power, and anything that carries a person's weight. The car categories do not change. The classifier and its prompt text change in B1.13 and B2.4; the car categories do not.
+- [x] **D2. Multi-manufacturer quotes. Decided: yes.** The quote engine asks every active partner that supports the material and shows the user the options, each with our markup applied. The Owner's stored margin rule (rule 5) still holds per quote. This is in B2.5 and B2.8.
+- [x] **D3. Launch focus. Decided: yes.** Keep the Miata NA as the first fit-tested vertical (its scan and benchmarks are in progress), and add a second benchmark set of everyday objects (vase, box, holder, knob, bracket) that needs no scan. G1 then has two parts (see Phase 1).
+- [x] **D4. Where photos are stored. Decided: proposal accepted.** Until R2 keys exist (O0.3, O0.5), the browser shrinks each photo to at most 1,600 px on the long side (about 300 KB) and the web app stores it in Postgres. Later, photos move to R2. This is a free change inside the current stack.
+- [x] **D5. Cost of looking up measurements. Decided: agreed.** The agent's web lookup is billed per search by the Claude API, on top of tokens. A per-design cap on lookups (default 5) and a line in the AI cost dashboard (B2.11). The Builder confirms the current price before building B1.16.
 
 ## How to use this plan
 
@@ -110,11 +110,11 @@ People design parts by chatting with an AI, starting from a photo with known dim
 
 We launch with non-structural parts, the first fit-tested vertical being one vehicle platform, and the software refuses safety-critical parts outright.
 
-**Part categories.** The car categories below are unchanged. Everyday and household objects are proposed as allowed from Phase 1, subject to decision D1 for the extra blocked and needs-review categories.
+**Part categories.** The car categories below are unchanged. Everyday and household objects are allowed from Phase 1; the extra blocked and needs-review categories (decision D1) are in force.
 
 | Category | Examples | Status |
 | --- | --- | --- |
-| Everyday objects (proposed) | Vases and planters that do not hold hot liquids, boxes, organizers, holders, knobs, clips, replacement caps, hobby and display pieces | Allowed from Phase 1 once Part Spec 2.0 exists (B1.17) |
+| Everyday objects | Vases and planters that do not hold hot liquids, boxes, organizers, holders, knobs, clips, replacement caps, hobby and display pieces | Allowed from Phase 1 once Part Spec 2.0 exists (B1.17) |
 | Mounts and brackets | Oil cooler bracket, phone mount, sensor mount, catch can bracket | Allowed from Phase 1 |
 | Interior | Gauge pods, switch panels, trim pieces, cup holders, shifter surrounds | Allowed from Phase 1 |
 | Covers and trim | Engine covers, blanking plates, badges, grommets | Allowed from Phase 1 |
@@ -122,13 +122,13 @@ We launch with non-structural parts, the first fit-tested vertical being one veh
 | Underhood near heat | Anything within reach of exhaust or turbo | Needs review: material must be rated for the temperature |
 | Emissions-related | Intake or exhaust parts that change engine airflow | Needs review: may be illegal on road cars in some states (California CARB rules) |
 | Safety-critical | Brakes, suspension, steering, wheels and hubs, seat and seatbelt mounts, airbag areas, fuel system, tow points | **Blocked** |
-| Proposed additions (decision D1) | Blocked: weapon parts, medical devices and implants, child-restraint parts, life-safety and climbing gear. Needs review: food or drink contact, mains-power enclosures, anything carrying a person's weight | Not in force until the Owner decides |
+| Additions for non-car parts (decision D1) | Blocked: weapon parts, medical devices and implants, child-restraint parts, life-safety and climbing gear. Needs review: food or drink contact, mains-power enclosures, anything carrying a person's weight | In force, Owner decided 2026-10-26 |
 
 **Materials and processes.** The Owner fills in the real numbers from partner rate cards in O0.6. The Builder stores them in a table the admin console can edit, never hard-coded.
 
 | Process | Materials | Good for | Notes |
 | --- | --- | --- | --- |
-| FDM (proposed) | PLA, PETG, ABS, TPU | Everyday objects, prototypes, water-holding parts (PETG), flexible parts (TPU) | Cheapest; visible layer lines; needs the material table rows from O1.5 |
+| FDM | PLA, PETG, ABS, TPU | Everyday objects, prototypes, water-holding parts (PETG), flexible parts (TPU) | Cheapest; visible layer lines; needs the material table rows from O1.5 |
 | SLS or MJF nylon | PA12, PA11 | Most brackets, pods, trim | Default choice: cheap, strong, no support marks |
 | SLS carbon-filled nylon | PA12-CF | Stiff brackets, engine bay | Higher heat tolerance than plain nylon |
 | CNC machining | 6061 aluminum | Flat or simple brackets that carry load | Limits shapes; added in Phase 3 |
@@ -243,7 +243,7 @@ CLAUDE.md               Rules for the Builder (copied from the handoff protocol)
 | chat\_messages | design, role, content, tool calls, tokens used | 1 |
 | materials | process, name, minimum wall, minimum hole, maximum build size, price parameters, allowed categories, active | 2 |
 | print\_partners | name, adapter type (manual or API), contact, materials offered, lead times | 2 |
-| quotes | design version, partner, material, quantity (several quotes per design version, one per partner, if D2 is approved), partner cost, markup, fees, shipping, total, expiry | 2 |
+| quotes | design version, partner, material, quantity (several quotes per design version, one per partner), partner cost, markup, fees, shipping, total, expiry | 2 |
 | orders | user, quote, Stripe ids, status, shipping address, partner order reference, tracking, safety confirmation | 2 |
 | safety\_reviews | design version, classifier result, reviewer, decision, notes | 2 |
 | subscriptions | user, Stripe subscription, plan, usage counters | 2 |
@@ -309,14 +309,14 @@ Phase 1 proves the core loop: start from a scan, a photo with known dimensions, 
 | B1.11 | **Downloads.** STL and STEP download for any version. | Downloaded STEP opens in a free CAD viewer with correct dimensions | B1.7 |
 | B1.12 | **Benchmark runner.** A script runs the 5 benchmark prompts through the agent and scores each one: valid spec, fit check passes, hole positions within 0.5 mm, number of attempts and tokens used. Run on demand, not on every commit, because it costs API tokens. | Report table is written to `benchmarks/results/` | B1.8, B1.10, O0.7 |
 
-**Added by the general-market revision (proposed).** These tasks are listed after B1.12 so existing IDs and branch names do not change. B1.13 to B1.16 need none of the scan work and can start now. Sizes are the Builder's estimates of changed lines, including tests.
+**Added by the general-market revision (approved 2026-10-26).** These tasks are listed after B1.12 so existing IDs and branch names do not change. B1.13 to B1.16 need none of the scan work and can start now. Sizes are the Builder's estimates of changed lines, including tests.
 
 | ID | Task | Done when | Needs |
 | --- | --- | --- | --- |
-| B1.13 | **Generalize the words.** Product copy, the agent's system prompt and the safety rules text move from "car parts" to "parts". Safety rules become named rule sets (vehicle, everyday) so the car rules do not change. No classifier behavior change. About 150 lines. | Existing agent tests pass; a prompt test shows the car rules are byte-identical and the everyday rule set is present | D1 for the new categories; the wording task can go ahead without it |
+| B1.13 | **Generalize the words.** Product copy, the agent's system prompt and the safety rules text move from "car parts" to "parts". Safety rules become named rule sets (vehicle, everyday) so the car rules do not change. No classifier behavior change. About 150 lines. | Existing agent tests pass; a prompt test shows the car rules are byte-identical and the everyday rule set is present | B1.8 |
 | B1.14 | **References.** Add `design_references` (additive migration) and a `dimension` anchor type. `designs.scan_id` stays but is no longer needed. `list_anchors` becomes `list_references` and returns anchors with their source. Fixture anchors become one reference among others. About 300 lines. | A design with no scan can hold anchors and dimensions; old designs open unchanged; migration test on PGlite | B1.8b |
-| B1.15 | **Photo input.** Take or choose a photo on the `/design` page (phone browser camera works through the file input), shrink it in the browser, send it to the agent as an image. The user states a dimension or picks a reference object, and the agent records it with `add_dimension`. The workspace shows a scale note and its accuracy. About 500 lines; likely two pull requests. | A photo of a coin on a table plus a 50 mm stated width gives anchors within the accuracy shown; test with a synthetic image whose true sizes are known | B1.14, D4 |
-| B1.16 | **Researched measurements.** The `lookup_dimensions` tool uses the Claude API's web search and fetch tools on the server. Each value is saved with its source link and shown for the user to confirm or edit before it becomes an anchor. Capped per design. About 350 lines. | A product with published dimensions produces cited, user-confirmed anchors; the cap stops the sixth lookup; an unconfirmed value never reaches a build | B1.14, D5 |
+| B1.15 | **Photo input.** Take or choose a photo on the `/design` page (phone browser camera works through the file input), shrink it in the browser, send it to the agent as an image. The user states a dimension or picks a reference object, and the agent records it with `add_dimension`. The workspace shows a scale note and its accuracy. About 500 lines; likely two pull requests. | A photo of a coin on a table plus a 50 mm stated width gives anchors within the accuracy shown; test with a synthetic image whose true sizes are known | B1.14 |
+| B1.16 | **Researched measurements.** The `lookup_dimensions` tool uses the Claude API's web search and fetch tools on the server. Each value is saved with its source link and shown for the user to confirm or edit before it becomes an anchor. Capped per design. About 350 lines. | A product with published dimensions produces cited, user-confirmed anchors; the cap stops the sixth lookup; an unconfirmed value never reaches a build | B1.14 |
 | B1.17 | **Part Spec 2.0: solids, not just plates.** Add extruded outlines (boxes and prisms), revolved profiles (vases, knobs), shell (hollow with a wall thickness and an open top), linear and circular patterns of features, and a surface texture (ridges, grooves, a repeating motif). Spec 1.1 stays buildable; one new schema file. Builder code follows the existing feature-per-function and golden-file pattern. About 1,200 to 1,500 lines; at least three pull requests (extrude and shell, revolve, patterns and texture). | Each feature has an example and a golden-file test; a "square vase, 200 mm tall, 2 mm walls, ridged" prompt builds and its volume matches a hand calculation within 1% | B1.7 |
 | B1.18 | **Checks without a scan.** A dimension check compares the built part's size to the stated dimensions and reports each difference. A wall-thickness check for the chosen material runs early (it is B2.3 pulled forward, FDM first). The scan fit check (B1.10) is unchanged and only runs when a scan reference exists. About 300 lines. | A part built 1 mm too tall is flagged against its stated height; a 0.8 mm wall fails an FDM minimum of 1.2 mm | B1.17 |
 | B1.19 | **Starting point screen.** `/design` opens with four choices (photo, look it up, scan, describe). The viewer's see-through scan toggle appears only when a scan exists. About 250 lines. | Each of the four choices starts a design; a design with no scan never shows scan controls | B1.15, B1.16 |
@@ -329,9 +329,9 @@ Phase 1 proves the core loop: start from a scan, a photo with known dimensions, 
 - [ ] **O1.3** First lawyer meeting: terms of service, who owns a design, liability limits, the blocked and needs-review lists, and the fit-failure policy. Ask an insurance broker for product liability quotes.
 - [ ] **O1.4** Recruit 10–20 alpha testers who own the launch car. Collect their emails and, if they have them, their scans.
 - [ ] **O1.5** Turn the partner data from O0.6 into the material table: process, material, minimum wall, minimum hole, maximum size, price per unit volume, setup fee, lead time. Include FDM rows (PLA, PETG, ABS, TPU) and ask each partner whether they print FDM.
-- [ ] **O1.6** **Owner decides** D1 to D5 in the revision section. Pick and print the 5 everyday benchmark objects, and write each one's stated dimensions from a ruler or calipers.
+- [ ] **O1.6** Pick and print the 5 everyday benchmark objects, and write each one's stated dimensions from a ruler or calipers.
 
-**Gate G1.** At least 4 of the 5 car benchmark parts were designed through chat in under 15 minutes each, printed, and fit the car with no more than light sanding. At least 4 of the 5 everyday objects, started from a photo or looked-up measurements, were printed and measure within 1 mm of their stated dimensions (the Owner may tighten this number). The benchmark reports show both. The Owner signs off, then runs the Architect review before Phase 2. If decision D3 keeps one vertical only, the other half of the gate is dropped.
+**Gate G1.** At least 4 of the 5 car benchmark parts were designed through chat in under 15 minutes each, printed, and fit the car with no more than light sanding. At least 4 of the 5 everyday objects, started from a photo or looked-up measurements, were printed and measure within 1 mm of their stated dimensions (the Owner may tighten this number). The benchmark reports show both. The Owner signs off, then runs the Architect review before Phase 2. 
 
 ## Phase 2: Launch (about 10 weeks)
 
@@ -344,7 +344,7 @@ Phase 2 turns the prototype into a business that takes money: accounts and plans
 | B2.1 | **Plans and limits.** Free and Pro plans through Stripe Billing. Enforce limits on AI messages per month, saved designs and STEP export. Show usage in the account page. | A free user hitting the limit sees an upgrade prompt; Pro removes it | O2.3 |
 | B2.2 | **Dashboard.** Lists of my scans, my designs and my orders, with search and status. | All three lists load in under 1 second with 100 items | B1.9 |
 | B2.3 | **Printability checks.** (The wall and hole rules for FDM arrive earlier in B1.18.) Per material, from the material table: minimum wall thickness (with thin spots highlighted), minimum hole size, fits the build size, closed solid with no gaps. Show pass or fail per material. | Each rule has a test part that fails it and one that passes | O1.5 |
-| B2.4 | **Safety guard.** A fast Claude model labels each design request and finished spec with a category (the car categories, plus the everyday categories if the Owner approves D1). Blocked stops the session. Needs review allows designing but holds ordering until an admin approves. Log every decision. | All examples in the category table are labeled correctly; an admin can approve or reject from the queue | B2.7 |
+| B2.4 | **Safety guard.** A fast Claude model labels each design request and finished spec with a category (the car categories plus the everyday categories from D1). Blocked stops the session. Needs review allows designing but holds ordering until an admin approves. Log every decision. | All examples in the category table are labeled correctly; an admin can approve or reject from the queue | B2.7 |
 | B2.5 | **Quote engine.** Price = partner cost estimate (from volume, size and the material's rate card) + setup fee + our markup + payment fees + shipping. Store every component. Quotes expire after 14 days. If D2 is approved, one quote per capable partner is stored and shown, cheapest first, and the user picks. | Quotes for the 5 benchmark parts are within 15% of real partner quotes the Owner collects | O1.5, O2.3 |
 | B2.6 | **Checkout.** Stripe Checkout with Stripe Tax and a shipping address. The user confirms the part is not safety-critical and accepts the fit terms before paying. A Stripe webhook creates the order. | A test-mode purchase creates an order with the confirmation stored | B2.5, O2.2 |
 | B2.7 | **Admin console.** Order queue by status, production file download (STEP, 3MF and a one-page job sheet with material, quantity and critical dimensions), status changes, tracking numbers, refunds, the safety review queue, material and rate-card editing, and user lookup. Admin-only access. | Owner processes a test order from paid to shipped without touching the database | B2.6 |
@@ -565,7 +565,7 @@ The two risks most likely to sink the business are parts that don't fit and a pa
 
 - [ ] Working name and domain (O0.1) — blocks B2.10
 - [ ] Launch car platform and first part type (O0.4) — blocks B1.12 benchmarks
-- [ ] Revision decisions D1 to D5 (O1.6) — D1 blocks the everyday categories in B2.4; D2 blocks B2.5 and B2.8; D3 sets the gate; D4 blocks B1.15; D5 blocks B1.16
+- [ ] Revision decisions D1 to D5: all answered on 2026-10-26
 - [ ] Launch print partner and backup (O2.1) — blocks B2.8
 - [ ] Markup, Pro plan price and limits, fit-failure policy (O2.3) — blocks B2.1, B2.5
 - [ ] Fit-failure rate target for G2 (G2) — blocks starting Phase 3
