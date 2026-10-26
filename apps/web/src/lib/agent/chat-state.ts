@@ -50,7 +50,8 @@ export function applyEvent(state: ChatState, event: AgentEvent): ChatState {
       const text = event.ok
         ? `Attempt ${event.attempt}: the part built`
         : `Attempt ${event.attempt}: ${event.errors.length === 1 ? "1 problem" : `${event.errors.length} problems`}, fixing: ${event.errors.join("; ")}`;
-      return { ...state, builtCount: state.builtCount + (event.ok ? 1 : 0), items: [...state.items, { kind: "status", text }] };
+      const notes: ChatItem[] = (event.checks ?? []).map((c) => ({ kind: "status", text: c }));
+      return { ...state, builtCount: state.builtCount + (event.ok ? 1 : 0), items: [...state.items, { kind: "status", text }, ...notes] };
     }
     case "dimension": {
       const d = event.dimension;

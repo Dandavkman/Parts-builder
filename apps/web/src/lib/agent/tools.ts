@@ -33,6 +33,11 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
         },
         note: { type: "string", description: "How you know it, such as 'user said 20 cm', 'scaled from the coin in the photo' or 'spec sheet, outer diameter'." },
         source_url: { type: "string", description: "The https page the value came from. Required when confidence is 'published'." },
+        measures: {
+          type: "string",
+          enum: ["overall_width", "overall_length", "overall_height", "overall_diameter"],
+          description: "Set this when the value is an overall size of the finished part (X, Y, Z up, or the larger of X and Y for a round part). We then check every build against it and tell you if it is off.",
+        },
       },
       required: ["id", "value_mm", "confidence", "note"],
       additionalProperties: false,
@@ -68,17 +73,18 @@ export function distanceMm(anchors: AgentAnchor[], from: unknown, to: unknown): 
   return Math.hypot(...a.point_mm.map((v, i) => v - b.point_mm[i]));
 }
 
-export function formatBuildOutcome(outcome: BuildOutcome): string {
+export function formatBuildOutcome(outcome: BuildOutcome, checks: string[] = []): string {
   return outcome.ok
-    ? "The spec built successfully."
+    ? ["The spec built successfully.", ...checks].join("\n")
     : `The spec did not build:\n${outcome.errors.map((e) => `- ${e}`).join("\n")}`;
 }
 
+const MEASURES = ["overall_width", "overall_length", "overall_height", "overall_diameter"];
 const DIMENSION_ID = /^[a-z][a-z0-9_]{0,39}$/;
 
 /** Checks the model's `add_dimension` input. Returns the dimension, or a sentence the model can act on. */
 export function parseDimension(input: Record<string, unknown>): AgentDimension | string {
-  const { id, value_mm, confidence, note, source_url } = input;
+  const { id, value_mm, confidence, note, source_url, measures } = input;
   if (typeof id !== "string" || !DIMENSION_ID.test(id)) return "id must be lowercase letters, digits and underscores, starting with a letter.";
   if (typeof value_mm !== "number" || !Number.isFinite(value_mm) || value_mm <= 0 || value_mm > 5000) {
     return "value_mm must be a number above 0 and at most 5000.";
@@ -87,7 +93,16 @@ export function parseDimension(input: Record<string, unknown>): AgentDimension |
     return "confidence must be 'stated', 'estimated' or 'published'.";
   }
   if (typeof note !== "string" || note.trim() === "") return "note must say how you know the value.";
-  const base = { id, value_mm, confidence, note: note.slice(0, 200) } as const;
+  if (measures !== undefined && !MEASURES.includes(measures as never)) {
+    return `measures must be one of ${MEASURES.join(", ")}.`;
+  }
+  const base = {
+    id,
+    value_mm,
+    confidence,
+    note: note.slice(0, 200),
+    ...(measures !== undefined ? { measures: measures as NonNullable<AgentDimension["measures"]> } : {}),
+  } as const;
   if (confidence !== "published") return { ...base, source: confidence === "stated" ? "user" : "photo" };
   if (typeof source_url !== "string" || !/^https:\/\/[^\s]{4,500}$/.test(source_url)) {
     return "A published value needs source_url, the https page it came from.";

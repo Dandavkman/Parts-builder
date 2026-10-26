@@ -1,4 +1,5 @@
 import { geometryAuthHeaders, geometryServiceUrl } from "../geometry";
+import { stlBounds } from "./stl";
 import type { AgentAnchor, BuildSpec } from "./types";
 
 export type GeometryFormat = "step" | "stl" | "glb";
@@ -41,5 +42,9 @@ export async function buildFile(
 /** Builds as STL just to learn whether the spec is valid. */
 export const buildWithGeometryService: BuildSpec = async (spec, anchors) => {
   const built = await buildFile(spec, anchors, "stl");
-  return built.ok ? { ok: true } : built;
+  if (!built.ok) return built;
+  const bounds = stlBounds(built.body);
+  return bounds
+    ? { ok: true, size_mm: [0, 1, 2].map((i) => bounds.max[i] - bounds.min[i]) as [number, number, number] }
+    : { ok: true };
 }
