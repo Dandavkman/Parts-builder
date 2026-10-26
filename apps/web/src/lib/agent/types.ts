@@ -8,6 +8,31 @@ export interface AgentAnchor {
   note?: string;
 }
 
+/**
+ * A named length that is not a position, such as "vase height 200 mm". It comes from the user, from a
+ * photo read against a known size, or from a published source. Dimensions never reach the geometry
+ * service; the agent reads them and writes the numbers into the Part Spec, and the dimension check
+ * (B1.18) compares the built part against them.
+ */
+export interface AgentDimension {
+  id: string;
+  value_mm: number;
+  source: "user" | "photo" | "researched";
+  /** Where a researched value came from. */
+  source_url?: string;
+  /** How far to trust it: stated by the user, estimated from a photo, or published by a maker. */
+  confidence: "stated" | "estimated" | "published";
+  note?: string;
+}
+
+/** Everything a design knows about the real object: anchors for placement, and dimensions. */
+export interface DesignReferences {
+  anchors: AgentAnchor[];
+  dimensions: AgentDimension[];
+}
+
+export type ReferenceKind = "photo" | "researched" | "scan" | "stated";
+
 export interface TokenUsage {
   input_tokens: number;
   output_tokens: number;

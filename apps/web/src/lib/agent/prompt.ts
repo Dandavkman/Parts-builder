@@ -1,5 +1,5 @@
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
-import type { AgentAnchor } from "./types";
+import type { AgentAnchor, AgentDimension } from "./types";
 
 /** How a spec is put together. The exact fields come from the schema and examples quoted below. */
 export const SPEC_CONVENTIONS = `
@@ -40,7 +40,12 @@ export const MATERIAL_LIMITS = `
 Default material is PA12 nylon (SLS or MJF). Until the real material table exists, keep walls and plates at least 2 mm thick and holes at least 2 mm in diameter, and keep the whole part under 250 mm in every direction.
 `.trim();
 
-export function buildSystemPrompt(anchors: AgentAnchor[]): string {
+export function describeDimension(d: AgentDimension): string {
+  const where = d.source_url ? `, source ${d.source_url}` : "";
+  return `- ${d.id} = ${d.value_mm} mm (${d.confidence}, from ${d.source}${where})${d.note ? `: ${d.note}` : ""}`;
+}
+
+export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimension[] = []): string {
   const anchorLines = anchors
     .map((a) => `- ${a.id} (${a.type}) at [${a.point_mm.join(", ")}] mm${a.note ? `: ${a.note}` : ""}`)
     .join("\n");
@@ -52,5 +57,10 @@ export function buildSystemPrompt(anchors: AgentAnchor[]): string {
     `## Safety rules\n${SAFETY_RULES}`,
     `## Materials\n${MATERIAL_LIMITS}`,
     `## Anchors (millimeters)\n${anchorLines}\nCall list_anchors for full details.`,
+    ...(dimensions.length
+      ? [
+          `## Known dimensions\n${dimensions.map(describeDimension).join("\n")}\nUse these numbers in the Part Spec. "estimated" values came from a photo and are not exact: say so, and ask the user to confirm anything that matters.`,
+        ]
+      : []),
   ].join("\n\n");
 }

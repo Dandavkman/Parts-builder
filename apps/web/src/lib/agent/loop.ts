@@ -1,6 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { distanceMm, formatBuildOutcome, TOOLS } from "./tools";
-import type { AgentAnchor, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
+import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
 
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
 export const MAX_BUILD_ATTEMPTS = 6;
@@ -53,6 +53,8 @@ export interface AgentOptions {
   system: string;
   history: MessageParam[];
   anchors: AgentAnchor[];
+  /** Named lengths from photos, lookups or the user. Listed to the agent, never sent to the geometry service. */
+  dimensions?: AgentDimension[];
   build: BuildSpec;
   emit: (event: AgentEvent) => void;
   maxAttempts?: number;
@@ -70,6 +72,7 @@ const emptyUsage = (): TokenUsage => ({
 /** Tool-use loop for one user message. The agent only ever produces Part Spec JSON. */
 export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   const { turn, system, anchors, build, emit } = options;
+  const dimensions = options.dimensions ?? [];
   const maxAttempts = options.maxAttempts ?? MAX_BUILD_ATTEMPTS;
   const messages: MessageParam[] = [...options.history];
   const usage = emptyUsage();
@@ -140,8 +143,12 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
       let content: string;
       let isError = false;
       if (call.name === "list_anchors") {
-        content = JSON.stringify(anchors);
-        emit({ type: "tool", name: call.name, summary: `${anchors.length} anchors` });
+        content = JSON.stringify(dimensions.length ? { anchors, dimensions } : anchors);
+        emit({
+          type: "tool",
+          name: call.name,
+          summary: `${anchors.length} anchors${dimensions.length ? `, ${dimensions.length} dimensions` : ""}`,
+        });
       } else if (call.name === "measure") {
         const d = distanceMm(anchors, input.from, input.to);
         isError = typeof d === "string";

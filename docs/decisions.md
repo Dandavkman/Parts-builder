@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: References are a table; dimensions are separate from anchors (B1.14)
+
+The plan said a new `dimension` anchor type. Instead a dimension is its own small record (`id`, `value_mm`, `source`, `confidence`, optional source link) stored beside the anchors in the new `design_references` table, because an anchor has a position and a normal that the geometry service needs for placement, and a dimension has neither; mixing them would mean filtering them out at every build. The tool is still called `list_anchors` (not `list_references`) because saved conversations contain tool calls by name and renaming it would break replay of old designs; it now returns dimensions too when there are any. Only confirmed references reach the agent, so a looked-up value the user has not accepted (B1.16) can never be built into a part. `designs.scan_id` is untouched. The migration is additive (`0003_design_references`).
+
 ## 2026-10-26: Safety rules become named sets; product copy says "parts" (B1.13)
 
 The prompt's safety text is split into a vehicle set (the original wording, unchanged) and an everyday set with the categories the Owner approved in D1 (blocked: weapons, medical devices, child-restraint, life-safety and climbing gear; needs review: food and drink contact, mains enclosures, load-bearing for a person). The line "non-automotive parts are out of scope" is removed. The landing page and page description no longer say car. The classifier (B2.4) is not built yet.

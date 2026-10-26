@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { AgentAnchor } from "../agent/types";
+import type { AgentAnchor, AgentDimension } from "../agent/types";
 import { boolean, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 /** Owner is the Clerk user id (or "dev" in the local bypass). A users table arrives with plans in Phase 2. */
@@ -56,3 +56,24 @@ export const chatMessages = pgTable(
   },
   (t) => [unique("chat_messages_design_seq").on(t.designId, t.seq)],
 );
+
+/**
+ * Where a design's anchors and dimensions came from: a photo, a lookup, a scan, or numbers the user
+ * typed. A design with no references uses the stand-in fixture panel until real scans exist.
+ */
+export const designReferences = pgTable("design_references", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  designId: uuid("design_id")
+    .notNull()
+    .references(() => designs.id, { onDelete: "cascade" }),
+  /** photo, researched, scan or stated. */
+  kind: text("kind").notNull(),
+  label: text("label").notNull(),
+  anchors: jsonb("anchors").$type<AgentAnchor[]>().notNull().default(sql`'[]'::jsonb`),
+  dimensions: jsonb("dimensions").$type<AgentDimension[]>().notNull().default(sql`'[]'::jsonb`),
+  /** Plain words on how accurate this is, shown in the workspace. */
+  accuracyNote: text("accuracy_note"),
+  /** Set when the user confirmed the values. Unconfirmed references are not given to the agent. */
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
