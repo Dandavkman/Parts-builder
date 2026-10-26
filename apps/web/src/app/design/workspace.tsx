@@ -7,6 +7,7 @@ import type { AgentDimension } from "../../lib/agent/types";
 import { shrinkPhoto, type ShrunkPhoto } from "../../lib/photo";
 import { ModelViewer } from "../viewer/plate-viewer";
 import { Sliders } from "./sliders";
+import { START_CHOICES, type StartChoice } from "./start-choices";
 
 const PART_ERROR =
   "Could not load the part. The geometry service may be waking up (up to 40 seconds); send another message or reload.";
@@ -38,6 +39,7 @@ export function Workspace() {
   const [edits, setEdits] = useState<Record<string, string>>({});
   const designIdRef = useRef<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const draftRef = useRef<HTMLInputElement>(null);
 
   const clearPhoto = useCallback(() => {
     setPhoto((p) => {
@@ -46,6 +48,20 @@ export function Workspace() {
     });
     if (fileRef.current) fileRef.current.value = "";
   }, []);
+
+  function startWith(choice: StartChoice) {
+    if (!choice.available) {
+      setNotice(choice.hint);
+      return;
+    }
+    setNotice(null);
+    if (choice.id === "photo") {
+      fileRef.current?.click();
+      return;
+    }
+    if (choice.example) setDraft(choice.example);
+    draftRef.current?.focus();
+  }
 
   async function choosePhoto(file: File | undefined) {
     if (!file) return;
@@ -237,7 +253,19 @@ export function Workspace() {
       <section className="flex h-[560px] flex-col rounded border border-zinc-200 dark:border-zinc-800">
         <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
           {chat.items.length === 0 && (
-            <p className="text-zinc-500">For example: a flat bracket that bolts to both holes, with a 20 mm hole in the middle.</p>
+            <div className="grid gap-2 sm:grid-cols-2" aria-label="Ways to start">
+              {START_CHOICES.map((choice) => (
+                <button
+                  key={choice.id}
+                  type="button"
+                  onClick={() => startWith(choice)}
+                  className={`rounded border border-zinc-300 p-3 text-left dark:border-zinc-700 ${choice.available ? "hover:bg-zinc-100 dark:hover:bg-zinc-800" : "opacity-60"}`}
+                >
+                  <span className="block font-medium">{choice.title}</span>
+                  <span className="mt-1 block text-xs text-zinc-500">{choice.hint}</span>
+                </button>
+              ))}
+            </div>
           )}
           {chat.items.map((item, i) => (
             <p
@@ -292,6 +320,7 @@ export function Workspace() {
             Photo
           </button>
           <input
+            ref={draftRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             maxLength={4000}
