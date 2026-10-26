@@ -34,7 +34,7 @@ export interface Recorder {
     anchors: AgentAnchor[];
     ok: boolean;
     errors: string[];
-    createdBy: "agent";
+    createdBy: "agent" | "slider";
   }): Promise<void>;
 }
 
