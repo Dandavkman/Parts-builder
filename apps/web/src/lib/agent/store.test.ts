@@ -43,6 +43,18 @@ describe("design list, versions and undo", () => {
     ]);
   });
 
+  it("saves a slider edit as a new current version made by the slider", async () => {
+    const id = await createDesign(db, "slider_user", "t");
+    const rec = recorderFor(db, id);
+    await rec.version({ spec: { name: "a" }, ok: true, errors: [], createdBy: "agent", anchors: [] });
+    await rec.version({ spec: { name: "a" }, ok: true, errors: [], createdBy: "slider", anchors: [] });
+    expect((await listVersions(db, id)).map((v) => [v.version, v.createdBy])).toEqual([
+      [1, "agent"],
+      [2, "slider"],
+    ]);
+    expect((await getOwnedDesign(db, id, "slider_user"))?.currentVersion).toBe(2);
+  });
+
   it("makes an earlier version that built current, and refuses others", async () => {
     const id = await createDesign(db, "undoer", "t");
     const rec = recorderFor(db, id);

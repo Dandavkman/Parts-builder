@@ -25,6 +25,8 @@ Every model message goes in `chat_messages` with token counts, and every `propos
 
 `GET /api/designs` lists the owner's designs (newest first, up to 50). `GET /api/designs/<id>` returns one design with all its versions (including ones that failed to build, with their errors) and its saved conversation as chat items, so the page can reopen it. `POST /api/designs/<id>/current` with `{ "version": n }` makes an earlier version that built the current one (undo); it never deletes anything, so a later version can be made current again, and a version that did not build gives 409. All three are owner-only.
 
+`POST /api/designs/<id>/edit` with `{ "base_version": n, "spec": {...} }` is the slider route. The new spec must equal the base version's spec except for numbers (any other change gives 400), so sliders cannot add features or change text. It is rebuilt on the geometry service without calling the AI and saved as a new version with `created_by` `slider` only if it builds; a failed edit returns `{ ok: false, errors }` and saves nothing, so dragging through invalid values leaves no failed versions behind. The page shows a slider and a number box for every number under a key ending in `_mm` or `_deg` (up to 60), and sends a change after a 600 ms pause.
+
 `GET /api/designs/<design id>/versions/<number or current>/download?format=step|stl|glb` (default step) builds the saved spec and returns the file with a download name. Only the owner can use it. A version that did not build gives 409 with its errors. Each version keeps the anchors it was built against.
 
 ## The page

@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: Sliders edit numbers only, and failed edits are not saved (B1.9b, part 2)
+
+Every number under a `_mm` or `_deg` key gets a slider. A slider edit goes to `POST /api/designs/<id>/edit`, which checks the new spec has exactly the same shape and text as the version it was made from, so only numbers can change (this keeps the future safety classifier's view of a design valid, because sliders cannot add a feature or change a category). It rebuilds on the geometry service with no AI call and saves a new version (`created_by` = `slider`) only if the build works; a failed build is shown to the user and not saved, unlike agent attempts, because a drag passes through many values and would bury the history. Slider ranges are a guess from the current value (0 to double for sizes, symmetric for positions, -360 to 360 for angles); the number box accepts any value and the builder is the judge. The see-through scan toggle is still waiting for real scans.
+
 ## 2026-10-26: Earlier designs, version history and undo (B1.9b, part 1)
 
 B1.9b is split so each pull request stays small. Part 1 adds a list of earlier designs, a version list and undo; part 2 adds sliders and the edit-and-rebuild route; the see-through scan toggle waits for real scans (B1.2). Undo does not delete or rewrite anything: it moves `designs.current_version` to an earlier version that built, so any version can be made current again, and the viewer and downloads always show the current version by its number. A version that failed to build cannot be current. Reopening a design rebuilds its chat from the saved messages (what the user typed, what the agent said and asked, the user's answers to questions); tool calls are not shown. If the agent then adds a new version, it becomes current as before.

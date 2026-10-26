@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { applyEvent, initialChat, openDesign, parseLines, sendMessage, type ChatItem } from "../../lib/agent/chat-state";
+import { setAtPath, type SpecNumber } from "../../lib/agent/spec-numbers";
 import { ModelViewer } from "../viewer/plate-viewer";
+import { Sliders } from "./sliders";
 
 const PART_ERROR =
   "Could not load the part. The geometry service may be waking up (up to 40 seconds); send another message or reload.";
@@ -25,6 +27,7 @@ export function Workspace() {
   const [designs, setDesigns] = useState<DesignRow[]>([]);
   const [versions, setVersions] = useState<VersionRow[]>([]);
   const [current, setCurrent] = useState<number | null>(null);
+  const [spec, setSpec] = useState<Record<string, unknown> | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const designIdRef = useRef<string | null>(null);
 
@@ -42,12 +45,14 @@ export function Workspace() {
     }
     const data = (await response.json()) as {
       design: { currentVersion: number | null };
+      currentSpec: Record<string, unknown> | null;
       versions: VersionRow[];
       items: ChatItem[];
     };
     setNotice(null);
     setVersions(data.versions);
     setCurrent(data.design.currentVersion);
+    setSpec(data.currentSpec);
     if (reopen) {
       designIdRef.current = id;
       setChat(openDesign(id, data.items));
@@ -63,6 +68,7 @@ export function Workspace() {
     setChat(initialChat);
     setVersions([]);
     setCurrent(null);
+    setSpec(null);
     setNotice(null);
   }
 
@@ -74,8 +80,26 @@ export function Workspace() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ version }),
     }).catch(() => null);
-    if (response?.ok) setCurrent(version);
+    if (response?.ok) await loadDesign(id, false);
     else setNotice("Could not switch versions.");
+  }
+
+  /** A slider edit: rebuilt on the server without the AI; saved as a new version only if it builds. */
+  async function commitSlider(item: SpecNumber, value: number) {
+    const id = designIdRef.current;
+    if (!id || !spec || current === null) return;
+    const response = await fetch(`/api/designs/${id}/edit`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ base_version: current, spec: setAtPath(spec, item.path, value) }),
+    }).catch(() => null);
+    const data = (await response?.json().catch(() => null)) as { ok?: boolean; errors?: string[]; error?: string } | null;
+    if (data?.ok) {
+      setNotice(null);
+    } else {
+      setNotice(data?.errors?.join("; ") ?? data?.error ?? "Could not apply that change.");
+    }
+    await loadDesign(id, false);
   }
 
   async function send() {
@@ -209,6 +233,7 @@ export function Workspace() {
             <a className="underline" href={download("stl")}>STL</a>
           </div>
         )}
+        {spec && <Sliders spec={spec} disabled={chat.busy} onCommit={(item, value) => void commitSlider(item, value)} />}
         {versions.length > 0 && (
           <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto text-xs" aria-label="Versions">
             {[...versions].reverse().map((v) => (

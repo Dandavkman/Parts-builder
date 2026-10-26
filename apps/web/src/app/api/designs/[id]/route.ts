@@ -1,5 +1,6 @@
 import {
   getOwnedDesign,
+  getOwnedVersion,
   listVersions,
   loadHistory,
 } from "../../../../lib/agent/store";
@@ -24,12 +25,13 @@ export async function GET(
     const design = await getOwnedDesign(db, id, who.ownerId);
     if (!design)
       return Response.json({ error: "Design not found." }, { status: 404 });
-    const [versions, history] = await Promise.all([
+    const [versions, history, current] = await Promise.all([
       listVersions(db, id),
       loadHistory(db, id),
+      getOwnedVersion(db, id, who.ownerId, "current"),
     ]);
     return Response.json(
-      { design, versions, items: itemsFromHistory(history) },
+      { design, versions, items: itemsFromHistory(history), currentSpec: current?.spec ?? null },
       { headers: { "cache-control": "private, no-store" } },
     );
   } catch (error) {
