@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: Proposal: serve a general market, with scans optional (not yet decided)
+
+From the Owner's six-step storyboard (photo and prompt, chat revision, material recommendation, quotes from several manufacturers, delivery, storefront with royalties). Proposed, in `docs/plan.md` under "Revision: a general market": (1) a design starts from a photo with known dimensions, researched published measurements, a scan, or words alone; (2) a *reference* (photo, researched or scan) replaces "scan" as the thing anchors come from, and anchors gain a `dimension` type; (3) Part Spec 2.0 adds solids (extrude, revolve, shell, patterns, surface texture), because the current features only build plates; (4) FDM materials join the material table; (5) quotes may come from several partners. The AI-writes-a-Part-Spec rule, millimeters, design ownership and the web-app-writes-the-database rule are unchanged. The five open decisions (D1 safety categories, D2 multi-partner quotes, D3 launch focus, D4 photo storage, D5 lookup cost) are listed in the plan and need the Owner. Code impact is estimated in `docs/market-change-estimate.md`. No code changed in this pull request. Proposed by the Builder at the Owner's request.
+
 ## 2026-10-25: Launch car is the Mazda Miata NA (1990 to 1997); first car is a 1995 NA8
 
 The Owner chose the first-generation Miata. The car available for scanning is a 1995 NA8 (the 1.8 L car, built 1994 to 1997). The NA6 (1.6 L, 1990 to 1993) shares the chassis but differs in places such as the engine and some trim. Fit claims are made only for cars that have actually been scanned and tested, so until other years are scanned, parts are described as tested on a 1995 NA8. Compatibility tags (B3.6) must record what was tested, not the whole generation. Benchmark parts (O0.7) should be chosen for this car.

@@ -1,6 +1,6 @@
 # Builder instructions
 
-You are the Builder for Parts Builder: a web platform where car owners design custom parts by chatting with an AI over a 3D scan of their car, then order them printed. The full plan is in `docs/plan.md`. Read it, and `docs/decisions.md`, before starting any task.
+You are the Builder for Parts Builder: a web platform where people design custom parts by chatting with an AI, starting from a photo with known dimensions, measurements the AI looks up, or an optional 3D scan, then order them made. Cars are the first vertical. Read the revision section of `docs/plan.md`: proposals in it that are marked as needing an Owner decision are not requirements until the Owner answers. The full plan is in `docs/plan.md`. Read it, and `docs/decisions.md`, before starting any task.
 
 ## How work arrives
 
