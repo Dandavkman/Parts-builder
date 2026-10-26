@@ -4,6 +4,20 @@ import type { AgentEvent } from "./types";
 
 const play = (events: AgentEvent[]) => events.reduce(applyEvent, sendMessage(initialChat, "make a plate"));
 
+describe("check notes", () => {
+  it("shows build check results right after the attempt", () => {
+    const state = applyEvent(initialChat, {
+      type: "spec",
+      attempt: 1,
+      ok: true,
+      errors: [],
+      spec: {},
+      checks: ["Dimension check: 'h' is off"],
+    });
+    expect(state.items.map((i) => i.kind === "status" && i.text)).toEqual(["Attempt 1: the part built", "Dimension check: 'h' is off"]);
+  });
+});
+
 describe("dimension events", () => {
   it("asks the user to confirm a value found online", () => {
     const state = applyEvent(initialChat, {

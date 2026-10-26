@@ -250,6 +250,25 @@ describe("runAgent", () => {
     expect(JSON.stringify(requests[1].tools)).not.toContain("web_search");
   });
 
+  it("reports dimension and wall check results to the agent and the chat after a build", async () => {
+    const dims: AgentDimension[] = [
+      { id: "vase_height", value_mm: 200, source: "user", confidence: "stated", measures: "overall_height" },
+    ];
+    const build: BuildSpec = async () => ({ ok: true, size_mm: [80, 80, 195] });
+    const { result, events, requests } = run(
+      [reply([call("a", "propose_spec", { spec: { name: "v", features: [] } })]), reply([text("fixing")], "end_turn")],
+      build,
+      undefined,
+      dims,
+    );
+    await result;
+    const results = (requests[1].messages as { content: Block[] }[]).at(-1)!.content;
+    expect(String(results[0].content)).toContain("Dimension check: 'vase_height'");
+    expect(String(results[0].content)).toContain("5.0 mm too small");
+    expect(results[0].is_error).toBe(false);
+    expect(events.find((e) => e.type === "spec")).toMatchObject({ ok: true, checks: [expect.stringContaining("vase_height")] });
+  });
+
   it("returns an error result for unknown anchors and non-object specs", async () => {
     const { result, requests } = run(
       [
