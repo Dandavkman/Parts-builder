@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
-import { buildSystemPrompt, EVERYDAY_SAFETY_RULES, VEHICLE_SAFETY_RULES } from "./prompt";
+import { PART_SPEC_V2_EXAMPLES, PART_SPEC_V2_SCHEMA } from "./generated/part-spec-v2-reference";
+import { agentSpecVersion, buildSystemPrompt, EVERYDAY_SAFETY_RULES, VEHICLE_SAFETY_RULES } from "./prompt";
 import { parseRequest } from "./request";
 
 const schemaPath = new URL(
@@ -111,5 +112,40 @@ describe("parseRequest", () => {
     [{ message: "hi", design_id: 7 }],
   ])("rejects bad input %#", (body) => {
     expect(typeof parseRequest(body)).toBe("string");
+  });
+});
+
+describe("Part Spec 2.0 prompt (B1.17d)", () => {
+  const v2Path = new URL("../../../../../services/geometry/src/geometry/spec/part-spec.v2.schema.json", import.meta.url);
+
+  it("stays on 1.1 unless DESIGN_AGENT_SPEC_VERSION is exactly 2.0", () => {
+    expect(agentSpecVersion({})).toBe("1.1");
+    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "" })).toBe("1.1");
+    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "3" })).toBe("1.1");
+    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "2.0" })).toBe("2.0");
+  });
+
+  it("keeps the 1.1 prompt free of the body feature by default", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "1.1");
+    expect(prompt).not.toContain("Part Spec 2.0");
+    expect(prompt).toContain(JSON.stringify(PART_SPEC_V1_SCHEMA));
+  });
+
+  it("quotes the 2.0 schema, every example and the body conventions", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "2.0");
+    expect(prompt).toContain(JSON.stringify(PART_SPEC_V2_SCHEMA));
+    for (const example of PART_SPEC_V2_EXAMPLES) expect(prompt).toContain(JSON.stringify(example));
+    expect(prompt).toContain('"revolve"');
+    expect(prompt).toContain('"spec_version": "2.0"');
+    expect(prompt).not.toContain('Part Spec is JSON: {"spec_version": "1.1"');
+  });
+
+  it("matches the schema file and includes bodies and every older feature", () => {
+    expect(PART_SPEC_V2_SCHEMA).toEqual(JSON.parse(readFileSync(v2Path, "utf8")));
+    const types = featureTypes(PART_SPEC_V2_SCHEMA);
+    expect(types.has("body")).toBe(true);
+    const quoted = new Set(PART_SPEC_V2_EXAMPLES.flatMap((e) => ((e.features as { type: string }[]) ?? []).map((f) => f.type)));
+    for (const t of types) expect(quoted.has(t), `no 2.0 example for ${t}`).toBe(true);
+    expect(PART_SPEC_V2_EXAMPLES.every((e) => e.spec_version === "2.0")).toBe(true);
   });
 });
