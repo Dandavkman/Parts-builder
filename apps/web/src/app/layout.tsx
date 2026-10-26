@@ -6,7 +6,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Parts Builder",
-  description: "Design custom car parts that fit your exact car.",
+  description: "Design custom parts from a photo, measurements or a scan, and have them made.",
 };
 
 // The auth mode is read from the environment on every request, not frozen at build time.

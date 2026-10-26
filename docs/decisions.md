@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: Safety rules become named sets; product copy says "parts" (B1.13)
+
+The prompt's safety text is split into a vehicle set (the original wording, unchanged) and an everyday set with the categories the Owner approved in D1 (blocked: weapons, medical devices, child-restraint, life-safety and climbing gear; needs review: food and drink contact, mains enclosures, load-bearing for a person). The line "non-automotive parts are out of scope" is removed. The landing page and page description no longer say car. The classifier (B2.4) is not built yet.
+
 ## 2026-10-26: Sliders edit numbers only, and failed edits are not saved (B1.9b, part 2)
 
 Every number under a `_mm` or `_deg` key gets a slider. A slider edit goes to `POST /api/designs/<id>/edit`, which checks the new spec has exactly the same shape and text as the version it was made from, so only numbers can change (this keeps the future safety classifier's view of a design valid, because sliders cannot add a feature or change a category). It rebuilds on the geometry service with no AI call and saves a new version (`created_by` = `slider`) only if the build works; a failed build is shown to the user and not saved, unlike agent attempts, because a drag passes through many values and would bury the history. Slider ranges are a guess from the current value (0 to double for sizes, symmetric for positions, -360 to 360 for angles); the number box accepts any value and the builder is the judge. The see-through scan toggle is still waiting for real scans.
