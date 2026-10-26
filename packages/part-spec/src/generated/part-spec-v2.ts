@@ -40,7 +40,7 @@ export type Outline =
     };
 export type LengthMm = number;
 /**
- * A point [x, y] in millimeters in the plate's local frame, origin at the plate center.
+ * A point [x, y] in millimeters. In a plate or extrude outline it is in the plate's local frame, origin at the center. In a revolve profile it is [radius, z] from the axis and the base.
  *
  * @minItems 2
  * @maxItems 2
@@ -84,7 +84,7 @@ export interface Placement {
 export interface Body {
   id: Id;
   type: "body";
-  shape: Extrude;
+  shape: Extrude | Revolve;
   shell?: Shell;
   /**
    * Radius that rounds the outer top and bottom edges. Must be smaller than the wall thickness when the body is hollow.
@@ -99,6 +99,17 @@ export interface Extrude {
   kind: "extrude";
   outline: Outline;
   height_mm: LengthMm;
+}
+/**
+ * A solid of revolution about the body's Z axis: vases, cups, knobs, bottles. 'profile_mm' lists [radius, z] points of the outside surface from the base up to the rim, with z strictly increasing (no overhangs, so it prints without supports). The base is a flat disc from the axis out to the first point, and the top is closed flat unless the body is hollowed open at the top. Use many points for a smooth curve.
+ */
+export interface Revolve {
+  kind: "revolve";
+  /**
+   * @minItems 2
+   * @maxItems 100
+   */
+  profile_mm: [PointMm, PointMm, ...PointMm[]];
 }
 /**
  * Hollows the body, leaving walls of wall_thickness_mm. open 'top' removes the top face (a vase, cup or box); 'none' makes a closed hollow part. The base stays as thick as the walls.
