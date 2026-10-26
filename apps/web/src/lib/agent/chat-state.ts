@@ -53,6 +53,8 @@ export function applyEvent(state: ChatState, event: AgentEvent): ChatState {
       const notes: ChatItem[] = (event.checks ?? []).map((c) => ({ kind: "status", text: c }));
       return { ...state, builtCount: state.builtCount + (event.ok ? 1 : 0), items: [...state.items, { kind: "status", text }, ...notes] };
     }
+    case "materials":
+      return { ...state, items: [...state.items, { kind: "status", text: event.advice }] };
     case "dimension": {
       const d = event.dimension;
       if (event.pending) {

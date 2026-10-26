@@ -1,5 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { checkBuild } from "./checks";
+import { assessMaterials, describeAdvice, recommend } from "../materials";
 import { distanceMm, formatBuildOutcome, parseDimension, TOOLS, webSearchTool } from "./tools";
 import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
 
@@ -225,6 +226,9 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
             spec: spec as Record<string, unknown>,
             ...(checks.length ? { checks } : {}),
           });
+          if (outcome.ok) {
+            emit({ type: "materials", advice: describeAdvice(recommend(assessMaterials(spec as Record<string, unknown>, outcome.size_mm))) });
+          }
         }
       } else {
         content = `Unknown tool ${call.name}.`;

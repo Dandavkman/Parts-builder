@@ -88,6 +88,13 @@ describe("parseLines", () => {
   });
 });
 
+describe("materials event", () => {
+  it("shows the advice as a status line", () => {
+    const state = applyEvent(initialChat, { type: "materials", advice: "Materials that suit this part: PETG." });
+    expect(state.items).toEqual([{ kind: "status", text: "Materials that suit this part: PETG." }]);
+  });
+});
+
 describe("openDesign", () => {
   it("replaces the page with a saved conversation", () => {
     const state = openDesign("d1", [{ kind: "user", text: "hi" }]);

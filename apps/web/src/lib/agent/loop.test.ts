@@ -67,6 +67,18 @@ describe("runAgent", () => {
     expect(results.every((b) => b.is_error === false)).toBe(true);
   });
 
+  it("gives material advice after a build that worked, and not after one that failed", async () => {
+    const thin = { features: [{ id: "v", type: "body", shell: { wall_thickness_mm: 1, open: "top" } }] };
+    const built = run([reply([call("a", "propose_spec", { spec: thin })]), reply([text("Done")], "end_turn")], ok);
+    await built.result;
+    const advice = built.events.filter((e) => e.type === "materials");
+    expect(advice).toHaveLength(1);
+    expect(JSON.stringify(advice[0])).toContain("PLA (FDM): walls of 1 mm");
+    const failed = run([reply([call("a", "propose_spec", { spec: thin })]), reply([text("Stuck")], "end_turn")], bad);
+    await failed.result;
+    expect(failed.events.some((e) => e.type === "materials")).toBe(false);
+  });
+
   it("feeds builder errors back so the agent can fix the spec", async () => {
     let n = 0;
     const flaky: BuildSpec = async () => (n++ === 0 ? bad(null as never, []) : ok(null as never, []));
