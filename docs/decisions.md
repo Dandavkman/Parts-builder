@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: The everyday benchmark scores the dimension check, runs only on demand, and is ready before it can pass (B1.20)
+
+The five everyday cases give the agent their sizes as stated dimensions tagged with what they measure, so the score is the same dimension check users get (B1.18): a case passes when a spec builds and every size matches. The runner is a vitest file skipped unless `BENCH=1` (`pnpm bench`), which avoids adding a script runner dependency, and the scoring and report code are plain functions with unit tests that need no API key. Results are written to `benchmarks/results/`. It is merged before B1.17d on purpose: with Part Spec 1.1 only the bracket can pass, so the first live run is a baseline and the run after B1.17d shows the improvement. This is the everyday half of B1.12; the five car cases (O0.7) still wait on the Owner.
+
 ## 2026-10-26: Material advice comes from a draft table in code, with no prices (B2.3a)
 
 Storyboard step 3 (Claude recommends a material and process) needs a material table, but the real one waits on partner data (O1.5). `apps/web/src/lib/materials.ts` holds a small draft table (PLA, PETG, TPU, nylon SLS) with typical minimum wall, minimum hole, build size, heat limit, outdoor use, flexibility and a 1-to-3 strength and cost ranking. After every spec that builds, the web app checks the part against each material and posts one chat line: the materials that pass, cheapest first, and why the others fail. Price and lead time are left out on purpose: they are quote math (B2.5), which needs the Owner's approval, and invented prices would be worse than none. The advice is code, not the model, so it is the same every time and costs no tokens; the agent is not told about it yet. Replacing the table with partner data (O1.5) changes only the `MATERIALS` array. The user's needs (heat, outdoor, flexible, load) exist in the code but nothing asks for them yet; the next step is an agent tool or a workspace control that sets them.
