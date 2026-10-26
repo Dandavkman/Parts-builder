@@ -45,3 +45,20 @@ export const PART_SPEC_V1_SCHEMA: Record<string, unknown> = ${JSON.stringify(sch
 export const PART_SPEC_V1_EXAMPLES: Record<string, unknown>[] = ${JSON.stringify(examples, null, 2)};
 `,
 );
+
+// The same for Part Spec 2.0 (task B1.17d). The agent only quotes it when DESIGN_AGENT_SPEC_VERSION=2.0,
+// which is switched on after the Fly geometry service has been redeployed. Every older example is a valid
+// 2.0 spec once its version is bumped (tested), so all of them are quoted.
+const schema2 = JSON.parse(await readFile(`${specDir}part-spec.v2.schema.json`, "utf8"));
+const examples2 = examples.map((e) => ({ ...e, spec_version: "2.0" }));
+for (const file of (await readdir(`${specDir}examples/v2`)).filter((f) => f.endsWith(".json")).sort()) {
+  examples2.push(JSON.parse(await readFile(`${specDir}examples/v2/${file}`, "utf8")));
+}
+await writeFile(
+  `${agentDir}part-spec-v2-reference.ts`,
+  `/* Generated from services/geometry/src/geometry/spec (part-spec.v2.schema.json and examples). Do not edit. Run \`pnpm generate\`. */
+export const PART_SPEC_V2_SCHEMA: Record<string, unknown> = ${JSON.stringify(schema2, null, 2)};
+
+export const PART_SPEC_V2_EXAMPLES: Record<string, unknown>[] = ${JSON.stringify(examples2, null, 2)};
+`,
+);

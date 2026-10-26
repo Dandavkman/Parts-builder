@@ -1,4 +1,5 @@
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
+import { PART_SPEC_V2_EXAMPLES, PART_SPEC_V2_SCHEMA } from "./generated/part-spec-v2-reference";
 import type { AgentAnchor, AgentDimension } from "./types";
 
 /** How a spec is put together. The exact fields come from the schema and examples quoted below. */
@@ -12,12 +13,38 @@ Use only the fields in the schema. Never invent field names. The schema rejects 
 The builder reports every problem in plain sentences, for example "hole 'hole_2' ... is outside plate 'base'". Schema errors name the field path, such as "features/0/outline: 'kind' is a required property". When you get one, find that field in the schema and the examples below and copy the shape exactly. Do not guess again.
 `.trim();
 
-export function specReference(): string {
+/** Added to the conventions for Part Spec 2.0: solid bodies (task B1.17). */
+export const SPEC_CONVENTIONS_V2 = `
+Part Spec 2.0 adds the "body" feature for anything with volume: boxes, cups, vases, holders, knobs. Use a body for solid or hollow objects and a plate only for flat parts. Use "spec_version": "2.0".
+A body has "shape" (the first Z-up solid sits on Z = 0, centered on its placement): {"kind": "extrude", "outline": <rectangle, circle or polygon outline>, "height_mm": ...} for straight sides, or {"kind": "revolve", "profile_mm": [[radius, z], ...]} for round shapes, listing the outside from base to rim with z strictly increasing.
+Optional "shell": {"wall_thickness_mm": ..., "open": "top"} makes it hollow with an open top ("none" for a closed hollow). Optional "edge_fillet_mm" rounds the outer edges. Optional "texture": {"kind": "ridges" or "grooves", "width_mm", "depth_mm", "spacing_mm", "z_range_mm"} puts vertical stripes on the outside wall of rectangle and circle extrusions and revolved bodies.
+Height is the Z size. When the user states an overall size, record it with add_dimension and "measures", then make the built part match it exactly: a revolved vase's widest radius is half its width.
+`.trim();
+
+export function specReference(version: SpecVersion = "1.1"): string {
+  if (version === "2.0") {
+    return [
+      SPEC_CONVENTIONS.replace('"spec_version": "1.1"', '"spec_version": "2.0"'),
+      SPEC_CONVENTIONS_V2,
+      `JSON Schema for Part Spec 2.0 (authoritative):\n${JSON.stringify(PART_SPEC_V2_SCHEMA)}`,
+      `Valid example specs, one or more per feature:\n${PART_SPEC_V2_EXAMPLES.map((e) => JSON.stringify(e)).join("\n")}`,
+    ].join("\n\n");
+  }
   return [
     SPEC_CONVENTIONS,
     `JSON Schema for Part Spec 1.1 (authoritative):\n${JSON.stringify(PART_SPEC_V1_SCHEMA)}`,
     `Valid example specs, one or more per feature:\n${PART_SPEC_V1_EXAMPLES.map((e) => JSON.stringify(e)).join("\n")}`,
   ].join("\n\n");
+}
+
+export type SpecVersion = "1.1" | "2.0";
+
+/**
+ * Which Part Spec the agent writes. It stays 1.1 until DESIGN_AGENT_SPEC_VERSION=2.0 is set, which must
+ * only happen after the Fly geometry service has been redeployed with Part Spec 2.0.
+ */
+export function agentSpecVersion(env: Record<string, string | undefined> = process.env): SpecVersion {
+  return env.DESIGN_AGENT_SPEC_VERSION === "2.0" ? "2.0" : "1.1";
 }
 
 /** Rules for parts that go on a vehicle. Unchanged by the general-market revision. */
@@ -55,7 +82,7 @@ export function describeDimension(d: AgentDimension): string {
   return `- ${d.id} = ${d.value_mm} mm (${d.confidence}, from ${d.source}${where})${d.note ? `: ${d.note}` : ""}`;
 }
 
-export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimension[] = []): string {
+export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimension[] = [], specVersion: SpecVersion = agentSpecVersion()): string {
   const anchorLines = anchors
     .map((a) => `- ${a.id} (${a.type}) at [${a.point_mm.join(", ")}] mm${a.note ? `: ${a.note}` : ""}`)
     .join("\n");
@@ -63,7 +90,7 @@ export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimen
     "You design custom parts for people: anything allowed by the safety rules, for cars or anything else. You do it by writing a Part Spec (JSON) with the propose_spec tool. Our own code builds the geometry. Never write code, meshes or CAD files.",
     "Work in this order: understand the request, call list_anchors, measure what you need, ask one short question with ask_user if something important is unknown (material, thickness, which hole), then call propose_spec. If propose_spec returns errors, fix them and call it again. When it succeeds, say in two or three sentences what you made and the key dimensions in millimeters.",
     "You have at most 6 propose_spec attempts per user message.",
-    `## Part Spec reference\n${specReference()}`,
+    `## Part Spec reference\n${specReference(specVersion)}`,
     `## Safety rules\n${SAFETY_RULES}`,
     `## Materials\n${MATERIAL_LIMITS}`,
     `## Photos and sizes\n${REFERENCE_OBJECTS}`,

@@ -80,3 +80,8 @@ When a spec builds, the web app measures the built part and `lib/agent/checks.ts
 ## Material advice
 
 After every build that works, the web app compares the part with the draft material table in `lib/materials.ts` (task B2.3a) and streams a `materials` event, shown in the chat as one status line. For each material it checks the thinnest wall (shells and plates), the smallest hole (holes, hole patterns, standoff bores, counterbores) and whether the built size fits the machine in any orientation. Passing materials are listed cheapest first, then strongest; failing ones come with the reason. Needs (`heat_c`, `outdoor`, `flexible`, `load`) can narrow the list in code but nothing sets them yet. The table values are drafts to be replaced by partner data (O1.5); it has no prices.
+
+## Which Part Spec the agent writes
+
+By default the agent's prompt quotes Part Spec 1.1. With `DESIGN_AGENT_SPEC_VERSION=2.0` it quotes the 2.0 schema, every example (older ones bumped to 2.0) and short conventions for the `body` feature, so it can design vases, boxes, holders and knobs (task B1.17d). Set the variable only after `fly deploy` has put 2.0 on the geometry service. Run `pnpm bench` before and after to compare (see `benchmarks/README.md`).
+
