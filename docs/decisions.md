@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: Surface texture is vertical stripes cut from a wall layer (B1.17c)
+
+`texture` on a body adds vertical `ridges` or `grooves`. Ridges are the layer between the body and a copy grown outward by `depth_mm`, intersected with thin slabs; grooves are the layer between the body and a copy shrunk by `depth_mm`, intersected the same way, then cut. Rectangles use two families of parallel slabs, so stripes are evenly spaced along flat sides and follow the rounded corners; round and revolved bodies use wedges around the axis, counted at the widest radius, and depth on a revolved body is measured along the radius. Volumes match hand calculations exactly on a sharp box (16 ridges of 4 x 1 x 200 mm add 12,800 mm3) and within 3% on the revolved vase. Stripes are the "same pattern" the storyboard vase asks for in its simplest form; polygon outlines, diamond or dot patterns and images are not supported and give a clear error. Edge fillets are applied before texture, so stripes end square at a rounded top or bottom edge. Builds with texture take about 2 seconds, so the 200-stripe limit stays.
+
 ## 2026-10-26: Revolved bodies take a [radius, z] profile with z always rising (B1.17b)
 
 `revolve` spins a list of `[radius_mm, z_mm]` points about the Z axis: the base is a flat disc out to the first point and the top a flat disc at the last. z must strictly increase, so there are no overhangs: a round vase or knob then prints without supports, and the hollow's walls can be computed by shifting each profile segment toward the axis and joining neighbours with sharp corners (`inset_profile`). That gives exact wall thickness measured square to each segment; it differs from the kernel's own shell by under 0.5% in volume on the test vase, which is checked. Smooth curves need many points for now; arcs and splines can be added later if real designs need them. Not handled: undercuts (bulbous vases that narrow then widen back would need z to rise while the profile turns back), which the schema rejects with a clear sentence.

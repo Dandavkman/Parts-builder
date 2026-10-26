@@ -79,7 +79,7 @@ export interface Placement {
   rotation_deg?: number;
 }
 /**
- * A solid with a height, for boxes, vases, cups and knobs. The body frame has its origin at the center of the base, Z up, so the base sits at Z = 0 and the top at Z = height_mm. 'shape' says how it is made; 'shell' hollows it; 'edge_fillet_mm' rounds the outer top and bottom edges.
+ * A solid with a height, for boxes, vases, cups and knobs. The body frame has its origin at the center of the base, Z up, so the base sits at Z = 0 and the top at Z = height_mm. 'shape' says how it is made; 'shell' hollows it; 'edge_fillet_mm' rounds the outer top and bottom edges; 'texture' adds vertical ridges or grooves on the outside wall.
  */
 export interface Body {
   id: Id;
@@ -91,6 +91,7 @@ export interface Body {
    */
   edge_fillet_mm?: number;
   placement: Placement;
+  texture?: Texture;
 }
 /**
  * A prism: the outline, straight up by height_mm. A rectangle outline gives a box; a circle gives a cylinder.
@@ -117,6 +118,20 @@ export interface Revolve {
 export interface Shell {
   wall_thickness_mm: LengthMm;
   open: "top" | "none";
+}
+/**
+ * A repeating pattern of vertical stripes on the outside wall: 'ridges' stand out by depth_mm, 'grooves' are cut in by depth_mm (and must be shallower than the wall if the body is hollow). 'spacing_mm' is the distance between stripe centers along a flat side, or around the widest part of a round body. Stripes run the full height unless 'z_range_mm' [from, to] limits them. Supported on rectangle and circle extrusions and on revolved bodies.
+ */
+export interface Texture {
+  kind: "ridges" | "grooves";
+  width_mm: LengthMm;
+  depth_mm: LengthMm;
+  spacing_mm: LengthMm;
+  /**
+   * @minItems 2
+   * @maxItems 2
+   */
+  z_range_mm?: [number, number];
 }
 export interface Hole {
   id: Id;

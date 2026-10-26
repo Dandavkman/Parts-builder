@@ -93,6 +93,73 @@ def inset_profile(
     return [(0.0, pts[0][1]), *pts, (0.0, pts[-1][1])]
 
 
+MAX_STRIPES = 200
+
+
+def _outer_solid(shape: Feature, delta_mm: float = 0.0) -> cq.Workplane:
+    """The body without hollowing, grown outward by `delta_mm` (shrunk if negative).
+
+    Extrusions grow their outline all round; revolved profiles grow along the radius.
+    """
+    if shape["kind"] == "revolve":
+        profile = [(max(r + delta_mm, 1e-3), z) for r, z in _profile(shape)]
+        return _revolve([(0.0, profile[0][1]), *profile, (0.0, profile[-1][1])])
+    return _prism(shape["outline"], 0.0, float(shape["height_mm"]), inset=-delta_mm)
+
+
+def _widest_radius(shape: Feature) -> float:
+    if shape["kind"] == "revolve":
+        return max(r for r, _ in _profile(shape))
+    outline = shape["outline"]
+    return float(outline["diameter_mm"]) / 2
+
+
+def _stripe_cutters(shape: Feature, texture: Feature, top_z: float) -> cq.Workplane:
+    """Thin vertical slabs that, intersected with a wall layer, leave stripes.
+
+    Rectangles use two families of slabs (one across each pair of sides); round bodies use
+    wedges around the axis, counted at the widest radius.
+    """
+    z0, z1 = texture.get("z_range_mm", [0.0, top_z])
+    width, spacing = float(texture["width_mm"]), float(texture["spacing_mm"])
+    z_base = _base_z(shape)
+    bottom, height = z_base + float(z0), float(z1) - float(z0)
+    plane = cq.Workplane("XY", origin=(0, 0, bottom))
+    if shape["kind"] == "extrude" and shape["outline"]["kind"] == "rectangle":
+        outline = shape["outline"]
+        slabs = None
+        for across, along in (
+            (float(outline["width_mm"]), "x"),
+            (float(outline["length_mm"]), "y"),
+        ):
+            n = int((across - width) // spacing) + 1
+            for i in range(n):
+                offset = (i - (n - 1) / 2) * spacing
+                size = (width, 1e4) if along == "x" else (1e4, width)
+                at = (offset, 0) if along == "x" else (0, offset)
+                slab = plane.center(*at).rect(*size).extrude(height)
+                slabs = slab if slabs is None else slabs.union(slab)
+        assert slabs is not None
+        return slabs
+    count = max(int(2 * math.pi * _widest_radius(shape) // spacing), 1)
+    wedges = None
+    for k in range(count):
+        wedge = (
+            cq.Workplane("XY", origin=(0, 0, bottom))
+            .transformed(rotate=(0, 0, 360 * k / count))
+            .center(1e4 / 2, 0)
+            .rect(1e4, width)
+            .extrude(height)
+        )
+        wedges = wedge if wedges is None else wedges.union(wedge)
+    assert wedges is not None
+    return wedges
+
+
+def _base_z(shape: Feature) -> float:
+    return _profile(shape)[0][1] if shape["kind"] == "revolve" else 0.0
+
+
 def build_body(feature: Feature) -> cq.Workplane:
     shape = feature["shape"]
     if shape["kind"] == "revolve":
@@ -105,6 +172,18 @@ def build_body(feature: Feature) -> cq.Workplane:
     fillet = float(feature.get("edge_fillet_mm", 0))
     if fillet > 0:
         solid = solid.faces(">Z or <Z").edges().fillet(fillet)
+    texture = feature.get("texture")
+    if texture:
+        depth = float(texture["depth_mm"])
+        stripes = _stripe_cutters(shape, texture, top_z - _base_z(shape))
+        if texture["kind"] == "ridges":
+            solid = solid.union(
+                _outer_solid(shape, depth).intersect(stripes).cut(_outer_solid(shape))
+            )
+        else:
+            solid = solid.cut(
+                _outer_solid(shape).cut(_outer_solid(shape, -depth)).intersect(stripes)
+            )
     shell = feature.get("shell")
     if shell:
         wall = float(shell["wall_thickness_mm"])
@@ -155,7 +234,10 @@ def check_body(feature: Feature, anchors: dict[str, Anchor], errors: list[str]) 
         errors.append(
             f"{name}: edge_fillet_mm must be less than half the height and half the width"
         )
+    texture = feature.get("texture")
     shell = feature.get("shell")
+    if texture:
+        _check_texture(name, shape, texture, height, shell, errors)
     if shell:
         wall = float(shell["wall_thickness_mm"])
         if profile:
@@ -178,3 +260,39 @@ def check_body(feature: Feature, anchors: dict[str, Anchor], errors: list[str]) 
                 f"{name}: edge_fillet_mm must be less than the wall thickness, "
                 "or the rim would be rounded away"
             )
+
+
+def _check_texture(
+    name: str, shape: Feature, texture: Feature, height: float, shell: Feature | None,
+    errors: list[str],
+) -> None:  # fmt: skip
+    label = f"{name}: texture"
+    outline = shape.get("outline")
+    if outline is not None and outline["kind"] == "polygon":
+        errors.append(f"{label} is not supported on a polygon outline; use a rectangle or circle")
+        return
+    width, spacing = float(texture["width_mm"]), float(texture["spacing_mm"])
+    depth = float(texture["depth_mm"])
+    if width >= spacing:
+        errors.append(f"{label}: width_mm must be less than spacing_mm, or the stripes merge")
+    z0, z1 = texture.get("z_range_mm", [0.0, height])
+    if not 0 <= z0 < z1 <= height + 1e-9:
+        errors.append(f"{label}: z_range_mm must be [from, to] with 0 <= from < to <= {height:g}")
+    if shell and texture["kind"] == "grooves" and depth >= float(shell["wall_thickness_mm"]):
+        errors.append(f"{label}: groove depth_mm must be less than the wall thickness")
+    if outline is not None and outline["kind"] == "rectangle":
+        sides = (float(outline["width_mm"]), float(outline["length_mm"]))
+        if any(side < width for side in sides):
+            errors.append(f"{label}: width_mm is larger than a side of the outline")
+        stripes = sum(int((side - width) // spacing) + 1 for side in sides)
+    else:
+        stripes = int(2 * math.pi * _widest_radius(shape) // spacing)
+    if stripes < 1:
+        errors.append(f"{label}: spacing_mm is too large to fit a single stripe")
+    if stripes > MAX_STRIPES:
+        errors.append(
+            f"{label}: {stripes} stripes is too many (limit {MAX_STRIPES}); increase spacing_mm"
+        )
+    if texture["kind"] == "grooves" and shape["kind"] == "revolve":
+        if depth >= min(r for r, _ in _profile(shape)):
+            errors.append(f"{label}: depth_mm is deeper than the narrowest radius")

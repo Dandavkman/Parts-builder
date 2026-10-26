@@ -812,7 +812,7 @@
       ]
     },
     "body": {
-      "description": "A solid with a height, for boxes, vases, cups and knobs. The body frame has its origin at the center of the base, Z up, so the base sits at Z = 0 and the top at Z = height_mm. 'shape' says how it is made; 'shell' hollows it; 'edge_fillet_mm' rounds the outer top and bottom edges.",
+      "description": "A solid with a height, for boxes, vases, cups and knobs. The body frame has its origin at the center of the base, Z up, so the base sits at Z = 0 and the top at Z = height_mm. 'shape' says how it is made; 'shell' hollows it; 'edge_fillet_mm' rounds the outer top and bottom edges; 'texture' adds vertical ridges or grooves on the outside wall.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -849,6 +849,9 @@
         },
         "placement": {
           "$ref": "#/$defs/placement"
+        },
+        "texture": {
+          "$ref": "#/$defs/texture"
         }
       }
     },
@@ -911,6 +914,44 @@
           "maxItems": 100,
           "items": {
             "$ref": "#/$defs/point_mm"
+          }
+        }
+      }
+    },
+    "texture": {
+      "description": "A repeating pattern of vertical stripes on the outside wall: 'ridges' stand out by depth_mm, 'grooves' are cut in by depth_mm (and must be shallower than the wall if the body is hollow). 'spacing_mm' is the distance between stripe centers along a flat side, or around the widest part of a round body. Stripes run the full height unless 'z_range_mm' [from, to] limits them. Supported on rectangle and circle extrusions and on revolved bodies.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "width_mm",
+        "depth_mm",
+        "spacing_mm"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "ridges",
+            "grooves"
+          ]
+        },
+        "width_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "depth_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "spacing_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "z_range_mm": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2000
           }
         }
       }
