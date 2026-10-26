@@ -47,3 +47,7 @@ The system prompt quotes `part-spec.v1.schema.json` and every file in `examples/
 ## Trying it
 
 Set `ANTHROPIC_API_KEY`, `DATABASE_URL` and `GEOMETRY_SERVICE_URL` (and `GEOMETRY_SERVICE_TOKEN`, or run the geometry service with `GEOMETRY_AUTH_DISABLED=1`) in `apps/web/.env.local`, sign in, and POST to `/api/agent`. Running it costs API tokens.
+
+## Safety rule sets
+
+The prompt carries two named rule sets, `VEHICLE_SAFETY_RULES` (unchanged) and `EVERYDAY_SAFETY_RULES` (added 2026-10-26, decision D1), in `lib/agent/prompt.ts`. The real classifier is still B2.4; these are prompt text only.
