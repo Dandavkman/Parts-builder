@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: Part Spec 2.0 starts with `body`: extrude and hollow by cutting an inset copy (B1.17a)
+
+The plate-only feature set cannot make a vase or a box. 2.0 adds one new feature, `body`, a solid with a height built from the same outlines as plates (rectangle with rounded corners, circle, polygon). Hollowing (`shell`) cuts a copy of the outline pulled in by the wall thickness instead of using the CAD kernel's shell, which tends to fail once edges are rounded; walls are exactly the stated thickness, and the vase from the storyboard (80 mm square, 200 mm tall, 2 mm walls) matches a hand calculation within 0.1%. The cavity is not rounded inside. A closed hollow (`open: none`) is allowed but a printer cannot drain it; the agent should prefer `top`. The plan's separate "patterns" item is folded into surface texture (B1.17c), because repeating holes already exist as `hole_pattern`. The agent keeps writing 1.1 until B1.17 is complete and Danny has redeployed the Fly service (`fly deploy`), since the live service would reject a 2.0 spec.
+
 ## 2026-10-26: References are a table; dimensions are separate from anchors (B1.14)
 
 The plan said a new `dimension` anchor type. Instead a dimension is its own small record (`id`, `value_mm`, `source`, `confidence`, optional source link) stored beside the anchors in the new `design_references` table, because an anchor has a position and a normal that the geometry service needs for placement, and a dimension has neither; mixing them would mean filtering them out at every build. The tool is still called `list_anchors` (not `list_references`) because saved conversations contain tool calls by name and renaming it would break replay of old designs; it now returns dimensions too when there are any. Only confirmed references reach the agent, so a looked-up value the user has not accepted (B1.16) can never be built into a part. `designs.scan_id` is untouched. The migration is additive (`0003_design_references`).

@@ -1,6 +1,7 @@
 """Checks the schema cannot make: ids, references, anchors and whether features fit the plate."""
 
 from geometry.builder.bend import edge_dims_mm
+from geometry.builder.body import check_body
 from geometry.builder.checks import circle_fits, outline_points
 from geometry.builder.errors import SpecError
 from geometry.builder.features import (
@@ -28,7 +29,9 @@ def check_spec(spec: Spec, anchors: dict[str, Anchor]) -> None:
         seen[f["id"]] = f
     bent_on = _check_bends(spec, seen, errors)
     for f in spec["features"]:
-        if f["type"] == "plate":
+        if f["type"] == "body":
+            check_body(f, anchors, errors)
+        elif f["type"] == "plate":
             _check_plate(f, anchors, errors, placed=f["id"] not in bent_on)
         elif f["type"] in ON_PLATE:
             plate = seen.get(f["plate"])
