@@ -8,12 +8,14 @@ import * as schema from "../db/schema";
 import { runAgent, type RunTurn } from "./loop";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import {
+  addReference,
   createDesign,
   getOwnedDesign,
   getOwnedVersion,
   listOwnedDesigns,
   listVersions,
   loadHistory,
+  loadReferences,
   recorderFor,
   setCurrentVersion,
   withUserMessage,
@@ -164,5 +166,45 @@ describe("withUserMessage", () => {
 
   it("adds plain text when nothing is open", () => {
     expect(withUserMessage([], "hi")).toEqual([{ role: "user", content: "hi" }]);
+  });
+});
+
+describe("references", () => {
+  it("falls back to the fixture panel until a confirmed reference exists", async () => {
+    const id = await createDesign(db, "ref_user", "t");
+    expect(await loadReferences(db, id)).toEqual({ anchors: FIXTURE_ANCHORS, dimensions: [] });
+    await addReference(db, id, {
+      kind: "researched",
+      label: "Spec sheet",
+      dimensions: [{ id: "height", value_mm: 200, source: "researched", confidence: "published" }],
+      confirmed: false,
+    });
+    expect((await loadReferences(db, id)).anchors).toEqual(FIXTURE_ANCHORS);
+  });
+
+  it("gives the agent only confirmed references, and drops the fixtures once there is one", async () => {
+    const id = await createDesign(db, "ref_user2", "t");
+    await addReference(db, id, {
+      kind: "photo",
+      label: "Photo with a 50 mm coin",
+      dimensions: [{ id: "vase_height", value_mm: 200, source: "photo", confidence: "estimated" }],
+      accuracyNote: "about 3 mm",
+    });
+    await addReference(db, id, {
+      kind: "stated",
+      label: "Typed",
+      anchors: [{ id: "base", type: "plane", point_mm: [0, 0, 0], normal: [0, 0, 1] }],
+      dimensions: [{ id: "width", value_mm: 80, source: "user", confidence: "stated" }],
+    });
+    const refs = await loadReferences(db, id);
+    expect(refs.anchors.map((a) => a.id)).toEqual(["base"]);
+    expect(refs.dimensions.map((d) => d.id)).toEqual(["vase_height", "width"]);
+  });
+
+  it("deletes references with their design", async () => {
+    const id = await createDesign(db, "ref_user3", "t");
+    await addReference(db, id, { kind: "stated", label: "x" });
+    await db.delete(schema.designs).where(eq(schema.designs.id, id));
+    expect(await db.select().from(schema.designReferences).where(eq(schema.designReferences.designId, id))).toEqual([]);
   });
 });

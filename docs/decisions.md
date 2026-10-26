@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-26: References are a table; dimensions are separate from anchors (B1.14)
+
+The plan said a new `dimension` anchor type. Instead a dimension is its own small record (`id`, `value_mm`, `source`, `confidence`, optional source link) stored beside the anchors in the new `design_references` table, because an anchor has a position and a normal that the geometry service needs for placement, and a dimension has neither; mixing them would mean filtering them out at every build. The tool is still called `list_anchors` (not `list_references`) because saved conversations contain tool calls by name and renaming it would break replay of old designs; it now returns dimensions too when there are any. Only confirmed references reach the agent, so a looked-up value the user has not accepted (B1.16) can never be built into a part. `designs.scan_id` is untouched. The migration is additive (`0003_design_references`).
+
 ## 2026-10-26: Sliders edit numbers only, and failed edits are not saved (B1.9b, part 2)
 
 Every number under a `_mm` or `_deg` key gets a slider. A slider edit goes to `POST /api/designs/<id>/edit`, which checks the new spec has exactly the same shape and text as the version it was made from, so only numbers can change (this keeps the future safety classifier's view of a design valid, because sliders cannot add a feature or change a category). It rebuilds on the geometry service with no AI call and saves a new version (`created_by` = `slider`) only if the build works; a failed build is shown to the user and not saved, unlike agent attempts, because a drag passes through many values and would bury the history. Slider ranges are a guess from the current value (0 to double for sizes, symmetric for positions, -360 to 360 for angles); the number box accepts any value and the builder is the judge. The see-through scan toggle is still waiting for real scans.

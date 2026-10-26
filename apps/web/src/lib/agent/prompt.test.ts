@@ -37,6 +37,14 @@ describe("system prompt", () => {
     expect(PART_SPEC_V1_EXAMPLES.length).toBeGreaterThanOrEqual(14);
   });
 
+  it("lists known dimensions with their source and confidence", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [
+      { id: "vase_height", value_mm: 200, source: "researched", source_url: "https://example.com/spec", confidence: "published" },
+    ]);
+    expect(prompt).toContain("vase_height = 200 mm (published, from researched, source https://example.com/spec)");
+    expect(buildSystemPrompt(FIXTURE_ANCHORS)).not.toContain("Known dimensions");
+  });
+
   it("lists the anchors and the blocked categories", () => {
     const prompt = buildSystemPrompt(FIXTURE_ANCHORS);
     for (const a of FIXTURE_ANCHORS) expect(prompt).toContain(a.id);

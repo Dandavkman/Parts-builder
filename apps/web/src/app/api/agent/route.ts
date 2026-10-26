@@ -1,10 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { FIXTURE_ANCHORS } from "../../../lib/agent/fixture-anchors";
 import { buildWithGeometryService } from "../../../lib/agent/geometry-client";
 import { anthropicTurn, DEFAULT_MODEL, runAgent } from "../../../lib/agent/loop";
 import { buildSystemPrompt } from "../../../lib/agent/prompt";
 import { parseRequest } from "../../../lib/agent/request";
-import { createDesign, getOwnedDesign, loadHistory, recorderFor, withUserMessage } from "../../../lib/agent/store";
+import { createDesign, getOwnedDesign, loadHistory, loadReferences, recorderFor, withUserMessage } from "../../../lib/agent/store";
 import type { AgentEvent } from "../../../lib/agent/types";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { requireOwner } from "../../../lib/require-owner";
@@ -24,7 +23,7 @@ function describeFailure(error: unknown): string {
 /**
  * Design agent. Takes `{ design_id?, message }`, continues that design's saved conversation (or starts
  * a new design) and streams one JSON event per line. Every message and spec version is saved.
- * Anchors are fixtures until anchor fitting (B1.5) exists.
+ * Anchors and dimensions come from the design's references; until it has one, a fixture panel stands in for a scan.
  */
 export async function POST(request: Request) {
   const who = await requireOwner();
@@ -57,6 +56,7 @@ export async function POST(request: Request) {
   } else {
     designId = await createDesign(db, ownerId, parsed.message);
   }
+  const references = await loadReferences(db, designId);
   const history = withUserMessage(saved, parsed.message);
   const record = recorderFor(db, designId);
 
@@ -71,9 +71,10 @@ export async function POST(request: Request) {
         await runAgent({
           turn: anthropicTurn(client),
           model: process.env.DESIGN_AGENT_MODEL || DEFAULT_MODEL,
-          system: buildSystemPrompt(FIXTURE_ANCHORS),
+          system: buildSystemPrompt(references.anchors, references.dimensions),
           history,
-          anchors: FIXTURE_ANCHORS,
+          anchors: references.anchors,
+          dimensions: references.dimensions,
           build: buildWithGeometryService,
           emit,
           record,

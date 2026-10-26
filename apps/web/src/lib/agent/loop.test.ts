@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import { MAX_BUILD_ATTEMPTS, runAgent, type RunTurn } from "./loop";
-import type { AgentEvent, BuildSpec } from "./types";
+import type { AgentDimension, AgentEvent, BuildSpec } from "./types";
 
 type Block = Record<string, unknown>;
 
@@ -23,7 +23,7 @@ function scripted(replies: ReturnType<typeof reply>[]) {
   return { turn, requests };
 }
 
-const run = (replies: ReturnType<typeof reply>[], build: BuildSpec, maxAttempts?: number) => {
+const run = (replies: ReturnType<typeof reply>[], build: BuildSpec, maxAttempts?: number, dimensions?: AgentDimension[]) => {
   const model = scripted(replies);
   const events: AgentEvent[] = [];
   const result = runAgent({
@@ -31,6 +31,7 @@ const run = (replies: ReturnType<typeof reply>[], build: BuildSpec, maxAttempts?
     system: "sys",
     history: [{ role: "user", content: "make a bracket" }],
     anchors: FIXTURE_ANCHORS,
+    dimensions,
     build,
     emit: (e) => events.push(e),
     maxAttempts,
@@ -116,6 +117,28 @@ describe("runAgent", () => {
       cache_creation_input_tokens: 0,
       cache_read_input_tokens: 4,
     });
+  });
+
+  it("lists dimensions beside anchors, and keeps them out of builds", async () => {
+    const dims: AgentDimension[] = [{ id: "vase_height", value_mm: 200, source: "photo", confidence: "estimated" }];
+    let sentAnchors: unknown;
+    const build: BuildSpec = async (_spec, anchors) => {
+      sentAnchors = anchors;
+      return { ok: true };
+    };
+    const { result, requests } = run(
+      [
+        reply([call("a", "list_anchors"), call("b", "propose_spec", { spec: { name: "v" } })]),
+        reply([text("ok")], "end_turn"),
+      ],
+      build,
+      undefined,
+      dims,
+    );
+    await result;
+    const toolResults = (requests[1].messages as { content: Block[] }[]).at(-1)!.content;
+    expect(JSON.parse(String(toolResults[0].content))).toEqual({ anchors: FIXTURE_ANCHORS, dimensions: dims });
+    expect(sentAnchors).toEqual(FIXTURE_ANCHORS);
   });
 
   it("returns an error result for unknown anchors and non-object specs", async () => {

@@ -48,6 +48,23 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
     id: "0002_version_anchors",
     sql: [`ALTER TABLE design_versions ADD COLUMN IF NOT EXISTS anchors jsonb NOT NULL DEFAULT '[]'::jsonb`],
   },
+  {
+    id: "0003_design_references",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS design_references (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        design_id uuid NOT NULL REFERENCES designs(id) ON DELETE CASCADE,
+        kind text NOT NULL,
+        label text NOT NULL,
+        anchors jsonb NOT NULL DEFAULT '[]'::jsonb,
+        dimensions jsonb NOT NULL DEFAULT '[]'::jsonb,
+        accuracy_note text,
+        confirmed_at timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )`,
+      `CREATE INDEX IF NOT EXISTS design_references_design_idx ON design_references (design_id)`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
