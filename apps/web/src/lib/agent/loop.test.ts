@@ -67,6 +67,18 @@ describe("runAgent", () => {
     expect(results.every((b) => b.is_error === false)).toBe(true);
   });
 
+  it("gives material advice after a build that worked, and not after one that failed", async () => {
+    const thin = { features: [{ id: "v", type: "body", shell: { wall_thickness_mm: 1, open: "top" } }] };
+    const built = run([reply([call("a", "propose_spec", { spec: thin })]), reply([text("Done")], "end_turn")], ok);
+    await built.result;
+    const advice = built.events.filter((e) => e.type === "materials");
+    expect(advice).toHaveLength(1);
+    expect(JSON.stringify(advice[0])).toContain("PLA (FDM): walls of 1 mm");
+    const failed = run([reply([call("a", "propose_spec", { spec: thin })]), reply([text("Stuck")], "end_turn")], bad);
+    await failed.result;
+    expect(failed.events.some((e) => e.type === "materials")).toBe(false);
+  });
+
   it("feeds builder errors back so the agent can fix the spec", async () => {
     let n = 0;
     const flaky: BuildSpec = async () => (n++ === 0 ? bad(null as never, []) : ok(null as never, []));
@@ -139,6 +151,134 @@ describe("runAgent", () => {
     const toolResults = (requests[1].messages as { content: Block[] }[]).at(-1)!.content;
     expect(JSON.parse(String(toolResults[0].content))).toEqual({ anchors: FIXTURE_ANCHORS, dimensions: dims });
     expect(sentAnchors).toEqual(FIXTURE_ANCHORS);
+  });
+
+  it("records a dimension the agent adds, saves it, and lists it afterwards", async () => {
+    const saved: AgentDimension[] = [];
+    const model = scripted([
+      reply([
+        call("a", "add_dimension", { id: "vase_height", value_mm: 200, confidence: "estimated", note: "scaled from the coin" }),
+        call("b", "add_dimension", { id: "Bad Id", value_mm: 5, confidence: "stated", note: "x" }),
+        call("c", "list_anchors"),
+      ]),
+      reply([text("ok")], "end_turn"),
+    ]);
+    const events: AgentEvent[] = [];
+    await runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [{ role: "user", content: "make a vase" }],
+      anchors: FIXTURE_ANCHORS,
+      build: async () => ({ ok: true }),
+      emit: (e) => events.push(e),
+      saveDimension: async (d) => void saved.push(d),
+    });
+    expect(saved).toEqual([
+      { id: "vase_height", value_mm: 200, source: "photo", confidence: "estimated", note: "scaled from the coin" },
+    ]);
+    expect(events.filter((e) => e.type === "dimension")).toHaveLength(1);
+    const results = (model.requests[1].messages as { content: Block[] }[]).at(-1)!.content;
+    expect(results[0].content).toContain("Recorded vase_height = 200 mm");
+    expect(results[1].is_error).toBe(true);
+    expect(String(results[2].content)).toContain("vase_height");
+  });
+
+  it("keeps a found value pending: saved, flagged, and not listed to the agent", async () => {
+    const saved: AgentDimension[] = [];
+    const model = scripted([
+      reply([
+        call("a", "add_dimension", { id: "case_width", value_mm: 74.5, confidence: "published", note: "spec sheet", source_url: "https://example.com/spec" }),
+        call("b", "add_dimension", { id: "case_height", value_mm: 150, confidence: "published", note: "spec sheet" }),
+        call("c", "list_anchors"),
+      ]),
+      reply([text("Please confirm.")], "end_turn"),
+    ]);
+    const events: AgentEvent[] = [];
+    await runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [{ role: "user", content: "case for the X100" }],
+      anchors: FIXTURE_ANCHORS,
+      build: async () => ({ ok: true }),
+      emit: (e) => events.push(e),
+      saveDimension: async (d) => void saved.push(d),
+    });
+    expect(saved.map((d) => d.id)).toEqual(["case_width"]);
+    expect(events.find((e) => e.type === "dimension")).toMatchObject({ pending: true });
+    const results = (model.requests[1].messages as { content: Block[] }[]).at(-1)!.content;
+    expect(String(results[0].content)).toContain("cannot be used until the user presses Confirm");
+    expect(results[1].is_error).toBe(true);
+    expect(String(results[1].content)).toContain("source_url");
+    expect(JSON.parse(String(results[2].content))).toEqual(FIXTURE_ANCHORS);
+  });
+
+  it("offers web search only while searches are left, and carries on after a paused turn", async () => {
+    const model = scripted([reply([text("working")], "pause_turn"), reply([text("done")], "end_turn")]);
+    await runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [{ role: "user", content: "x" }],
+      anchors: FIXTURE_ANCHORS,
+      build: async () => ({ ok: true }),
+      emit: () => {},
+      searchesLeft: 3,
+    });
+    expect(model.requests).toHaveLength(2);
+    for (const r of model.requests) {
+      expect(r.tools).toContainEqual({ type: "web_search_20250305", name: "web_search", max_uses: 3 });
+    }
+    const off = scripted([reply([text("ok")], "end_turn")]);
+    await runAgent({
+      turn: off.turn,
+      system: "sys",
+      history: [{ role: "user", content: "x" }],
+      anchors: FIXTURE_ANCHORS,
+      build: async () => ({ ok: true }),
+      emit: () => {},
+      searchesLeft: 0,
+    });
+    expect(JSON.stringify(off.requests[0].tools)).not.toContain("web_search");
+  });
+
+  it("drops web search and retries if the API says the tool is not available", async () => {
+    let calls = 0;
+    const requests: Block[] = [];
+    const turn = (async (params: unknown) => {
+      requests.push(JSON.parse(JSON.stringify(params)));
+      if (calls++ === 0) throw new Error("400 web_search tool is not enabled for this organization");
+      return reply([text("ok")], "end_turn");
+    }) as unknown as RunTurn;
+    const run = await runAgent({
+      turn,
+      system: "sys",
+      history: [{ role: "user", content: "x" }],
+      anchors: FIXTURE_ANCHORS,
+      build: async () => ({ ok: true }),
+      emit: () => {},
+      searchesLeft: 5,
+    });
+    expect(run.outcome).toBe("answered");
+    expect(JSON.stringify(requests[0].tools)).toContain("web_search");
+    expect(JSON.stringify(requests[1].tools)).not.toContain("web_search");
+  });
+
+  it("reports dimension and wall check results to the agent and the chat after a build", async () => {
+    const dims: AgentDimension[] = [
+      { id: "vase_height", value_mm: 200, source: "user", confidence: "stated", measures: "overall_height" },
+    ];
+    const build: BuildSpec = async () => ({ ok: true, size_mm: [80, 80, 195] });
+    const { result, events, requests } = run(
+      [reply([call("a", "propose_spec", { spec: { name: "v", features: [] } })]), reply([text("fixing")], "end_turn")],
+      build,
+      undefined,
+      dims,
+    );
+    await result;
+    const results = (requests[1].messages as { content: Block[] }[]).at(-1)!.content;
+    expect(String(results[0].content)).toContain("Dimension check: 'vase_height'");
+    expect(String(results[0].content)).toContain("5.0 mm too small");
+    expect(results[0].is_error).toBe(false);
+    expect(events.find((e) => e.type === "spec")).toMatchObject({ ok: true, checks: [expect.stringContaining("vase_height")] });
   });
 
   it("returns an error result for unknown anchors and non-object specs", async () => {

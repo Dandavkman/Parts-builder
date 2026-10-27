@@ -4,6 +4,39 @@ import type { AgentEvent } from "./types";
 
 const play = (events: AgentEvent[]) => events.reduce(applyEvent, sendMessage(initialChat, "make a plate"));
 
+describe("check notes", () => {
+  it("shows build check results right after the attempt", () => {
+    const state = applyEvent(initialChat, {
+      type: "spec",
+      attempt: 1,
+      ok: true,
+      errors: [],
+      spec: {},
+      checks: ["Dimension check: 'h' is off"],
+    });
+    expect(state.items.map((i) => i.kind === "status" && i.text)).toEqual(["Attempt 1: the part built", "Dimension check: 'h' is off"]);
+  });
+});
+
+describe("dimension events", () => {
+  it("asks the user to confirm a value found online", () => {
+    const state = applyEvent(initialChat, {
+      type: "dimension",
+      pending: true,
+      dimension: { id: "case_width", value_mm: 74.5, source: "researched", source_url: "https://example.com/s", confidence: "published" },
+    });
+    expect(state.items.at(-1)).toMatchObject({ kind: "status", text: expect.stringContaining("Please confirm") });
+  });
+
+  it("shows a noted dimension with where it came from", () => {
+    const state = applyEvent(initialChat, {
+      type: "dimension",
+      dimension: { id: "vase_height", value_mm: 200, source: "photo", confidence: "estimated" },
+    });
+    expect(state.items.at(-1)).toEqual({ kind: "status", text: "Noted vase_height = 200 mm (estimated from the photo)" });
+  });
+});
+
 describe("chat state", () => {
   it("joins streamed text into one assistant message and ends not busy", () => {
     const s = play([
@@ -52,6 +85,13 @@ describe("parseLines", () => {
     const second = parseLines(first.rest + 'xt","delta":"b"}\n');
     expect(second.events).toEqual([{ type: "text", delta: "b" }]);
     expect(second.rest).toBe("");
+  });
+});
+
+describe("materials event", () => {
+  it("shows the advice as a status line", () => {
+    const state = applyEvent(initialChat, { type: "materials", advice: "Materials that suit this part: PETG." });
+    expect(state.items).toEqual([{ kind: "status", text: "Materials that suit this part: PETG." }]);
   });
 });
 

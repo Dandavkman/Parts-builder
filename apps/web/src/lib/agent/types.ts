@@ -23,6 +23,8 @@ export interface AgentDimension {
   /** How far to trust it: stated by the user, estimated from a photo, or published by a maker. */
   confidence: "stated" | "estimated" | "published";
   note?: string;
+  /** Which size of the built part this is, so the dimension check can compare. Z is up. */
+  measures?: "overall_width" | "overall_length" | "overall_height" | "overall_diameter";
 }
 
 /** Everything a design knows about the real object: anchors for placement, and dimensions. */
@@ -41,7 +43,8 @@ export interface TokenUsage {
 }
 
 /** What the geometry service said about a proposed spec. */
-export type BuildOutcome = { ok: true } | { ok: false; errors: string[] };
+/** `size_mm` is the built part's overall size in X, Y, Z when the service reported one. */
+export type BuildOutcome = { ok: true; size_mm?: [number, number, number] } | { ok: false; errors: string[] };
 
 export type BuildSpec = (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<BuildOutcome>;
 
@@ -50,7 +53,9 @@ export type AgentEvent =
   | { type: "design"; design_id: string }
   | { type: "text"; delta: string }
   | { type: "tool"; name: string; summary: string }
-  | { type: "spec"; attempt: number; ok: boolean; errors: string[]; spec: Record<string, unknown> }
+  | { type: "spec"; attempt: number; ok: boolean; errors: string[]; spec: Record<string, unknown>; checks?: string[] }
+  | { type: "materials"; advice: string }
+  | { type: "dimension"; dimension: AgentDimension; pending?: boolean }
   | { type: "question"; question: string }
   | { type: "usage"; usage: TokenUsage }
   | { type: "done"; outcome: AgentOutcome; attempts: number }

@@ -8,16 +8,23 @@ import * as schema from "../db/schema";
 import { runAgent, type RunTurn } from "./loop";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import {
+  addPhoto,
   addReference,
   createDesign,
   getOwnedDesign,
   getOwnedVersion,
   listOwnedDesigns,
+  listPendingDimensions,
   listVersions,
   loadHistory,
+  loadPhotos,
   loadReferences,
+  MAX_PHOTOS_PER_DESIGN,
   recorderFor,
+  resolvePendingDimension,
+  saveDimension,
   setCurrentVersion,
+  withPhotos,
   withUserMessage,
 } from "./store";
 
@@ -206,5 +213,91 @@ describe("references", () => {
     await addReference(db, id, { kind: "stated", label: "x" });
     await db.delete(schema.designs).where(eq(schema.designs.id, id));
     expect(await db.select().from(schema.designReferences).where(eq(schema.designReferences.designId, id))).toEqual([]);
+  });
+});
+
+describe("photos and recorded dimensions", () => {
+  const photo = { mediaType: "image/jpeg" as const, base64: "QUJD" };
+
+  it("keeps photos with the design up to the limit", async () => {
+    const id = await createDesign(db, "photo_user", "t");
+    for (let i = 0; i < MAX_PHOTOS_PER_DESIGN; i++) expect(await addPhoto(db, id, photo)).toBe(true);
+    expect(await addPhoto(db, id, photo)).toBe(false);
+    expect(await loadPhotos(db, id)).toHaveLength(MAX_PHOTOS_PER_DESIGN);
+    const other = await createDesign(db, "photo_user", "t2");
+    expect(await loadPhotos(db, other)).toEqual([]);
+  });
+
+  it("a photo reference replaces the fixture panel for the agent", async () => {
+    const id = await createDesign(db, "photo_user2", "t");
+    await addPhoto(db, id, photo);
+    expect((await loadReferences(db, id)).anchors).toEqual([]);
+  });
+
+  it("puts photos first in the first user message, without touching the saved history", () => {
+    const history = [{ role: "user" as const, content: "make a vase" }, { role: "assistant" as const, content: "ok" }];
+    const sent = withPhotos(history, [photo]);
+    expect(sent[0].content).toEqual([
+      { type: "image", source: { type: "base64", media_type: "image/jpeg", data: "QUJD" } },
+      { type: "text", text: "make a vase" },
+    ]);
+    expect(sent[1]).toBe(history[1]);
+    expect(history[0].content).toBe("make a vase");
+    expect(withPhotos(history, [])).toBe(history);
+  });
+
+  it("saves a dimension and replaces one with the same id", async () => {
+    const id = await createDesign(db, "dim_user", "t");
+    await saveDimension(db, id, { id: "height", value_mm: 100, source: "user", confidence: "stated" });
+    await saveDimension(db, id, { id: "width", value_mm: 50, source: "user", confidence: "stated" });
+    await saveDimension(db, id, { id: "height", value_mm: 120, source: "photo", confidence: "estimated" });
+    const dims = (await loadReferences(db, id)).dimensions;
+    expect(dims.map((d) => [d.id, d.value_mm]).sort()).toEqual([
+      ["height", 120],
+      ["width", 50],
+    ]);
+  });
+});
+
+describe("values found online", () => {
+  const found = {
+    id: "case_width",
+    value_mm: 74.5,
+    source: "researched" as const,
+    source_url: "https://example.com/spec",
+    confidence: "published" as const,
+    note: "spec sheet, width",
+  };
+
+  it("keeps a found value hidden from the agent until the user confirms it", async () => {
+    const id = await createDesign(db, "web_user", "t");
+    await saveDimension(db, id, found);
+    expect(await listPendingDimensions(db, id)).toEqual([found]);
+    expect((await loadReferences(db, id)).dimensions).toEqual([]);
+    expect(await resolvePendingDimension(db, id, "case_width", { action: "confirm" })).toBe("ok");
+    expect(await listPendingDimensions(db, id)).toEqual([]);
+    expect((await loadReferences(db, id)).dimensions).toEqual([found]);
+  });
+
+  it("stores a corrected number as the user's own", async () => {
+    const id = await createDesign(db, "web_user2", "t");
+    await saveDimension(db, id, found);
+    await resolvePendingDimension(db, id, "case_width", { action: "confirm", value_mm: 75 });
+    const [d] = (await loadReferences(db, id)).dimensions;
+    expect([d.value_mm, d.source, d.confidence]).toEqual([75, "user", "stated"]);
+    expect(d.source_url).toBe("https://example.com/spec");
+  });
+
+  it("rejects a value, replaces a repeated suggestion, and ignores unknown ids", async () => {
+    const id = await createDesign(db, "web_user3", "t");
+    await saveDimension(db, id, found);
+    await saveDimension(db, id, { ...found, value_mm: 80 });
+    expect((await listPendingDimensions(db, id)).map((d) => d.value_mm)).toEqual([80]);
+    expect(await resolvePendingDimension(db, id, "case_width", { action: "reject" })).toBe("ok");
+    expect(await listPendingDimensions(db, id)).toEqual([]);
+    expect(await resolvePendingDimension(db, id, "case_width", { action: "reject" })).toBe("not_found");
+    const other = await createDesign(db, "web_user3", "t2");
+    await saveDimension(db, other, found);
+    expect(await resolvePendingDimension(db, id, "case_width", { action: "confirm" })).toBe("not_found");
   });
 });

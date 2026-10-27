@@ -65,6 +65,13 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `CREATE INDEX IF NOT EXISTS design_references_design_idx ON design_references (design_id)`,
     ],
   },
+  {
+    id: "0004_reference_photo",
+    sql: [
+      `ALTER TABLE design_references ADD COLUMN IF NOT EXISTS image_media_type text`,
+      `ALTER TABLE design_references ADD COLUMN IF NOT EXISTS image_base64 text`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

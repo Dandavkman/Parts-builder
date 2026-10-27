@@ -50,7 +50,18 @@ export function applyEvent(state: ChatState, event: AgentEvent): ChatState {
       const text = event.ok
         ? `Attempt ${event.attempt}: the part built`
         : `Attempt ${event.attempt}: ${event.errors.length === 1 ? "1 problem" : `${event.errors.length} problems`}, fixing: ${event.errors.join("; ")}`;
-      return { ...state, builtCount: state.builtCount + (event.ok ? 1 : 0), items: [...state.items, { kind: "status", text }] };
+      const notes: ChatItem[] = (event.checks ?? []).map((c) => ({ kind: "status", text: c }));
+      return { ...state, builtCount: state.builtCount + (event.ok ? 1 : 0), items: [...state.items, { kind: "status", text }, ...notes] };
+    }
+    case "materials":
+      return { ...state, items: [...state.items, { kind: "status", text: event.advice }] };
+    case "dimension": {
+      const d = event.dimension;
+      if (event.pending) {
+        return { ...state, items: [...state.items, { kind: "status", text: `Found ${d.id} = ${d.value_mm} mm online. Please confirm it on the right before I use it.` }] };
+      }
+      const how = d.confidence === "stated" ? "from you" : d.confidence === "estimated" ? "estimated from the photo" : "published";
+      return { ...state, items: [...state.items, { kind: "status", text: `Noted ${d.id} = ${d.value_mm} mm (${how})` }] };
     }
     case "question":
       return { ...state, items: [...state.items, { kind: "assistant", text: event.question }] };

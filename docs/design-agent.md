@@ -4,7 +4,7 @@ The design agent turns a chat request into a Part Spec. Code lives in `apps/web/
 
 ## Request and stream
 
-Send `{"message": "...", "design_id": "<uuid, optional>"}` (up to 4,000 characters). Without `design_id` a new design starts; with it, the saved conversation continues (only the owner can; anyone else gets 404). Sign-in is required. The first event tells you the design id. The reply is NDJSON, one event per line:
+Send `{"message": "...", "design_id": "<uuid, optional>", "image": {"media_type": "image/jpeg", "data": "<base64>"}}` (message up to 4,000 characters; `image` is optional, JPEG, PNG or WebP, up to 900,000 base64 characters, which is about 650 KB; the browser shrinks photos to about 300 KB first). Without `design_id` a new design starts; with it, the saved conversation continues (only the owner can; anyone else gets 404). Sign-in is required. The first event tells you the design id. The reply is NDJSON, one event per line:
 
 | Event | Meaning |
 | --- | --- |
@@ -12,6 +12,7 @@ Send `{"message": "...", "design_id": "<uuid, optional>"}` (up to 4,000 characte
 | `text` | A piece of the reply text. |
 | `tool` | The agent used `list_anchors` or `measure`. |
 | `spec` | A `propose_spec` attempt: `attempt` (1 to 6), `ok`, `errors`, and the `spec`. |
+| `dimension` | The agent recorded a dimension with `add_dimension`: `dimension` has `id`, `value_mm`, `source`, `confidence`, `note`. |
 | `question` | The agent asked the user something and stopped. |
 | `usage` | Running token totals for this message (input, output, cache). |
 | `done` | `outcome` is `answered`, `asked`, `attempts_exhausted`, `refused` or `step_limit`. |
@@ -55,3 +56,32 @@ The prompt carries two named rule sets, `VEHICLE_SAFETY_RULES` (unchanged) and `
 ## References and dimensions
 
 A design's anchors and named dimensions live in `design_references` (one row per photo, lookup, scan or set of typed numbers). `POST /api/agent` gives the agent the anchors and dimensions of the design's **confirmed** references, and lists dimensions in the system prompt with their source and confidence. A design with no confirmed reference still gets the fixture panel (the stand-in for a scan); the first confirmed reference replaces it. `list_anchors` returns the anchors, and when there are dimensions, `{ anchors, dimensions }`. Dimensions are never sent to the geometry service.
+
+## Photos and recorded dimensions
+
+A photo sent with a message is saved as a `design_references` row (kind `photo`, base64 in the row, until file storage exists; decision D4). A design keeps at most 4. Each request puts the design's photos at the top of the first user message for that request only; they are not stored in the saved conversation, so history stays small. A photo gives shape and proportion, not size: the prompt tells the agent to take sizes only from a stated dimension or an object of known size in the same plane (it lists card, coin and paper sizes), and to ask when it cannot. The agent records each size it relies on with `add_dimension` (`id`, `value_mm`, `confidence` stated or estimated, `note` saying how it knows). Recorded dimensions are kept in one reference per design, replace an earlier one with the same id, appear in `list_anchors` and the prompt on later turns, and are shown to the user in the chat as "Noted ...". The first photo replaces the stand-in fixture panel, so a photo-based design has no anchors except `origin`.
+
+## Photo button in the workspace
+
+The `/design` page has a Photo button (on a phone it opens the camera). The browser shrinks the picture to at most 1,600 px on the long side as a JPEG under 700,000 base64 characters (`lib/photo.ts`; it lowers the size until it fits), shows a thumbnail with a reminder to give one real measurement or put a card or coin next to the object, and sends it with the next message. The right-hand panel lists the design's known sizes with a note on where each came from, and estimates are marked "please check". `GET /api/designs/<id>` now also returns `dimensions` and `photoCount`.
+
+## Looking up measurements
+
+When the user names a real product and gives no sizes, the agent can search the web (the Claude API's server-side `web_search` tool, about 1 cent per search plus tokens; `docs/accounts-and-keys.md` covers the spend limit). A design may use 5 searches in total (`WEB_SEARCHES_PER_DESIGN`, counted from the saved conversation); `DESIGN_AGENT_WEB_SEARCH=off` turns it off, and if the API says the tool is not available the agent drops it and carries on. The agent records what it finds with `add_dimension` (confidence `published`, an https `source_url`, a note). A found value is saved as an unconfirmed `researched` reference, so `loadReferences` hides it from the agent. The workspace shows it in a "Found online" box with the number, a source link, an editable value, Confirm and "Not right". `POST /api/designs/<id>/dimensions` with `{ "id", "action": "confirm" | "reject", "value_mm"? }` records the answer (owner only). A confirmed value reaches the agent from its next turn; a corrected number is stored as the user's own (`stated`) and keeps the source link. `GET /api/designs/<id>` returns `pendingDimensions`.
+
+## Starting a design
+
+An empty `/design` page shows four ways to start (`app/design/start-choices.ts`): start from a photo (opens the file picker), look up a product (puts a starter sentence in the message box), just describe it (same), and use a 3D scan (shown but not open yet: scan upload is B1.1, which waits for R2 keys, so it explains that until then car designs use the stand-in panel). The choices disappear once the chat has messages. There are no scan controls on the page today, so a design without a scan never shows any; the see-through toggle (B1.9b) will appear only when a scan exists.
+
+## Checks after a build
+
+When a spec builds, the web app measures the built part and `lib/agent/checks.ts` compares it with what the design knows (task B1.18). The geometry service's STL is read for its bounding box (`lib/agent/stl.ts`, binary or ASCII), so no change to the service was needed. **Dimension check:** every dimension recorded with `measures` (`overall_width` is X, `overall_length` is Y, `overall_height` is Z, `overall_diameter` is the larger of X and Y) must match the built size within 0.5 mm or 0.25%, whichever is more; each miss is reported as a plain sentence ("should be 200 mm but the part is 195.0 mm, 5.0 mm too small. Fix the spec."). **Wall check:** a body shell or plate thinner than 1.2 mm is flagged. Both come back to the agent in the `propose_spec` result, so it can fix them within its 6 attempts, and the chat shows them under the attempt (`checks` on the `spec` event). The part still counts as built. The scan fit check (B1.10) is unchanged and runs only where a scan exists. The 1.2 mm limit is a stand-in for the material table (B2.3).
+
+## Material advice
+
+After every build that works, the web app compares the part with the draft material table in `lib/materials.ts` (task B2.3a) and streams a `materials` event, shown in the chat as one status line. For each material it checks the thinnest wall (shells and plates), the smallest hole (holes, hole patterns, standoff bores, counterbores) and whether the built size fits the machine in any orientation. Passing materials are listed cheapest first, then strongest; failing ones come with the reason. Needs (`heat_c`, `outdoor`, `flexible`, `load`) can narrow the list in code but nothing sets them yet. The table values are drafts to be replaced by partner data (O1.5); it has no prices.
+
+## Which Part Spec the agent writes
+
+By default the agent's prompt quotes Part Spec 1.1. With `DESIGN_AGENT_SPEC_VERSION=2.0` it quotes the 2.0 schema, every example (older ones bumped to 2.0) and short conventions for the `body` feature, so it can design vases, boxes, holders and knobs (task B1.17d). Set the variable only after `fly deploy` has put 2.0 on the geometry service. Run `pnpm bench` before and after to compare (see `benchmarks/README.md`).
+
