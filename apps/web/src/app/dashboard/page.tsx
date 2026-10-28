@@ -48,6 +48,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             {PLAN_LIMITS[usage.plan].savedDesigns} designs saved{plansEnforced() ? "" : " (limits are not enforced yet)"}.
           </p>
         )}
+        <p className="mt-2 text-sm">
+          <Link href="/dashboard/store" className="underline">
+            My store
+          </Link>
+        </p>
         {problem && <p className="mt-4 text-sm text-warning-text">{problem}</p>}
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           <section className="rounded border border-line p-4">
