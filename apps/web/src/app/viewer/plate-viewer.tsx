@@ -20,13 +20,14 @@ function Model({ url }: { url: string }) {
     });
     return copy;
   }, [gltf.scene]);
-  // CAD models are Z-up; the viewer is Y-up. Rotate so the plate lies flat.
+  // CAD models are Z-up; the viewer is Y-up. Rotate so the part lies flat, then centre it
+  // over the origin with its lowest point on the floor (y = 0), where the grid is drawn.
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]}>
-      <Center>
+    <Center bottom>
+      <group rotation={[-Math.PI / 2, 0, 0]}>
         <primitive object={scene} />
-      </Center>
-    </group>
+      </group>
+    </Center>
   );
 }
 
@@ -62,7 +63,7 @@ export function ModelViewer({ url, errorMessage }: { url: string; errorMessage: 
           </Bounds>
         </Suspense>
         <Grid
-          position={[0, -3, 0]}
+          position={[0, -0.01, 0]}
           args={[200, 200]}
           cellSize={5}
           sectionSize={25}
