@@ -138,6 +138,38 @@ export const orders = pgTable("orders", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
 
+/** A seller's store. Unpublished until Stripe verifies the seller (B4.1). One store per user for now. */
+export const stores = pgTable("stores", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: text("owner_id").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  published: boolean("published").notNull().default(false),
+  stripeConnectAccount: text("stripe_connect_account"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
+
+/** A design version offered for sale. Prices are frozen at listing time; review_status is pending, approved or rejected (B4.4). */
+export const listings = pgTable("listings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id, { onDelete: "cascade" }),
+  designId: uuid("design_id")
+    .notNull()
+    .references(() => designs.id),
+  version: integer("version").notNull(),
+  title: text("title").notNull(),
+  materialId: text("material_id").notNull(),
+  materialName: text("material_name").notNull(),
+  retailCents: integer("retail_cents").notNull(),
+  floorCents: integer("floor_cents").notNull(),
+  platformFeeCents: integer("platform_fee_cents").notNull(),
+  royaltyCents: integer("royalty_cents").notNull(),
+  placeholder: boolean("placeholder").notNull().default(true),
+  reviewStatus: text("review_status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
 /** A user's plan. No row means the free plan. Stripe ids are filled in when Stripe Billing is connected. */
 export const subscriptions = pgTable("subscriptions", {
   ownerId: text("owner_id").primaryKey(),
@@ -157,6 +189,25 @@ export const usageCounters = pgTable(
   },
   (t) => [primaryKey({ columns: [t.ownerId, t.period] })],
 );
+
+/** Every safety decision, automatic or by an admin, so each can be traced (plan B2.4). */
+export const safetyReviews = pgTable("safety_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  designId: uuid("design_id")
+    .notNull()
+    .references(() => designs.id, { onDelete: "cascade" }),
+  /** request (the user's message), spec, or admin. */
+  source: text("source").notNull(),
+  status: text("status").notNull(),
+  category: text("category").notNull(),
+  reason: text("reason").notNull(),
+  model: text("model"),
+  decidedBy: text("decided_by"),
+  /** approved or rejected, set when an admin decides. */
+  decision: text("decision"),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
 
 /** The one saved set of partner rates and markup (row id 1). Editing it in the admin console replaces the placeholder numbers in code. */
 export const rateCards = pgTable("rate_cards", {
