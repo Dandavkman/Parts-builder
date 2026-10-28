@@ -2,6 +2,7 @@ import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { PLAN_LIMITS, plansEnforced } from "../../../lib/plans";
 import { aiMessagesUsed, designCount, getPlan } from "../../../lib/plans-store";
 import { requireOwner } from "../../../lib/require-owner";
+import { reportError } from "../../../lib/observability";
 
 /** The signed-in user's plan, this month's usage and the plan's limits. */
 export async function GET() {
@@ -16,7 +17,7 @@ export async function GET() {
       { headers: { "cache-control": "private, no-store" } },
     );
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }

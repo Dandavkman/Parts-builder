@@ -10,6 +10,7 @@ import {
 import { itemsFromHistory } from "../../../../lib/agent/transcript";
 import { DatabaseNotConfigured, getDb } from "../../../../lib/db/client";
 import { requireOwner } from "../../../../lib/require-owner";
+import { reportError } from "../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -50,7 +51,7 @@ export async function GET(
     );
   } catch (error) {
     if (!(error instanceof DatabaseNotConfigured))
-      console.error("database unavailable", error);
+      await reportError("database unavailable", error);
     return Response.json(
       { error: "The database is not available." },
       { status: 503 },

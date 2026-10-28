@@ -2,9 +2,10 @@ import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { PLATFORM_FEE_PERCENT, STORE_FEES_ARE_PLACEHOLDER } from "../../../lib/stores/royalty";
 import { createStore, getOwnedStore, listStoreListings } from "../../../lib/stores/store";
 import { requireOwner } from "../../../lib/require-owner";
+import { reportError } from "../../../lib/observability";
 
-const unavailable = (error: unknown) => {
-  if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+const unavailable = async (error: unknown) => {
+  if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
   return Response.json({ error: "The database is not available." }, { status: 503 });
 };
 

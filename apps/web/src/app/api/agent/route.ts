@@ -24,6 +24,7 @@ import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { checkAiMessage, checkNewDesign, plansEnforced } from "../../../lib/plans";
 import { aiMessagesUsed, countAiMessage, designCount, getPlan } from "../../../lib/plans-store";
 import { requireOwner } from "../../../lib/require-owner";
+import { reportError } from "../../../lib/observability";
 
 export const maxDuration = 300;
 
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
     if (error instanceof DatabaseNotConfigured) {
       return Response.json({ error: "The database is not configured." }, { status: 503 });
     }
-    console.error("database unavailable", error);
+    await reportError("database unavailable", error);
     return Response.json({ error: "The database is not reachable." }, { status: 503 });
   }
 
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
       const status = await applyVerdict(db, designId, "request", verdict, process.env.SAFETY_MODEL || undefined);
       if (status === "blocked") return Response.json({ error: verdict.reason || BLOCKED_MESSAGE, blocked: true }, { status: 403 });
     } catch (error) {
-      console.error("safety guard failed", error);
+      await reportError("safety guard failed", error);
       return Response.json({ error: "We could not run the safety check. Please try again." }, { status: 503 });
     }
   }
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
           saveDimension: (dimension) => saveDimension(db, designId, dimension),
         });
       } catch (error) {
-        console.error("design agent failed", error);
+        await reportError("design agent failed", error);
         emit({ type: "error", message: describeFailure(error) });
       }
       controller.close();

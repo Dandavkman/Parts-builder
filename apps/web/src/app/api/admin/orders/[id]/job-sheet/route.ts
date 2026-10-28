@@ -2,6 +2,7 @@ import { DatabaseNotConfigured, getDb } from "../../../../../../lib/db/client";
 import { getOrder } from "../../../../../../lib/orders/store";
 import { jobSheet } from "../../../../../../lib/partners/manual";
 import { requireAdmin } from "../../../../../../lib/require-admin";
+import { reportError } from "../../../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -16,7 +17,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     if (!order) return Response.json({ error: "Order not found." }, { status: 404 });
     return new Response(jobSheet(order), { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "private, no-store" } });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }
