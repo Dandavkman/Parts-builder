@@ -1,4 +1,5 @@
 import { DatabaseNotConfigured, getDb } from "../../../../lib/db/client";
+import { handleBillingEvent } from "../../../../lib/billing/stripe-billing";
 import { handleStripeEvent, verifyStripeSignature } from "../../../../lib/payments/stripe";
 import { reportError } from "../../../../lib/observability";
 
@@ -17,7 +18,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Not JSON." }, { status: 400 });
   }
   try {
-    const result = await handleStripeEvent(await getDb(), event);
+    const db = await getDb();
+    const order = await handleStripeEvent(db, event);
+    const result = order !== "ignored" ? order : await handleBillingEvent(db, event);
     return Response.json({ received: true, result });
   } catch (error) {
     if (!(error instanceof DatabaseNotConfigured)) await reportError("stripe webhook failed", error);
