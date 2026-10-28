@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canMove, isOrderStatus, ORDER_STATUSES } from "./status";
+import { canMove, isOrderStatus, nextStatuses, ORDER_STATUSES } from "./status";
 
 describe("order status flow", () => {
   it("follows the plan's main path", () => {
@@ -25,5 +25,11 @@ describe("order status flow", () => {
   it("recognises statuses", () => {
     expect(isOrderStatus("paid")).toBe(true);
     expect(isOrderStatus("shiped")).toBe(false);
+  });
+
+  it("lists the next statuses, and none for finished or unknown orders", () => {
+    expect(nextStatuses("paid")).toEqual(["in_review", "sent_to_partner", "refunded"]);
+    expect(nextStatuses("refunded")).toEqual([]);
+    expect(nextStatuses("nope")).toEqual([]);
   });
 });
