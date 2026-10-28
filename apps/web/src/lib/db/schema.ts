@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import type { AgentAnchor, AgentDimension } from "../agent/types";
 import type { ShippingAddress } from "../orders/address";
 import type { QuoteLine } from "../quotes/engine";
-import { boolean, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 /** Owner is the Clerk user id (or "dev" in the local bypass). A users table arrives with plans in Phase 2. */
 export const designs = pgTable("designs", {
@@ -137,3 +137,23 @@ export const orders = pgTable("orders", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
+
+/** A user's plan. No row means the free plan. Stripe ids are filled in when Stripe Billing is connected. */
+export const subscriptions = pgTable("subscriptions", {
+  ownerId: text("owner_id").primaryKey(),
+  plan: text("plan").notNull().default("free"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
+
+/** AI messages a user has sent in a calendar month ("2026-10"). */
+export const usageCounters = pgTable(
+  "usage_counters",
+  {
+    ownerId: text("owner_id").notNull(),
+    period: text("period").notNull(),
+    aiMessages: integer("ai_messages").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.ownerId, t.period] })],
+);
