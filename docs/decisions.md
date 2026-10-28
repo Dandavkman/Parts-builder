@@ -285,3 +285,6 @@ A seller gets paste-ready HTML from `GET /api/stores/embed`: a `<div data-parts-
 
 ## 2026-10-28 — API reference kept honest by a test
 `docs/api.md` lists every route handler with who may call it and what it does, taken from each route's own comment. `api-docs.test.ts` fails when a handler is missing from it, the same way the access-control sweep fails on an unprotected route. The point is the redesign: screens can be rebuilt against a documented set of routes with no presentation inside them.
+
+## 2026-10-28 — End-to-end buy flow test (B4.5c)
+`buy-flow.test.ts` runs the real route handlers for the whole store purchase in stub-payment mode on an in-memory database: refusal before approval and without confirmations, a paid order from an approved listing, one royalty per order, the seller's numbers, the white-label packing slip, and a taken-down listing no longer selling. Only sign-in, the database connection and the geometry service are replaced. It runs in CI with the rest of the suite.
