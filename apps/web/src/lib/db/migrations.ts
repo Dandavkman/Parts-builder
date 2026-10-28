@@ -219,6 +219,15 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       )`,
     ],
   },
+  {
+    id: "0012_waitlist",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS waitlist (
+        email text PRIMARY KEY,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

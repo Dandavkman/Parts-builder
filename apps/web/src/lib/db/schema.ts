@@ -230,3 +230,9 @@ export const emailLog = pgTable(
   },
   (t) => [primaryKey({ columns: [t.orderId, t.event] })],
 );
+
+/** People who asked to be told when ordering opens. Lower-cased email is the key, so signing up twice does nothing. */
+export const waitlist = pgTable("waitlist", {
+  email: text("email").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
