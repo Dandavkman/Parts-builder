@@ -17,6 +17,7 @@ import {
   withUserMessage,
 } from "../../../lib/agent/store";
 import type { AgentEvent } from "../../../lib/agent/types";
+import { MESSAGES_PER_MINUTE, recentUserMessages } from "../../../lib/ai-cost";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { checkAiMessage, checkNewDesign, plansEnforced } from "../../../lib/plans";
 import { aiMessagesUsed, countAiMessage, designCount, getPlan } from "../../../lib/plans-store";
@@ -61,6 +62,11 @@ export async function POST(request: Request) {
     }
     console.error("database unavailable", error);
     return Response.json({ error: "The database is not reachable." }, { status: 503 });
+  }
+
+  // Rate limit (B2.11a): a script cannot run up the model bill.
+  if ((await recentUserMessages(db, ownerId, new Date(Date.now() - 60_000))) >= MESSAGES_PER_MINUTE) {
+    return Response.json({ error: "You are sending messages very quickly. Wait a minute and try again." }, { status: 429, headers: { "retry-after": "60" } });
   }
 
   // Free and Pro limits (B2.1a). Off unless PLANS_ENFORCED=1.
