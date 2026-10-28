@@ -1,6 +1,7 @@
 import { getOwnedDesign, resolvePendingDimension } from "../../../../../lib/agent/store";
 import { DatabaseNotConfigured, getDb } from "../../../../../lib/db/client";
 import { requireOwner } from "../../../../../lib/require-owner";
+import { reportError } from "../../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -35,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (outcome === "not_found") return Response.json({ error: "No suggestion with that id is waiting." }, { status: 404 });
     return Response.json({ ok: true });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }

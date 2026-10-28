@@ -4,6 +4,7 @@ import { DatabaseNotConfigured, getDb } from "../../../../../../../lib/db/client
 import { checkStepExport, plansEnforced } from "../../../../../../../lib/plans";
 import { getPlan } from "../../../../../../../lib/plans-store";
 import { requireOwner } from "../../../../../../../lib/require-owner";
+import { reportError } from "../../../../../../../lib/observability";
 
 const FORMATS: GeometryFormat[] = ["step", "stl", "glb"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -33,7 +34,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
     row = await getOwnedVersion(db, id, who.ownerId, which);
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
   if (!row) return Response.json({ error: "Version not found." }, { status: 404 });

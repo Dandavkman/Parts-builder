@@ -1,6 +1,7 @@
 import { DatabaseNotConfigured, getDb } from "../../../../../lib/db/client";
 import { createListing, getOwnedStore } from "../../../../../lib/stores/store";
 import { requireOwner } from "../../../../../lib/require-owner";
+import { reportError } from "../../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -20,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const result = await createListing(db, { ownerId: who.ownerId, designId: body.designId, quoteId: body.quoteId, retailCents: body.retailCents, title: body.title });
     return result.ok ? Response.json({ listing: result.listing }, { status: 201 }) : Response.json({ error: result.error }, { status: result.status });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("listing failed", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("listing failed", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }

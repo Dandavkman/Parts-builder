@@ -2,6 +2,7 @@ import { DatabaseNotConfigured, getDb } from "../../../../../../lib/db/client";
 import { isPlan } from "../../../../../../lib/plans";
 import { setPlan } from "../../../../../../lib/plans-store";
 import { requireAdmin } from "../../../../../../lib/require-admin";
+import { reportError } from "../../../../../../lib/observability";
 
 /** Sets a user's plan (until Stripe Billing is connected). Body: `{ plan: "free" | "pro" }`. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +15,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     await setPlan(await getDb(), id, body.plan);
     return Response.json({ ok: true, plan: body.plan });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }

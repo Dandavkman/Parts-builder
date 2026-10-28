@@ -1,5 +1,6 @@
 import { DatabaseNotConfigured, getDb } from "../../../../lib/db/client";
 import { handleStripeEvent, verifyStripeSignature } from "../../../../lib/payments/stripe";
+import { reportError } from "../../../../lib/observability";
 
 /** Stripe calls this when a payment completes. The signature is checked against STRIPE_WEBHOOK_SECRET before anything is read. */
 export async function POST(request: Request) {
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     const result = await handleStripeEvent(await getDb(), event);
     return Response.json({ received: true, result });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("stripe webhook failed", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("stripe webhook failed", error);
     // A 5xx makes Stripe retry later, which is what we want if the database was briefly down.
     return Response.json({ error: "Could not record the payment." }, { status: 503 });
   }

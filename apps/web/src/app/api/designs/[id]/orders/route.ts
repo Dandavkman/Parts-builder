@@ -6,6 +6,7 @@ import { parseAddress } from "../../../../../lib/orders/address";
 import { createOrder, markPaid } from "../../../../../lib/orders/store";
 import { getPaymentProvider } from "../../../../../lib/payments/provider";
 import { requireOwner } from "../../../../../lib/require-owner";
+import { reportError } from "../../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -60,7 +61,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     try {
       started = await provider.start(created.order, new URL(request.url).origin);
     } catch (error) {
-      console.error("payment could not start", error);
+      await reportError("payment could not start", error);
       return Response.json({ error: "Payment could not be started. Try again in a moment." }, { status: 502 });
     }
     if (started.paidNow) {
@@ -70,7 +71,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     return Response.json({ order: created.order, checkoutUrl: started.url }, { status: 201 });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("order failed", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("order failed", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }

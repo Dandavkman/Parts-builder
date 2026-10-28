@@ -4,6 +4,7 @@ import { designVersions } from "../../../../../../lib/db/schema";
 import { getOrder } from "../../../../../../lib/orders/store";
 import { requireAdmin } from "../../../../../../lib/require-admin";
 import { and, eq } from "drizzle-orm";
+import { reportError } from "../../../../../../lib/observability";
 
 const FORMATS: GeometryFormat[] = ["step", "stl", "glb"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,7 +29,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       .where(and(eq(designVersions.designId, order.designId), eq(designVersions.version, order.version)));
     anchors = row?.anchors ?? [];
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
   let built;
