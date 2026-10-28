@@ -86,7 +86,7 @@ export function OrderPanel({ designId, version }: { designId: string; version: n
   if (version === null) return null;
   return (
     <details className="mt-2 text-xs">
-      <summary className="cursor-pointer text-zinc-500">Quote and order</summary>
+      <summary className="cursor-pointer text-muted">Quote and order</summary>
       <div className="mt-1 space-y-2">
         <div className="flex items-center gap-2">
           <label htmlFor="order-quantity">Quantity</label>
@@ -97,14 +97,14 @@ export function OrderPanel({ designId, version }: { designId: string; version: n
             max={100}
             value={quantity}
             onChange={(e) => setQuantity(Math.max(1, Math.floor(Number(e.target.value)) || 1))}
-            className="w-16 rounded border border-zinc-300 bg-transparent px-1 dark:border-zinc-700"
+            className="w-16 rounded border border-line-strong bg-transparent px-1"
           />
-          <button type="button" onClick={() => void getQuotes()} disabled={busy} className="rounded border border-zinc-300 px-2 py-0.5 disabled:opacity-40 dark:border-zinc-700">
+          <button type="button" onClick={() => void getQuotes()} disabled={busy} className="rounded border border-line-strong px-2 py-0.5 disabled:opacity-40">
             Get quotes
           </button>
         </div>
         {placeholder && quotes.length > 0 && (
-          <p className="rounded bg-amber-100 px-2 py-1 text-amber-900">Example prices only: real partner rates are not set up yet.</p>
+          <p className="rounded bg-warning-soft px-2 py-1 text-warning-ink">Example prices only: real partner rates are not set up yet.</p>
         )}
         {quotes.length > 0 && (
           <ul aria-label="Quotes" className="space-y-1">
@@ -119,7 +119,7 @@ export function OrderPanel({ designId, version }: { designId: string; version: n
           </ul>
         )}
         {unquoted.length > 0 && (
-          <ul className="space-y-0.5 text-zinc-500">
+          <ul className="space-y-0.5 text-muted">
             {unquoted.map((u) => (
               <li key={u.materialName}>
                 {u.materialName}: {u.reasons.join("; ")}
@@ -136,7 +136,7 @@ export function OrderPanel({ designId, version }: { designId: string; version: n
                 placeholder={f.label}
                 value={address[f.key]}
                 onChange={(e) => setAddress((a) => ({ ...a, [f.key]: e.target.value }))}
-                className="block w-full rounded border border-zinc-300 bg-transparent px-1 py-0.5 dark:border-zinc-700"
+                className="block w-full rounded border border-line-strong bg-transparent px-1 py-0.5"
               />
             ))}
             <label className="flex items-start gap-2">
@@ -145,7 +145,7 @@ export function OrderPanel({ designId, version }: { designId: string; version: n
             <label className="flex items-start gap-2">
               <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} />I accept the fit and use terms.
             </label>
-            <button type="button" onClick={() => void order()} disabled={busy} className="rounded bg-zinc-900 px-3 py-1 text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900">
+            <button type="button" onClick={() => void order()} disabled={busy} className="rounded bg-primary px-3 py-1 text-on-primary disabled:opacity-40">
               Place order
             </button>
           </div>

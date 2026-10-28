@@ -238,7 +238,7 @@ export function Workspace() {
   return (
     <>
     <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-      <button type="button" onClick={newDesign} disabled={chat.busy} className="rounded border border-zinc-300 px-3 py-1 disabled:opacity-40 dark:border-zinc-700">
+      <button type="button" onClick={newDesign} disabled={chat.busy} className="rounded border border-line-strong px-3 py-1 disabled:opacity-40">
         New design
       </button>
       {designs.length > 0 && (
@@ -247,7 +247,7 @@ export function Workspace() {
           value={chat.designId ?? ""}
           disabled={chat.busy}
           onChange={(e) => e.target.value && void loadDesign(e.target.value, true)}
-          className="max-w-xs rounded border border-zinc-300 bg-transparent px-2 py-1 dark:border-zinc-700"
+          className="max-w-xs rounded border border-line-strong bg-transparent px-2 py-1"
         >
           <option value="">Earlier designs...</option>
           {designs.map((d) => (
@@ -257,10 +257,10 @@ export function Workspace() {
           ))}
         </select>
       )}
-      {notice && <span className="text-red-700 dark:text-red-400">{notice}</span>}
+      {notice && <span className="text-danger">{notice}</span>}
     </div>
     <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-      <section className="flex h-[560px] flex-col rounded border border-zinc-200 dark:border-zinc-800">
+      <section className="flex h-[560px] flex-col rounded border border-line">
         <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
           {chat.items.length === 0 && (
             <div className="grid gap-2 sm:grid-cols-2" aria-label="Ways to start">
@@ -269,10 +269,10 @@ export function Workspace() {
                   key={choice.id}
                   type="button"
                   onClick={() => startWith(choice)}
-                  className={`rounded border border-zinc-300 p-3 text-left dark:border-zinc-700 ${choice.available ? "hover:bg-zinc-100 dark:hover:bg-zinc-800" : "opacity-60"}`}
+                  className={`rounded border border-line-strong p-3 text-left ${choice.available ? "hover:bg-raised" : "opacity-60"}`}
                 >
                   <span className="block font-medium">{choice.title}</span>
-                  <span className="mt-1 block text-xs text-zinc-500">{choice.hint}</span>
+                  <span className="mt-1 block text-xs text-muted">{choice.hint}</span>
                 </button>
               ))}
             </div>
@@ -282,21 +282,21 @@ export function Workspace() {
               key={i}
               className={
                 item.kind === "user"
-                  ? "ml-8 rounded bg-zinc-900 px-3 py-2 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  ? "ml-8 rounded bg-primary px-3 py-2 text-on-primary"
                   : item.kind === "assistant"
-                    ? "mr-8 whitespace-pre-wrap rounded bg-zinc-100 px-3 py-2 dark:bg-zinc-800"
+                    ? "mr-8 whitespace-pre-wrap rounded bg-raised px-3 py-2"
                     : item.kind === "error"
-                      ? "rounded border border-red-300 px-3 py-2 text-red-700 dark:text-red-400"
-                      : "px-1 text-xs text-zinc-500"
+                      ? "rounded border border-danger-line px-3 py-2 text-danger"
+                      : "px-1 text-xs text-muted"
               }
             >
               {item.text}
             </p>
           ))}
-          {chat.busy && <p className="px-1 text-xs text-zinc-500">Working...</p>}
+          {chat.busy && <p className="px-1 text-xs text-muted">Working...</p>}
         </div>
         {photo && (
-          <div className="flex items-center gap-3 border-t border-zinc-200 px-3 pt-3 text-xs text-zinc-500 dark:border-zinc-800">
+          <div className="flex items-center gap-3 border-t border-line px-3 pt-3 text-xs text-muted">
             <img src={photo.previewUrl} alt="Photo to send" className="h-12 w-12 rounded object-cover" />
             <span>Photo ready. Tell me one real measurement, or put a card or coin next to the object.</span>
             <button type="button" onClick={clearPhoto} className="underline">
@@ -305,7 +305,7 @@ export function Workspace() {
           </div>
         )}
         <form
-          className="flex gap-2 border-t border-zinc-200 p-3 dark:border-zinc-800"
+          className="flex gap-2 border-t border-line p-3"
           onSubmit={(e) => {
             e.preventDefault();
             void send();
@@ -325,7 +325,7 @@ export function Workspace() {
             onClick={() => fileRef.current?.click()}
             disabled={chat.busy || photoCount >= 4}
             title={photoCount >= 4 ? "This design has the most photos allowed." : "Add a photo to start from"}
-            className="rounded border border-zinc-300 px-3 py-2 text-sm disabled:opacity-40 dark:border-zinc-700"
+            className="rounded border border-line-strong px-3 py-2 text-sm disabled:opacity-40"
           >
             Photo
           </button>
@@ -335,12 +335,12 @@ export function Workspace() {
             onChange={(e) => setDraft(e.target.value)}
             maxLength={4000}
             placeholder={photo ? "Say what to make from this photo" : "Describe the part"}
-            className="min-w-0 flex-1 rounded border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700"
+            className="min-w-0 flex-1 rounded border border-line-strong bg-transparent px-3 py-2 text-sm"
           />
           <button
             type="submit"
             disabled={chat.busy || draft.trim() === ""}
-            className="rounded bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900"
+            className="rounded bg-primary px-4 py-2 text-sm text-on-primary disabled:opacity-40"
           >
             Send
           </button>
@@ -348,24 +348,24 @@ export function Workspace() {
       </section>
 
       <section className="flex h-[560px] flex-col">
-        <div className="min-h-0 flex-1 overflow-hidden rounded border border-zinc-200 dark:border-zinc-800">
+        <div className="min-h-0 flex-1 overflow-hidden rounded border border-line">
           {partUrl ? (
             <ModelViewer url={partUrl} errorMessage={PART_ERROR} />
           ) : (
-            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-zinc-500">
+            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted">
               The part will appear here once the agent has built one.
             </div>
           )}
         </div>
         {partUrl && (
           <div className="mt-2 flex gap-3 text-sm">
-            <span className="text-zinc-500">Download version {current}:</span>
+            <span className="text-muted">Download version {current}:</span>
             <a className="underline" href={download("step")}>STEP</a>
             <a className="underline" href={download("stl")}>STL</a>
           </div>
         )}
         {pending.length > 0 && (
-          <ul className="mt-2 space-y-1 rounded border border-amber-400 p-2 text-xs" aria-label="Found online">
+          <ul className="mt-2 space-y-1 rounded border border-warning-line p-2 text-xs" aria-label="Found online">
             {pending.map((d) => (
               <li key={d.id} className="flex flex-wrap items-center gap-2">
                 <span>Found online: {d.id} =</span>
@@ -375,7 +375,7 @@ export function Workspace() {
                   aria-label={`${d.id} in millimeters`}
                   value={edits[d.id] ?? String(d.value_mm)}
                   onChange={(e) => setEdits((s) => ({ ...s, [d.id]: e.target.value }))}
-                  className="w-20 rounded border border-zinc-300 bg-transparent px-1 py-0.5 dark:border-zinc-700"
+                  className="w-20 rounded border border-line-strong bg-transparent px-1 py-0.5"
                 />
                 <span>mm</span>
                 {d.source_url && (
@@ -383,7 +383,7 @@ export function Workspace() {
                     source
                   </a>
                 )}
-                <button type="button" onClick={() => void answerSuggestion(d, "confirm")} disabled={chat.busy} className="rounded bg-zinc-900 px-2 py-0.5 text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900">
+                <button type="button" onClick={() => void answerSuggestion(d, "confirm")} disabled={chat.busy} className="rounded bg-primary px-2 py-0.5 text-on-primary disabled:opacity-40">
                   Confirm
                 </button>
                 <button type="button" onClick={() => void answerSuggestion(d, "reject")} disabled={chat.busy} className="underline disabled:opacity-40">
@@ -396,7 +396,7 @@ export function Workspace() {
         {dimensions.length > 0 && (
           <ul className="mt-2 space-y-0.5 text-xs" aria-label="Known sizes">
             {dimensions.map((d) => (
-              <li key={d.id} className="text-zinc-500">
+              <li key={d.id} className="text-muted">
                 {d.id}: {d.value_mm} mm ({d.confidence === "stated" ? "from you" : d.confidence === "estimated" ? "estimated from a photo, please check" : "published"})
               </li>
             ))}
@@ -408,7 +408,7 @@ export function Workspace() {
           <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto text-xs" aria-label="Versions">
             {[...versions].reverse().map((v) => (
               <li key={v.version} className="flex items-center gap-2">
-                <span className={v.version === current ? "font-semibold" : "text-zinc-500"}>
+                <span className={v.version === current ? "font-semibold" : "text-muted"}>
                   v{v.version} {v.name} ({v.createdBy}, {v.buildOk ? "built" : "did not build"})
                 </span>
                 {v.buildOk && v.version !== current && (
@@ -416,7 +416,7 @@ export function Workspace() {
                     Use this version
                   </button>
                 )}
-                {v.version === current && <span className="text-zinc-500">showing</span>}
+                {v.version === current && <span className="text-muted">showing</span>}
               </li>
             ))}
           </ul>

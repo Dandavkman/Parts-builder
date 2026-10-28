@@ -226,6 +226,9 @@ A typed in-code catalog (make, model, generation, year range, scanned areas) and
 
 The AI message cap already existed (`MESSAGES_PER_MINUTE`). Added a general fixed-window limiter backed by a `rate_limits` table (migration 0013), because serverless instances share no memory. One atomic upsert per hit, so concurrent requests all count. Applied to the public waitlist (5 per hour per address) and order creation (20 per hour per user). The numbers are placeholders in `LIMITS`. A fixed window allows a short burst at a window edge; fine for abuse control, not for billing. Error tracking and database backups need an account choice (Sentry or similar; Neon's backup tier) and are left for the Owner.
 
+## 2026-10-28 — Design tokens and UI guidelines
+
+The Owner plans a later visual redesign. Colours now live only in `globals.css` as semantic tokens (CSS variables, with dark values under `prefers-color-scheme`, exposed to Tailwind through `@theme inline`). All components were moved from raw zinc/amber/red classes to the token names; the look is unchanged. A test scans `app/**/*.tsx` and fails on raw palette classes, `dark:` colour overrides and hex colours (the 3D viewer's lighting and material are exempt). Guidelines are in `docs/ui-guidelines.md`. Extracting logic from the large `design/workspace.tsx` into hooks is the next step and is not part of this change.
 ## 2026-10-28 — Daily database backup (B2.11d)
 
 A scheduled GitHub Actions job runs `scripts/backup-db.sh` (`pg_dump | gzip`, upload to a private R2 bucket). It exits successfully and does nothing when `BACKUP_DATABASE_URL` is unset, so merging it costs nothing and needs no account yet. It refuses to call a tiny dump a backup, and fails loudly if the dump exists but the upload settings are missing. Workflow artifacts are not used because they would keep customer data in GitHub. Restore steps are in `docs/backups.md`.

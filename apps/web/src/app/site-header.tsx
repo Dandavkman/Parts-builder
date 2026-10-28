@@ -5,7 +5,7 @@ import { getAuthMode } from "../lib/auth-mode";
 export function SiteHeader() {
   const mode = getAuthMode();
   return (
-    <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
+    <header className="flex items-center justify-between border-b border-line px-6 py-3">
       <Link href="/" className="font-semibold tracking-tight">
         Parts Builder
       </Link>
@@ -25,13 +25,13 @@ export function SiteHeader() {
               <UserButton />
             </Show>
             <Show when="signed-out">
-              <Link href="/sign-in" className="rounded bg-zinc-900 px-3 py-1.5 text-white dark:bg-zinc-100 dark:text-zinc-900">
+              <Link href="/sign-in" className="rounded bg-primary px-3 py-1.5 text-on-primary">
                 Sign in
               </Link>
             </Show>
           </>
         ) : (
-          <span className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-900">
+          <span className="rounded bg-warning-soft px-2 py-1 text-xs text-warning-ink">
             {mode === "dev-bypass" ? "Dev mode: no sign-in" : "Sign-in not set up"}
           </span>
         )}

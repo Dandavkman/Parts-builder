@@ -1,9 +1,66 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. This is the one place colours are chosen: components use the semantic names below
+ * (bg-page, text-muted, border-line, bg-primary ...) and never a raw palette colour, so a redesign
+ * means editing this file. A test (design-tokens.test.ts) fails if a raw palette class sneaks back in.
+ * Light values are on :root; dark values follow the system setting.
+ */
 :root {
   color-scheme: light dark;
+
+  --page: var(--color-zinc-50);
+  --ink: var(--color-zinc-900);
+  --muted: var(--color-zinc-500);
+  --subtle: var(--color-zinc-600);
+  --line: var(--color-zinc-200);
+  --line-strong: var(--color-zinc-300);
+  --raised: var(--color-zinc-100);
+  --sunken: var(--color-zinc-100);
+  --primary: var(--color-zinc-900);
+  --on-primary: white;
+  --warning-soft: var(--color-amber-100);
+  --warning-ink: var(--color-amber-900);
+  --warning-text: var(--color-amber-700);
+  --warning-line: var(--color-amber-400);
+  --danger: var(--color-red-700);
+  --danger-line: var(--color-red-300);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: var(--color-zinc-950);
+    --ink: var(--color-zinc-100);
+    --subtle: var(--color-zinc-400);
+    --line: var(--color-zinc-800);
+    --line-strong: var(--color-zinc-700);
+    --raised: var(--color-zinc-800);
+    --sunken: var(--color-zinc-900);
+    --primary: var(--color-zinc-100);
+    --on-primary: var(--color-zinc-900);
+    --danger: var(--color-red-400);
+  }
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-text: var(--warning-text);
+  --color-warning-line: var(--warning-line);
+  --color-danger: var(--danger);
+  --color-danger-line: var(--danger-line);
 }
 
 body {
-  @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+  @apply bg-page text-ink antialiased;
 }
