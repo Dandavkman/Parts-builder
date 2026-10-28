@@ -222,3 +222,6 @@ Emails for order confirmed, sent to production, shipped (with tracking), deliver
 ## 2026-10-28 — Vehicle catalog (B3.1)
 
 A typed in-code catalog (make, model, generation, year range, scanned areas) and a search that needs every query word to match a field prefix or a year in range, so "mia", "mx5", "NA 1994" all work. Public `GET /api/vehicles?q=`. It lives in code, not the database, until the Owner supplies the real list; a table and admin editor come with B3.2/B3.4. Only the Miata NA rows reflect real plans; the other rows are placeholders so search and pages can be tested. Scan areas are a fixed list so tags and pages stay consistent.
+## 2026-10-28 — Rate limits beyond the AI cap (B2.11b)
+
+The AI message cap already existed (`MESSAGES_PER_MINUTE`). Added a general fixed-window limiter backed by a `rate_limits` table (migration 0013), because serverless instances share no memory. One atomic upsert per hit, so concurrent requests all count. Applied to the public waitlist (5 per hour per address) and order creation (20 per hour per user). The numbers are placeholders in `LIMITS`. A fixed window allows a short burst at a window edge; fine for abuse control, not for billing. Error tracking and database backups need an account choice (Sentry or similar; Neon's backup tier) and are left for the Owner.

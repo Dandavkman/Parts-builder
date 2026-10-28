@@ -228,6 +228,17 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       )`,
     ],
   },
+  {
+    id: "0013_rate_limits",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS rate_limits (
+        key text NOT NULL,
+        window_start timestamptz NOT NULL,
+        hits integer NOT NULL DEFAULT 0,
+        PRIMARY KEY (key, window_start)
+      )`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
