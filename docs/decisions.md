@@ -208,3 +208,7 @@ A small model (`SAFETY_MODEL`, default `claude-haiku-5-5`) labels each design re
 ## 2026-10-28: Partner rates and markup are editable by an admin (B2.7b)
 
 The quote engine now prices from one saved set of rates in the database (`rate_cards`, row 1), edited with `PUT /api/admin/rates`, instead of only the numbers in `rate-cards.ts`. Until a set is saved the built-in placeholder rates are used. The saved set carries a `placeholder` flag the admin sets to `false` only for real, confirmed rates; quotes copy it, and a live Stripe key is refused for any order whose quote is marked placeholder. The whole set is validated (known materials, whole cents, unique partner ids) and replaced at once. Printability limits in the material table (`materials.ts`) are not editable yet, and there is no admin screen for rates (API only).
+
+## 2026-10-28 — Access-control sweep (B2.12a)
+
+A test enumerates every `route.ts` under `app/api` and checks that signed-out callers get 401 (only `stripe/webhook` and `waitlist` are public), that signed-in non-admins get 403 on `admin/*`, and that middleware `PROTECTED_PATHS` covers each prefix. It found `/api/account` missing from `PROTECTED_PATHS`; added. `demo-plate` does its own auth and returns 503 when auth is unconfigured (fail closed). New routes must be added to the public list deliberately or they fail this test.
