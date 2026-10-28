@@ -41,7 +41,7 @@ export function Sliders({
   if (numbers.length === 0) return null;
   return (
     <details className="mt-2 text-xs" open={numbers.length < OPEN_BELOW}>
-      <summary className="cursor-pointer text-zinc-500">Adjust numbers ({numbers.length})</summary>
+      <summary className="cursor-pointer text-muted">Adjust numbers ({numbers.length})</summary>
       <ul className="mt-1 max-h-48 space-y-1 overflow-y-auto" aria-label="Sliders">
         {numbers.slice(0, MAX_SLIDERS).map((item) => {
           const key = item.path.join(".");
@@ -69,15 +69,15 @@ export function Sliders({
                 value={value}
                 disabled={disabled}
                 onChange={(e) => change(item, Number(e.target.value))}
-                className="w-20 rounded border border-zinc-300 bg-transparent px-1 dark:border-zinc-700"
+                className="w-20 rounded border border-line-strong bg-transparent px-1"
               />
-              <span className="w-7 text-zinc-500">{item.unit}</span>
+              <span className="w-7 text-muted">{item.unit}</span>
             </li>
           );
         })}
       </ul>
       {numbers.length > MAX_SLIDERS && (
-        <p className="mt-1 text-zinc-500">Showing the first {MAX_SLIDERS} of {numbers.length} numbers.</p>
+        <p className="mt-1 text-muted">Showing the first {MAX_SLIDERS} of {numbers.length} numbers.</p>
       )}
     </details>
   );

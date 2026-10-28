@@ -42,15 +42,15 @@ export default async function AdminOrders({ searchParams }: { searchParams: Prom
                 </Link>
               ))}
             </nav>
-            {problem && <p className="mt-4 text-sm text-amber-700">{problem}</p>}
-            {orders.length === 0 && !problem && <p className="mt-4 text-sm text-zinc-500">No orders.</p>}
+            {problem && <p className="mt-4 text-sm text-warning-text">{problem}</p>}
+            {orders.length === 0 && !problem && <p className="mt-4 text-sm text-muted">No orders.</p>}
             <ul className="mt-4 space-y-4" aria-label="Orders">
               {orders.map((o) => (
-                <li key={o.id} className="rounded border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+                <li key={o.id} className="rounded border border-line p-3 text-sm">
                   <div className="font-medium">
-                    {orderSummary(o)} <span className="font-normal text-zinc-500">({statusLabel(o.status)})</span>
+                    {orderSummary(o)} <span className="font-normal text-muted">({statusLabel(o.status)})</span>
                   </div>
-                  <div className="text-zinc-500">
+                  <div className="text-muted">
                     {o.id} · {o.quoteSnapshot.partnerName} · {o.shippingAddress.name}, {o.shippingAddress.city} {o.shippingAddress.country}
                     {o.quoteSnapshot.placeholder ? " · placeholder pricing" : ""}
                   </div>

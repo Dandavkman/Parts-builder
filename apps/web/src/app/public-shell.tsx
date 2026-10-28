@@ -12,7 +12,7 @@ export function PublicShell({ title, children }: { title?: string; children: Rea
         {title && <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>}
         {children}
       </main>
-      <footer className="mx-auto max-w-3xl border-t border-zinc-200 px-6 py-6 text-sm text-zinc-500 dark:border-zinc-800">
+      <footer className="mx-auto max-w-3xl border-t border-line px-6 py-6 text-sm text-muted">
         <nav className="flex flex-wrap gap-4" aria-label="Footer">
           <Link href="/pricing" className="hover:underline">Pricing</Link>
           <Link href="/faq" className="hover:underline">FAQ</Link>
