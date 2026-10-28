@@ -7,6 +7,7 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 | `/api/account` | GET | signed in | The signed-in user's plan, this month's usage and the plan's limits. |
 | `/api/account/portal` | POST | signed in | Returns `{ url }` of the Stripe page where a Pro user changes or cancels their subscription. |
 | `/api/account/upgrade` | POST | signed in | Starts the Pro subscription: returns `{ url }` of a Stripe Checkout page. 503 until Stripe Billing is set up. |
+| `/api/admin/agent-failures` | GET | admin | How well the design agent is doing over the last `?days=` days (default 7, up to 90): the share of designs whose last version built, the ten most common failures with example requests, and draft benchmark cases from them. |
 | `/api/admin/ai-cost` | GET | admin | AI spend over the last `?days=` days (default 1, up to 90): total, most expensive designs and users. Prices are estimates. |
 | `/api/admin/licenses` | POST | admin | Grants a user a scan license by hand. Body: `{ ownerId, vehicleId, area, note? }`. |
 | `/api/admin/listings` | GET | admin | Listings waiting for an admin's decision. |
