@@ -1,3 +1,5 @@
+import { notifyOrder } from "../../../../../lib/email/notify";
+import { validEmail } from "../../../../../lib/email/mailer";
 import { DatabaseNotConfigured, getDb } from "../../../../../lib/db/client";
 import { parseAddress } from "../../../../../lib/orders/address";
 import { createOrder, markPaid } from "../../../../../lib/orders/store";
@@ -35,6 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const address = parseAddress(body.shipping);
   if (!address.ok) return Response.json({ error: "Check the shipping address.", errors: address.errors }, { status: 400 });
 
+  if (body.email !== undefined && body.email !== "" && !validEmail(body.email)) return Response.json({ error: "That email address does not look right." }, { status: 400 });
   try {
     const db = await getDb();
     const created = await createOrder(db, {
@@ -42,6 +45,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       designId: id,
       quoteId: body.quoteId,
       address: address.address,
+      contactEmail: typeof body.email === "string" && body.email ? body.email : undefined,
       confirmedNotSafetyCritical: body.confirmNotSafetyCritical === true,
       acceptedFitTerms: body.acceptFitTerms === true,
     });
@@ -58,6 +62,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     if (started.paidNow) {
       const paid = await markPaid(db, created.order.id, { provider: provider.name, ref: started.ref });
+      if (paid) await notifyOrder(db, paid, "order_confirmed");
       return Response.json({ order: paid }, { status: 201 });
     }
     return Response.json({ order: created.order, checkoutUrl: started.url }, { status: 201 });
