@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { AgentAnchor, AgentDimension } from "../agent/types";
+import type { ShippingAddress } from "../orders/address";
+import type { QuoteLine } from "../quotes/engine";
 import { boolean, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 /** Owner is the Clerk user id (or "dev" in the local bypass). A users table arrives with plans in Phase 2. */
@@ -105,4 +107,33 @@ export const quotes = pgTable("quotes", {
   placeholder: boolean("placeholder").notNull().default(true),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
+
+/**
+ * An order is traceable to the exact frozen design version, quote and safety confirmation (plan rule 4).
+ * The quote and spec are copied so later edits or expiry cannot change what was bought.
+ * Status moves are defined in lib/orders/status.ts.
+ */
+export const orders = pgTable("orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: text("owner_id").notNull(),
+  designId: uuid("design_id")
+    .notNull()
+    .references(() => designs.id),
+  version: integer("version").notNull(),
+  quoteId: uuid("quote_id").references(() => quotes.id),
+  status: text("status").notNull().default("quote"),
+  quoteSnapshot: jsonb("quote_snapshot").$type<QuoteLine>().notNull(),
+  specSnapshot: jsonb("spec_snapshot").$type<Record<string, unknown>>().notNull(),
+  shippingAddress: jsonb("shipping_address").$type<ShippingAddress>().notNull(),
+  totalCents: integer("total_cents").notNull(),
+  safetyConfirmedAt: timestamp("safety_confirmed_at", { withTimezone: true }).notNull(),
+  termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }).notNull(),
+  paymentProvider: text("payment_provider"),
+  paymentRef: text("payment_ref"),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  partnerOrderRef: text("partner_order_ref"),
+  trackingNumber: text("tracking_number"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
 });

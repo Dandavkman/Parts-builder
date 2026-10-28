@@ -99,6 +99,35 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `CREATE INDEX IF NOT EXISTS quotes_design_idx ON quotes (design_id, version)`,
     ],
   },
+  {
+    id: "0006_orders",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS orders (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_id text NOT NULL,
+        design_id uuid NOT NULL REFERENCES designs(id),
+        version integer NOT NULL,
+        quote_id uuid REFERENCES quotes(id),
+        status text NOT NULL DEFAULT 'quote',
+        quote_snapshot jsonb NOT NULL,
+        spec_snapshot jsonb NOT NULL,
+        shipping_address jsonb NOT NULL,
+        total_cents integer NOT NULL,
+        safety_confirmed_at timestamptz NOT NULL,
+        terms_accepted_at timestamptz NOT NULL,
+        payment_provider text,
+        payment_ref text,
+        paid_at timestamptz,
+        partner_order_ref text,
+        tracking_number text,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      )`,
+      `CREATE INDEX IF NOT EXISTS orders_owner_idx ON orders (owner_id)`,
+      `CREATE INDEX IF NOT EXISTS orders_status_idx ON orders (status)`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS orders_payment_ref_idx ON orders (payment_provider, payment_ref) WHERE payment_ref IS NOT NULL`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
