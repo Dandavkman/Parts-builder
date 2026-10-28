@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDb } from "../../../../lib/db/client";
 import { publicStore } from "../../../../lib/stores/review";
 import { PublicShell } from "../../../public-shell";
+import { OrderFormView } from "./order-form";
 
 type Params = { params: Promise<{ slug: string; listing: string }> };
 
@@ -32,11 +32,7 @@ export default async function ListingPage(props: Params) {
       <p className="mt-4">Made to order in {item.materialName}.</p>
       <p className="mt-2 text-2xl">${(item.retailCents / 100).toFixed(2)}</p>
       {item.placeholder && <p className="mt-4 rounded bg-warning-soft px-3 py-2 text-warning-ink">Example price only: pricing is not final yet.</p>}
-      <p className="mt-6">
-        <Link href="/sign-in" className="underline">
-          Sign in to order
-        </Link>
-      </p>
+      <OrderFormView listingId={item.id} />
     </PublicShell>
   );
 }

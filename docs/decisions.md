@@ -285,3 +285,6 @@ A seller gets paste-ready HTML from `GET /api/stores/embed`: a `<div data-parts-
 
 ## 2026-10-28 — API reference kept honest by a test
 `docs/api.md` lists every route handler with who may call it and what it does, taken from each route's own comment. `api-docs.test.ts` fails when a handler is missing from it, the same way the access-control sweep fails on an unprotected route. The point is the redesign: screens can be rebuilt against a documented set of routes with no presentation inside them.
+
+## 2026-10-28 — Order form on the listing page (B4.5b)
+The listing page now has a working order form: shipping address, optional email, and the two confirmations (not safety-critical, fit terms). Validation and the request live in `lib/orders/order-form.ts` (tested without a browser), state in `use-order-form.ts`, and `order-form.tsx` is markup on the design tokens only, so the redesign can restyle it without touching behavior. A buyer who is not signed in is sent to sign in; a Stripe payment redirects to Checkout; stub payments show the confirmation straight away.
