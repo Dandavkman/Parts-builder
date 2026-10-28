@@ -4,6 +4,7 @@ import { DatabaseNotConfigured, getDb } from "../../../../../lib/db/client";
 import { isOrderStatus } from "../../../../../lib/orders/status";
 import { getOrder, moveOrder } from "../../../../../lib/orders/store";
 import { requireAdmin } from "../../../../../lib/require-admin";
+import { reportError } from "../../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const short = (v: unknown) => (typeof v === "string" && v.trim() && v.length <= 200 ? v.trim() : undefined);
@@ -35,7 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (event) await notifyOrder(db, moved.order, event);
     return Response.json({ order: moved.order });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }

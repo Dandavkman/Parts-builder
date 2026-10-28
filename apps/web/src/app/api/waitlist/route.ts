@@ -1,6 +1,7 @@
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { waitlist } from "../../../lib/db/schema";
 import { clientKey, hit, LIMITS, tooMany } from "../../../lib/rate-limit";
+import { reportError } from "../../../lib/observability";
 
 /** Public. Adds an email to the waitlist. Body: `{ email }`. Answers the same whether or not the address was already there. */
 export async function POST(request: Request) {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     await db.insert(waitlist).values({ email }).onConflictDoNothing();
     return Response.json({ ok: true }, { status: 201 });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("waitlist failed", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("waitlist failed", error);
     return Response.json({ error: "We could not save that right now. Please try again later." }, { status: 503 });
   }
 }

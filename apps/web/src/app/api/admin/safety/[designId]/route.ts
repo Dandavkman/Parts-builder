@@ -1,6 +1,7 @@
 import { DatabaseNotConfigured, getDb } from "../../../../../lib/db/client";
 import { decideReview } from "../../../../../lib/safety/store";
 import { requireAdmin } from "../../../../../lib/require-admin";
+import { reportError } from "../../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -20,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ des
       ? Response.json({ error: "Design not found." }, { status: 404 })
       : Response.json({ error: "That design is not waiting for review." }, { status: 409 });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }
