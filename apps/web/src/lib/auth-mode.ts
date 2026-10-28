@@ -18,4 +18,4 @@ export function getAuthMode(env: Env = process.env): AuthMode {
   return "unconfigured";
 }
 
-export const PROTECTED_PATHS = ["/dashboard(.*)", "/viewer(.*)", "/api/demo-plate(.*)", "/api/agent(.*)", "/api/designs(.*)", "/api/orders(.*)", "/api/stores(.*)", "/admin(.*)", "/api/admin(.*)", "/design(.*)"];
+export const PROTECTED_PATHS = ["/dashboard(.*)", "/viewer(.*)", "/api/demo-plate(.*)", "/api/agent(.*)", "/api/designs(.*)", "/api/orders(.*)", "/api/stores(.*)", "/api/account(.*)", "/admin(.*)", "/api/admin(.*)", "/design(.*)"];
