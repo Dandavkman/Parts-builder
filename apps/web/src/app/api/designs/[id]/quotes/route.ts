@@ -3,7 +3,7 @@ import { stlBounds, stlVolumeMm3 } from "../../../../../lib/agent/stl";
 import { getOwnedDesign, getOwnedVersion } from "../../../../../lib/agent/store";
 import { DatabaseNotConfigured, getDb } from "../../../../../lib/db/client";
 import { buildQuotes, MAX_QUANTITY } from "../../../../../lib/quotes/engine";
-import { RATES_ARE_PLACEHOLDER } from "../../../../../lib/quotes/rate-cards";
+import { loadRates } from "../../../../../lib/quotes/rates-store";
 import { listQuotes, saveQuotes } from "../../../../../lib/quotes/store";
 import { requireOwner } from "../../../../../lib/require-owner";
 
@@ -20,7 +20,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const design = await getOwnedDesign(db, id, who.ownerId);
     if (!design) return Response.json({ error: "Design not found." }, { status: 404 });
     const quotes = design.currentVersion ? await listQuotes(db, id, design.currentVersion) : [];
-    return Response.json({ quotes, placeholder: RATES_ARE_PLACEHOLDER }, { headers: { "cache-control": "private, no-store" } });
+    return Response.json({ quotes, placeholder: quotes.some((q) => q.placeholder) }, { headers: { "cache-control": "private, no-store" } });
   } catch (error) {
     if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
@@ -65,10 +65,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!bounds || !volume_mm3) return Response.json({ error: "The built part has no volume to quote." }, { status: 422 });
 
   const size_mm = [0, 1, 2].map((i) => bounds.max[i] - bounds.min[i]) as [number, number, number];
-  const result = buildQuotes({ volume_mm3, size_mm, spec: row.spec, quantity });
+  const { config } = await loadRates(db);
+  const result = buildQuotes({ volume_mm3, size_mm, spec: row.spec, quantity, partners: config.partners, markupPercent: config.markupPercent, placeholder: config.placeholder });
   const saved = await saveQuotes(db, id, row.version, result.quotes);
   return Response.json(
-    { version: row.version, quotes: saved, unquoted: result.unquoted, volume_cm3: volume_mm3 / 1000, size_mm, placeholder: RATES_ARE_PLACEHOLDER },
+    { version: row.version, quotes: saved, unquoted: result.unquoted, volume_cm3: volume_mm3 / 1000, size_mm, placeholder: config.placeholder },
     { headers: { "cache-control": "private, no-store" } },
   );
 }

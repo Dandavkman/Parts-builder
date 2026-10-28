@@ -197,6 +197,17 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
     ],
   },
   {
+    id: "0010_rate_cards",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS rate_cards (
+        id integer PRIMARY KEY CHECK (id = 1),
+        config jsonb NOT NULL,
+        updated_by text,
+        updated_at timestamptz NOT NULL DEFAULT now()
+      )`,
+    ],
+  },
+  {
     id: "0011_order_emails",
     sql: [
       `ALTER TABLE orders ADD COLUMN IF NOT EXISTS contact_email text`,
