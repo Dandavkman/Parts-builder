@@ -22,8 +22,8 @@ export function WaitlistForm() {
 
   return (
     <form onSubmit={(e) => void submit(e)} className="mt-4 flex flex-wrap gap-2" aria-label="Join the waitlist">
-      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email address" placeholder="you@example.com" className="w-64 rounded border border-zinc-300 bg-transparent px-3 py-2 dark:border-zinc-700" />
-      <button type="submit" disabled={busy} className="rounded bg-zinc-900 px-4 py-2 text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">
+      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email address" placeholder="you@example.com" className="w-64 rounded border border-line-strong bg-transparent px-3 py-2" />
+      <button type="submit" disabled={busy} className="rounded bg-primary px-4 py-2 text-on-primary disabled:opacity-50">
         Join the waitlist
       </button>
       {message && <p role="status" className="w-full text-sm">{message}</p>}

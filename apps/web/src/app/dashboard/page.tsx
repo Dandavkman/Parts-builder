@@ -37,27 +37,27 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <main className="mx-auto max-w-4xl px-6 py-10">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <form className="mt-4 flex gap-2" role="search">
-          <input name="q" defaultValue={q ?? ""} aria-label="Search" placeholder="Search designs and orders" className="w-64 rounded border border-zinc-300 bg-transparent px-2 py-1 text-sm dark:border-zinc-700" />
-          <button type="submit" className="rounded border border-zinc-300 px-3 py-1 text-sm dark:border-zinc-700">
+          <input name="q" defaultValue={q ?? ""} aria-label="Search" placeholder="Search designs and orders" className="w-64 rounded border border-line-strong bg-transparent px-2 py-1 text-sm" />
+          <button type="submit" className="rounded border border-line-strong px-3 py-1 text-sm">
             Search
           </button>
         </form>
         {usage && (
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-muted">
             {usage.plan === "pro" ? "Pro plan" : "Free plan"}: {usage.ai} of {PLAN_LIMITS[usage.plan].aiMessagesPerMonth} AI messages used this month, {designs.length} of{" "}
             {PLAN_LIMITS[usage.plan].savedDesigns} designs saved{plansEnforced() ? "" : " (limits are not enforced yet)"}.
           </p>
         )}
-        {problem && <p className="mt-4 text-sm text-amber-700">{problem}</p>}
+        {problem && <p className="mt-4 text-sm text-warning-text">{problem}</p>}
         <div className="mt-8 grid gap-6 md:grid-cols-3">
-          <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+          <section className="rounded border border-line p-4">
             <h2 className="font-medium">Scans</h2>
-            <p className="mt-2 text-sm text-zinc-500">No scans yet. Upload a scan or choose one from the library.</p>
+            <p className="mt-2 text-sm text-muted">No scans yet. Upload a scan or choose one from the library.</p>
           </section>
-          <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+          <section className="rounded border border-line p-4">
             <h2 className="font-medium">Designs ({shownDesigns.length})</h2>
             {shownDesigns.length === 0 ? (
-              <p className="mt-2 text-sm text-zinc-500">{q ? "No designs match." : "No designs yet. Describe a part to start one."}</p>
+              <p className="mt-2 text-sm text-muted">{q ? "No designs match." : "No designs yet. Describe a part to start one."}</p>
             ) : (
               <ul className="mt-2 space-y-1 text-sm" aria-label="Designs">
                 {shownDesigns.map((d) => (
@@ -65,22 +65,22 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                     <Link href={`/design?open=${d.id}`} className="underline">
                       {d.title}
                     </Link>
-                    <span className="ml-2 text-zinc-500">{d.createdAt.toLocaleDateString("en-US")}</span>
+                    <span className="ml-2 text-muted">{d.createdAt.toLocaleDateString("en-US")}</span>
                   </li>
                 ))}
               </ul>
             )}
           </section>
-          <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+          <section className="rounded border border-line p-4">
             <h2 className="font-medium">Orders ({shownOrders.length})</h2>
             {shownOrders.length === 0 ? (
-              <p className="mt-2 text-sm text-zinc-500">{q ? "No orders match." : "No orders yet."}</p>
+              <p className="mt-2 text-sm text-muted">{q ? "No orders match." : "No orders yet."}</p>
             ) : (
               <ul className="mt-2 space-y-2 text-sm" aria-label="Orders">
                 {shownOrders.map((o) => (
                   <li key={o.id}>
                     <div>{orderSummary(o)}</div>
-                    <div className="text-zinc-500">
+                    <div className="text-muted">
                       {statusLabel(o.status)}
                       {o.trackingNumber ? `, tracking ${o.trackingNumber}` : ""}
                     </div>
