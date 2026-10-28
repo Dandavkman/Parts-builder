@@ -144,6 +144,9 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
         ai_messages integer NOT NULL DEFAULT 0,
         PRIMARY KEY (owner_id, period)
       )`,
+    ],
+  },
+  {
     id: "0008_stores_listings",
     sql: [
       `CREATE TABLE IF NOT EXISTS stores (
