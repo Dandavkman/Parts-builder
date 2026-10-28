@@ -57,6 +57,7 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | `PLANS_ENFORCED` | B2.1a (optional; `1` enforces the Free and Pro limits on AI messages, saved designs and STEP export. The limits in `lib/plans.ts` are placeholders until you decide them; leave empty and nobody is blocked) |
 | `RESEND_API_KEY` | B2.9 (optional; API key from resend.com, server-side only. With `EMAIL_FROM` it turns on order emails; without them emails are only logged) |
 | `EMAIL_FROM` | B2.9 (optional; the From line, for example `Parts Builder <orders@yourdomain.com>`, on a domain verified in Resend) |
+| `SITE_URL` | B3.2 (optional; the public address, for the sitemap, for example `https://yourdomain.com`. Falls back to the Vercel production URL) |
 | `SENTRY_DSN` | B2.11c (optional; the project DSN from sentry.io, server-side only. Without it, errors are only logged to the console) |
 | `STRIPE_PRO_PRICE_ID` | B2.1b (optional; id of the recurring Price for Pro made in the Stripe dashboard. With `STRIPE_SECRET_KEY` it turns on `/api/account/upgrade` and `/api/account/portal`) |
 | `PRO_PRICE_CONFIRMED` | B2.1b (optional; `1` once the Pro price and limits are real. Until then a live Stripe key is refused for subscriptions) |
