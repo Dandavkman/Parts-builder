@@ -150,6 +150,8 @@ export const stores = pgTable("stores", {
   published: boolean("published").notNull().default(false),
   stripeConnectAccount: text("stripe_connect_account"),
   connectVerified: boolean("connect_verified").notNull().default(false),
+  /** White-label (B4.6): buyers see our brand on emails and packing slips only when the seller turns this on. */
+  showPlatformBrand: boolean("show_platform_brand").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
 

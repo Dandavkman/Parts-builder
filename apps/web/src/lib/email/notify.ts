@@ -2,6 +2,7 @@ import { eq, and } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { emailLog } from "../db/schema";
 import type { Order } from "../orders/store";
+import { orderBrand } from "./order-brand";
 import { getMailer, type Mailer } from "./mailer";
 import { renderOrderEmail, type OrderEmailEvent } from "./templates";
 import { reportError } from "../observability";
@@ -18,6 +19,7 @@ export async function notifyOrder(db: Db, order: Order, event: OrderEmailEvent, 
     if (claimed.length === 0) return "skipped";
     try {
       const q = order.quoteSnapshot;
+      const brand = await orderBrand(db, order);
       const content = renderOrderEmail(event, {
         orderId: order.id,
         materialName: q.materialName,
@@ -25,8 +27,10 @@ export async function notifyOrder(db: Db, order: Order, event: OrderEmailEvent, 
         totalCents: order.totalCents,
         trackingNumber: order.trackingNumber,
         placeholder: q.placeholder,
+        brandName: brand.name,
+        showPlatformBrand: brand.showPlatformBrand,
       });
-      await mailer.send({ to: order.contactEmail, ...content });
+      await mailer.send({ to: order.contactEmail, ...content, fromName: brand.name });
       return "sent";
     } catch (error) {
       await reportError("email failed", error);

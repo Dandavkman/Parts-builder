@@ -274,3 +274,6 @@ A design is tagged with every car its library scan covers (`design_vehicle_tags`
 
 ## 2026-10-28 — Seller sales numbers (B4.7a)
 `GET /api/stores/stats` returns each listing's units sold, refunds, gross (retail price times units) and royalty, plus store totals, paid out and balance. Everything is computed from the append-only ledger, so the numbers cannot drift from what the seller is owed. Buyer reviews and the match against Stripe's own reports wait for live Stripe data; the screen waits for the redesign.
+
+## 2026-10-28 — White-label emails and packing slips (B4.6)
+An order bought from a store (`orders.listing_id`) is emailed under the store's name: the sender's display name is the store name (the address stays ours, because mail from a domain we do not control would not be delivered), and the message is signed with the store name. The packing slip (`GET /api/admin/orders/<id>/packing-slip`, plain text) names the store, shows the ship-to address and contents, and never shows prices or the manufacturer. Our name appears only when the seller turns on `stores.show_platform_brand` (migration 0021, off by default) through `POST /api/stores/branding`, and then only as "Made by <name>". Our own orders keep our name. Email subject lines carry no brand. Per-store reply-to addresses and a custom sending domain wait for the Owner's email provider choice.
