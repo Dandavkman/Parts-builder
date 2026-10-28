@@ -164,3 +164,8 @@ Brakes, suspension, steering, wheels, seat and seatbelt mounts, airbag areas, fu
 ## 2026-10-28: Slider list is readable and collapsed when long
 
 The "Adjust numbers" list now shows names without the `_mm` / `_deg` suffix (the unit has its own column) and starts collapsed when a design has 13 or more numbers, so a ridged part with dozens of values no longer fills the panel. Labels in the data (`collectNumbers`) are unchanged.
+
+## 2026-10-28: Part Spec 2.1 adds blind bores and separate round-overs on bodies
+
+A live knob test on 2.0 failed because a `hole` can only go in a plate and a body rounded its top and bottom edges together. 2.1 adds `bores` (blind holes along Z) and `edge_fillet_top_mm` / `edge_fillet_bottom_mm` to the body, rather than letting `hole` target bodies, so plate features keep their meaning and older specs are untouched. Bores are refused in shelled bodies and must leave 1.2 mm of wall (the same minimum as the web wall check). Threads are not modelled: the agent is told to drill the tap-drill size (8.8 mm for M10x1.25) and say the user taps it or presses in an insert. The agent switches to 2.1 with `DESIGN_AGENT_SPEC_VERSION=2.1`, only after `fly deploy`. Approved by the Owner 2026-10-28.
+

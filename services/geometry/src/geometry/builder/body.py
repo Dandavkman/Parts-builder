@@ -1,4 +1,5 @@
 """Solid bodies (Part Spec 2.0): extruded outlines and revolved profiles, optionally hollowed.
+Part Spec 2.1 adds separate top and bottom round-overs and blind bores.
 
 Body frame: origin at the center of the base, Z up, so the base is at Z = 0 and the top at
 Z = height_mm. Hollowing cuts an inset copy of the outline instead of using the CAD kernel's
@@ -14,6 +15,7 @@ from geometry.builder.features import Feature
 from geometry.builder.placement import Anchor
 
 OVERCUT_MM = 1.0
+MIN_BORE_WALL_MM = 1.2
 
 
 def min_span_mm(outline: Feature) -> float:
@@ -156,6 +158,32 @@ def _stripe_cutters(shape: Feature, texture: Feature, top_z: float) -> cq.Workpl
     return wedges
 
 
+def fillet_radii(feature: Feature) -> tuple[float, float]:
+    """Round-over radii (top, bottom). `edge_fillet_mm` sets both; 2.1 can set each on its own."""
+    both = float(feature.get("edge_fillet_mm", 0))
+    top = float(feature.get("edge_fillet_top_mm", both))
+    bottom = float(feature.get("edge_fillet_bottom_mm", both))
+    return top, bottom
+
+
+def _cut_bores(
+    solid: cq.Workplane, shape: Feature, bores: list[Feature], top_z: float
+) -> cq.Workplane:
+    """Blind holes along Z; each cutter starts OVERCUT_MM outside its face (no coplanar faces)."""
+    base = _base_z(shape)
+    for bore in bores:
+        x, y = (float(v) for v in bore.get("position_mm", [0, 0]))
+        depth = float(bore["depth_mm"])
+        z0 = base - OVERCUT_MM if bore["from"] == "bottom" else top_z - depth
+        cutter = (
+            cq.Workplane("XY", origin=(x, y, z0))
+            .circle(float(bore["diameter_mm"]) / 2)
+            .extrude(depth + OVERCUT_MM)
+        )
+        solid = solid.cut(cutter)
+    return solid
+
+
 def _base_z(shape: Feature) -> float:
     return _profile(shape)[0][1] if shape["kind"] == "revolve" else 0.0
 
@@ -169,9 +197,14 @@ def build_body(feature: Feature) -> cq.Workplane:
     else:
         top_z = float(shape["height_mm"])
         solid = _prism(shape["outline"], 0.0, top_z)
-    fillet = float(feature.get("edge_fillet_mm", 0))
-    if fillet > 0:
-        solid = solid.faces(">Z or <Z").edges().fillet(fillet)
+    top_fillet, bottom_fillet = fillet_radii(feature)
+    if top_fillet > 0 and top_fillet == bottom_fillet:
+        solid = solid.faces(">Z or <Z").edges().fillet(top_fillet)
+    else:
+        if bottom_fillet > 0:
+            solid = solid.faces("<Z").edges().fillet(bottom_fillet)
+        if top_fillet > 0:
+            solid = solid.faces(">Z").edges().fillet(top_fillet)
     texture = feature.get("texture")
     if texture:
         depth = float(texture["depth_mm"])
@@ -200,6 +233,8 @@ def build_body(feature: Feature) -> cq.Workplane:
         else:
             cavity = _prism(shape["outline"], wall, top_z - 2 * wall, inset=wall)
         solid = solid.cut(cavity)
+    if feature.get("bores"):
+        solid = _cut_bores(solid, shape, feature["bores"], top_z)
     return solid
 
 
@@ -229,11 +264,19 @@ def check_body(feature: Feature, anchors: dict[str, Anchor], errors: list[str]) 
         span = min_span_mm(outline)
         if outline["kind"] == "rectangle" and float(outline.get("corner_radius_mm", 0)) > span / 2:
             errors.append(f"{name}: corner_radius_mm is larger than half the shorter side")
-    fillet = float(feature.get("edge_fillet_mm", 0))
-    if fillet and (fillet >= height / 2 or fillet >= span / 2):
+    if "edge_fillet_mm" in feature and (
+        "edge_fillet_top_mm" in feature or "edge_fillet_bottom_mm" in feature
+    ):
         errors.append(
-            f"{name}: edge_fillet_mm must be less than half the height and half the width"
+            f"{name}: use edge_fillet_mm, or edge_fillet_top_mm and edge_fillet_bottom_mm, not both"
         )
+    top_fillet, bottom_fillet = fillet_radii(feature)
+    fillet = max(top_fillet, bottom_fillet)
+    if fillet and (fillet >= height / 2 or fillet >= span / 2):
+        errors.append(f"{name}: edge fillets must be less than half the height and half the width")
+    bores = feature.get("bores")
+    if bores:
+        _check_bores(name, shape, profile, bores, height, feature.get("shell"), errors)
     texture = feature.get("texture")
     shell = feature.get("shell")
     if texture:
@@ -255,9 +298,9 @@ def check_body(feature: Feature, anchors: dict[str, Anchor], errors: list[str]) 
                 f"{name}: wall_thickness_mm ({wall:g} mm) is too large "
                 f"for height_mm ({height:g} mm)"
             )
-        if fillet and shell["open"] == "top" and fillet >= wall:
+        if top_fillet and shell["open"] == "top" and top_fillet >= wall:
             errors.append(
-                f"{name}: edge_fillet_mm must be less than the wall thickness, "
+                f"{name}: the top round-over must be less than the wall thickness, "
                 "or the rim would be rounded away"
             )
 
@@ -296,3 +339,34 @@ def _check_texture(
     if texture["kind"] == "grooves" and shape["kind"] == "revolve":
         if depth >= min(r for r, _ in _profile(shape)):
             errors.append(f"{label}: depth_mm is deeper than the narrowest radius")
+
+
+def _check_bores(
+    name: str, shape: Feature, profile: list[tuple[float, float]], bores: list[Feature],
+    height: float, shell: Feature | None, errors: list[str],
+) -> None:  # fmt: skip
+    if shell:
+        errors.append(
+            f"{name}: bores cannot be combined with shell; a hollow body has no solid to drill"
+        )
+        return
+    if profile:
+        reach = min(r for r, _ in profile)
+    elif shape["outline"]["kind"] == "circle":
+        reach = float(shape["outline"]["diameter_mm"]) / 2
+    else:
+        reach = min_span_mm(shape["outline"]) / 2
+    for i, bore in enumerate(bores, start=1):
+        label = f"{name}: bore {i}"
+        if float(bore["depth_mm"]) > height + 1e-9:
+            errors.append(
+                f"{label}: depth_mm ({float(bore['depth_mm']):g} mm) is more than "
+                f"height_mm ({height:g} mm)"
+            )
+        x, y = (float(v) for v in bore.get("position_mm", [0, 0]))
+        wall = reach - math.hypot(x, y) - float(bore["diameter_mm"]) / 2
+        if wall < MIN_BORE_WALL_MM:
+            errors.append(
+                f"{label}: leaves {max(wall, 0):g} mm of wall; keep at least "
+                f"{MIN_BORE_WALL_MM:g} mm between the hole and the outside"
+            )

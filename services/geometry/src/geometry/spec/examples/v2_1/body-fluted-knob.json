@@ -1,0 +1,15 @@
+{
+  "spec_version": "2.1",
+  "name": "Fluted shift knob",
+  "features": [
+    {
+      "id": "knob",
+      "type": "body",
+      "placement": { "anchor": "origin" },
+      "shape": { "kind": "extrude", "outline": { "kind": "circle", "diameter_mm": 60 }, "height_mm": 35 },
+      "edge_fillet_top_mm": 4,
+      "texture": { "kind": "grooves", "width_mm": 2, "depth_mm": 1, "spacing_mm": 7.85 },
+      "bores": [{ "diameter_mm": 8.8, "depth_mm": 20, "from": "bottom" }]
+    }
+  ]
+}
