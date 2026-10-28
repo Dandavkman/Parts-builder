@@ -5,6 +5,12 @@ import { collectNumbers, type SpecNumber } from "../../lib/agent/spec-numbers";
 
 const MAX_SLIDERS = 60;
 const COMMIT_DELAY_MS = 600;
+const OPEN_BELOW = 13;
+
+/** "knob thickness_mm" -> "knob thickness", "r00 end_mm x" -> "r00 end x"; the unit has its own column. */
+export function readableLabel(label: string): string {
+  return label.replace(/_(mm|deg)\b/g, "").replace(/_/g, " ");
+}
 
 /** One slider and number box per `_mm` / `_deg` value in the spec. A change is sent after a short pause. */
 export function Sliders({
@@ -34,7 +40,7 @@ export function Sliders({
 
   if (numbers.length === 0) return null;
   return (
-    <details className="mt-2 text-xs" open>
+    <details className="mt-2 text-xs" open={numbers.length < OPEN_BELOW}>
       <summary className="cursor-pointer text-zinc-500">Adjust numbers ({numbers.length})</summary>
       <ul className="mt-1 max-h-48 space-y-1 overflow-y-auto" aria-label="Sliders">
         {numbers.slice(0, MAX_SLIDERS).map((item) => {
@@ -42,8 +48,8 @@ export function Sliders({
           const value = draft[key] ?? item.value;
           return (
             <li key={key} className="flex items-center gap-2">
-              <span className="w-40 shrink-0 truncate" title={item.label}>
-                {item.label}
+              <span className="w-40 shrink-0 truncate" title={readableLabel(item.label)}>
+                {readableLabel(item.label)}
               </span>
               <input
                 type="range"

@@ -160,3 +160,7 @@ The design agent outputs a JSON Part Spec built from a fixed list of features, p
 ## 2026-10-22: Launch with non-structural parts only
 
 Brakes, suspension, steering, wheels, seat and seatbelt mounts, airbag areas, fuel system and tow points are blocked in code. Underhood-near-heat and emissions-related parts need admin review before ordering. Decided in the master plan.
+
+## 2026-10-28: Slider list is readable and collapsed when long
+
+The "Adjust numbers" list now shows names without the `_mm` / `_deg` suffix (the unit has its own column) and starts collapsed when a design has 13 or more numbers, so a ridged part with dozens of values no longer fills the panel. Labels in the data (`collectNumbers`) are unchanged.
