@@ -1,6 +1,7 @@
 import { DatabaseNotConfigured, getDb } from "../../../../lib/db/client";
 import { getOwnedOrder } from "../../../../lib/orders/store";
 import { requireOwner } from "../../../../lib/require-owner";
+import { reportError } from "../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -15,7 +16,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     if (!order) return Response.json({ error: "Order not found." }, { status: 404 });
     return Response.json({ order }, { headers: { "cache-control": "private, no-store" } });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }

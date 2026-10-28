@@ -6,6 +6,7 @@ import { buildQuotes, MAX_QUANTITY } from "../../../../../lib/quotes/engine";
 import { loadRates } from "../../../../../lib/quotes/rates-store";
 import { listQuotes, saveQuotes } from "../../../../../lib/quotes/store";
 import { requireOwner } from "../../../../../lib/require-owner";
+import { reportError } from "../../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -22,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const quotes = design.currentVersion ? await listQuotes(db, id, design.currentVersion) : [];
     return Response.json({ quotes, placeholder: quotes.some((q) => q.placeholder) }, { headers: { "cache-control": "private, no-store" } });
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
 }
@@ -47,7 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (design?.safetyStatus === "blocked") return Response.json({ error: "This design is in a category we do not make." }, { status: 403 });
     row = await getOwnedVersion(db, id, who.ownerId, "current");
   } catch (error) {
-    if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+    if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
     return Response.json({ error: "The database is not available." }, { status: 503 });
   }
   if (!row) return Response.json({ error: "Nothing to quote yet: the design has no version that built." }, { status: 404 });

@@ -1,6 +1,7 @@
 import { listOwnedDesigns } from "../../../lib/agent/store";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { requireOwner } from "../../../lib/require-owner";
+import { reportError } from "../../../lib/observability";
 
 /** The signed-in user's designs, newest first. */
 export async function GET() {
@@ -13,7 +14,7 @@ export async function GET() {
     );
   } catch (error) {
     if (!(error instanceof DatabaseNotConfigured))
-      console.error("database unavailable", error);
+      await reportError("database unavailable", error);
     return Response.json(
       { error: "The database is not available." },
       { status: 503 },

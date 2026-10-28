@@ -2,9 +2,10 @@ import { DatabaseNotConfigured, getDb } from "../../../../lib/db/client";
 import { parseRates } from "../../../../lib/quotes/rates-config";
 import { loadRates, saveRates } from "../../../../lib/quotes/rates-store";
 import { requireAdmin } from "../../../../lib/require-admin";
+import { reportError } from "../../../../lib/observability";
 
-const unavailable = (error: unknown) => {
-  if (!(error instanceof DatabaseNotConfigured)) console.error("database unavailable", error);
+const unavailable = async (error: unknown) => {
+  if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
   return Response.json({ error: "The database is not available." }, { status: 503 });
 };
 

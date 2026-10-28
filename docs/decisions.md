@@ -225,3 +225,7 @@ A typed in-code catalog (make, model, generation, year range, scanned areas) and
 ## 2026-10-28 — Rate limits beyond the AI cap (B2.11b)
 
 The AI message cap already existed (`MESSAGES_PER_MINUTE`). Added a general fixed-window limiter backed by a `rate_limits` table (migration 0013), because serverless instances share no memory. One atomic upsert per hit, so concurrent requests all count. Applied to the public waitlist (5 per hour per address) and order creation (20 per hour per user). The numbers are placeholders in `LIMITS`. A fixed window allows a short burst at a window edge; fine for abuse control, not for billing. Error tracking and database backups need an account choice (Sentry or similar; Neon's backup tier) and are left for the Owner.
+
+## 2026-10-28 — Error tracking adapter (B2.11c)
+
+`reportError(message, error, context)` replaces the 31 `console.error` calls in routes and email. It always logs; when `SENTRY_DSN` is set it also posts the error to Sentry's HTTP store API. Chosen over the Sentry SDK to avoid a heavy dependency and bundle/build-time config; it can be swapped for the SDK later because every call site goes through this one function. It sends only the error name, message, stack and short tags, never request bodies or headers, and never throws. Sentry's free tier covers the first stage, so no paid service is implied; the Owner creates the project and sets the DSN.

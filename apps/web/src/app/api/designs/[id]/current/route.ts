@@ -1,6 +1,7 @@
 import { setCurrentVersion } from "../../../../../lib/agent/store";
 import { DatabaseNotConfigured, getDb } from "../../../../../lib/db/client";
 import { requireOwner } from "../../../../../lib/require-owner";
+import { reportError } from "../../../../../lib/observability";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -46,7 +47,7 @@ export async function POST(
     return Response.json({ current_version: version });
   } catch (error) {
     if (!(error instanceof DatabaseNotConfigured))
-      console.error("database unavailable", error);
+      await reportError("database unavailable", error);
     return Response.json(
       { error: "The database is not available." },
       { status: 503 },

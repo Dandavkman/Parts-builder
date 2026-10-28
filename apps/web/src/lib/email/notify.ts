@@ -4,6 +4,7 @@ import { emailLog } from "../db/schema";
 import type { Order } from "../orders/store";
 import { getMailer, type Mailer } from "./mailer";
 import { renderOrderEmail, type OrderEmailEvent } from "./templates";
+import { reportError } from "../observability";
 
 /**
  * Emails the customer about an order event, once. The log row is claimed first, so two callers (a repeated
@@ -28,12 +29,12 @@ export async function notifyOrder(db: Db, order: Order, event: OrderEmailEvent, 
       await mailer.send({ to: order.contactEmail, ...content });
       return "sent";
     } catch (error) {
-      console.error("email failed", error);
+      await reportError("email failed", error);
       await db.delete(emailLog).where(and(eq(emailLog.orderId, order.id), eq(emailLog.event, event)));
       return "failed";
     }
   } catch (error) {
-    console.error("email log failed", error);
+    await reportError("email log failed", error);
     return "failed";
   }
 }
