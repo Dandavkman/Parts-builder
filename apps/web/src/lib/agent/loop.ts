@@ -1,3 +1,4 @@
+import { lookupFastener } from "../fasteners";
 import type Anthropic from "@anthropic-ai/sdk";
 import { checkBuild } from "./checks";
 import { assessMaterials, describeAdvice, recommend } from "../materials";
@@ -192,6 +193,10 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
         isError = typeof d === "string";
         content = isError ? (d as string) : `${(d as number).toFixed(2)} mm`;
         emit({ type: "tool", name: call.name, summary: `${String(input.from)} to ${String(input.to)}` });
+      } else if (call.name === "fastener_lookup") {
+        content = lookupFastener(input.size, input.kind);
+        isError = /^(size must|kind must|Unknown size|No data)/.test(content);
+        emit({ type: "tool", name: call.name, summary: `${String(input.size)} ${String(input.kind)}` });
       } else if (call.name === "propose_spec") {
         const spec = input.spec;
         if (typeof spec !== "object" || spec === null || Array.isArray(spec)) {

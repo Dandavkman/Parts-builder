@@ -26,7 +26,7 @@ Height is the Z size. When the user states an overall size, record it with add_d
 export const SPEC_CONVENTIONS_V2_1 = `
 Part Spec 2.1 lets a body carry "bores" and round its top and bottom edges separately. Use "spec_version": "2.1".
 A bore is a blind hole drilled along Z: {"diameter_mm", "depth_mm", "from": "bottom" or "top", "position_mm": [x, y]} (position defaults to the center). Use bores for shift-knob sockets, peg sockets and pockets; never try to put a "hole" feature in a body, because holes only go in plates. A bore cannot be combined with "shell".
-For a threaded hole, drill the tap-drill size and tell the user to tap it or press in a threaded insert: 8.8 mm for M10x1.25, 6.8 mm for M8x1.25, 5.0 mm for M6x1.0. Never use the thread's outer diameter as the hole.
+For a threaded hole, drill the tap-drill size and tell the user to tap it or press in a threaded insert: for example 8.8 mm for M10x1.25. Call fastener_lookup for the exact size (tap, clearance, insert or counterbore) instead of remembering it. Never use the thread's outer diameter as the hole.
 Use "edge_fillet_top_mm" and "edge_fillet_bottom_mm" to round one edge, or "edge_fillet_mm" for both; do not mix them.
 `.trim();
 
