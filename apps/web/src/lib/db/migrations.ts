@@ -196,6 +196,18 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `CREATE INDEX IF NOT EXISTS safety_reviews_design_idx ON safety_reviews (design_id)`,
     ],
   },
+  {
+    id: "0011_order_emails",
+    sql: [
+      `ALTER TABLE orders ADD COLUMN IF NOT EXISTS contact_email text`,
+      `CREATE TABLE IF NOT EXISTS email_log (
+        order_id uuid NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        event text NOT NULL,
+        sent_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (order_id, event)
+      )`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

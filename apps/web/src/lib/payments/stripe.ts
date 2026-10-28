@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Db } from "../db/client";
+import { notifyOrder } from "../email/notify";
 import { markPaid } from "../orders/store";
 import type { PaymentProvider } from "./provider";
 
@@ -93,5 +94,7 @@ export async function handleStripeEvent(db: Db, event: StripeEvent): Promise<"pa
     typeof session.client_reference_id === "string";
   if (!paid || !session) return "ignored";
   const order = await markPaid(db, session.client_reference_id as string, { provider: "stripe", ref: session.payment_intent ?? session.id ?? "unknown" });
-  return order ? "paid" : "ignored";
+  if (!order) return "ignored";
+  await notifyOrder(db, order, "order_confirmed");
+  return "paid";
 }

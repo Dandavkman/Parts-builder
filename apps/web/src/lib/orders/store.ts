@@ -22,6 +22,7 @@ export async function createOrder(
     designId: string;
     quoteId: string;
     address: ShippingAddress;
+    contactEmail?: string;
     confirmedNotSafetyCritical: boolean;
     acceptedFitTerms: boolean;
     now?: Date;
@@ -73,6 +74,7 @@ export async function createOrder(
       quoteSnapshot: snapshot,
       specSnapshot: version.spec,
       shippingAddress: input.address,
+      contactEmail: input.contactEmail ?? null,
       totalCents: quote.totalCents,
       safetyConfirmedAt: now,
       termsAcceptedAt: now,

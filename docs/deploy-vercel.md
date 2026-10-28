@@ -55,6 +55,8 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | B1.1 (scan upload) |
 | `GEOMETRY_SERVICE_URL` | B0.7 (address of the Fly.io geometry service) |
 | `PLANS_ENFORCED` | B2.1a (optional; `1` enforces the Free and Pro limits on AI messages, saved designs and STEP export. The limits in `lib/plans.ts` are placeholders until you decide them; leave empty and nobody is blocked) |
+| `RESEND_API_KEY` | B2.9 (optional; API key from resend.com, server-side only. With `EMAIL_FROM` it turns on order emails; without them emails are only logged) |
+| `EMAIL_FROM` | B2.9 (optional; the From line, for example `Parts Builder <orders@yourdomain.com>`, on a domain verified in Resend) |
 | `ADMIN_USER_IDS` | B2.7 (comma separated Clerk user ids allowed into `/admin/orders`, for example your own user id from the Clerk dashboard; server-side only; empty means nobody is an admin) |
 | `STRIPE_SECRET_KEY` | B2.6b (Stripe secret key, a `sk_test_` key for now; server-side only. When set, checkout uses Stripe instead of the stub. A `sk_live_` key is refused while prices are placeholders) |
 | `STRIPE_WEBHOOK_SECRET` | B2.6b (signing secret of the Stripe webhook endpoint `https://<site>/api/stripe/webhook`, event `checkout.session.completed`; server-side only; without it the webhook answers 503 and orders stay unpaid) |

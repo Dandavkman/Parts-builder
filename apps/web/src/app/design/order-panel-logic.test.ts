@@ -20,7 +20,7 @@ describe("order panel logic", () => {
   it("builds the request the orders route expects", () => {
     expect(orderRequest("q", address, true, true)).toEqual({
       ok: true,
-      body: { quoteId: "q", shipping: address, confirmNotSafetyCritical: true, acceptFitTerms: true },
+      body: { quoteId: "q", shipping: { name: "Ada", line1: "1 Main St", line2: "", city: "Denver", region: "CO", postal_code: "80202", country: "US" }, email: "", confirmNotSafetyCritical: true, acceptFitTerms: true },
     });
   });
 });
