@@ -285,3 +285,6 @@ A seller gets paste-ready HTML from `GET /api/stores/embed`: a `<div data-parts-
 
 ## 2026-10-28 — API reference kept honest by a test
 `docs/api.md` lists every route handler with who may call it and what it does, taken from each route's own comment. `api-docs.test.ts` fails when a handler is missing from it, the same way the access-control sweep fails on an unprotected route. The point is the redesign: screens can be rebuilt against a documented set of routes with no presentation inside them.
+
+## 2026-10-28 — Agent failure report and scoring harness (B3.9a)
+B3.9 needs the ten most common failed requests from real Phase 2 logs, which do not exist yet. The tooling is built now and tested on a synthetic log: `failure-report.ts` classifies each design by its latest version, groups failures by build error with numbers and ids stripped (so "Hole 3 at 12.5 mm is outside the plate" and "Hole 7 at 40 mm ..." count together), ranks them with example requests, drafts benchmark cases from them (sizes left empty for a person to fill in before they count), and prints the before and after success rate the task asks for. `GET /api/admin/agent-failures?days=` runs it on the saved conversations and versions; owner ids are never loaded. When real logs arrive, the first run of this report is the task's starting list.
