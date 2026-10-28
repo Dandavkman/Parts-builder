@@ -208,3 +208,11 @@ export const safetyReviews = pgTable("safety_reviews", {
   decidedAt: timestamp("decided_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
+
+/** The one saved set of partner rates and markup (row id 1). Editing it in the admin console replaces the placeholder numbers in code. */
+export const rateCards = pgTable("rate_cards", {
+  id: integer("id").primaryKey(),
+  config: jsonb("config").$type<import("../quotes/rates-config").RatesConfig>().notNull(),
+  updatedBy: text("updated_by"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
