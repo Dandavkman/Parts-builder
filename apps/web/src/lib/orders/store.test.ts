@@ -8,7 +8,7 @@ import { migrate } from "../db/migrations";
 import * as schema from "../db/schema";
 import { buildQuotes } from "../quotes/engine";
 import { saveQuotes } from "../quotes/store";
-import { getOwnedOrder, listOwnedOrders, createOrder, markPaid, moveOrder } from "./store";
+import { getOwnedOrder, listAllOrders, listOwnedOrders, createOrder, markPaid, moveOrder } from "./store";
 
 let db: Db;
 beforeAll(async () => {
@@ -97,5 +97,15 @@ describe("orders", () => {
     expect(await moveOrder(db, "00000000-0000-0000-0000-000000000000", "paid")).toEqual({ ok: false, reason: "not_found" });
     expect(await getOwnedOrder(db, r.order.id, "someone_else")).toBeNull();
     expect((await getOwnedOrder(db, r.order.id, "o7"))?.id).toBe(r.order.id);
+  });
+
+  it("lists all orders for the admin, optionally by status", async () => {
+    const { designId, quote } = await setup("o8");
+    const r = await createOrder(db, { ownerId: "o8", designId, quoteId: quote.id, address, ...confirmed });
+    if (!r.ok) throw new Error("setup");
+    await markPaid(db, r.order.id, { provider: "stub", ref: "pay_all" });
+    expect((await listAllOrders(db)).some((o) => o.id === r.order.id)).toBe(true);
+    expect((await listAllOrders(db, "paid")).every((o) => o.status === "paid")).toBe(true);
+    expect((await listAllOrders(db, "delivered")).some((o) => o.id === r.order.id)).toBe(false);
   });
 });

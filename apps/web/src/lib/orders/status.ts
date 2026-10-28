@@ -31,6 +31,11 @@ export function canMove(from: OrderStatus, to: OrderStatus): boolean {
   return NEXT[from].includes(to);
 }
 
+/** The statuses an order can move to from `from` (empty for finished orders or unknown values). */
+export function nextStatuses(from: string): OrderStatus[] {
+  return isOrderStatus(from) ? [...NEXT[from]] : [];
+}
+
 export function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === "string" && (ORDER_STATUSES as readonly string[]).includes(value);
 }

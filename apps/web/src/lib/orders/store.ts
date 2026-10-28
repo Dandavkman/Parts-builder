@@ -138,3 +138,9 @@ export async function moveOrder(
     .returning();
   return updated ? { ok: true, order: updated } : { ok: false, reason: "not_allowed" };
 }
+
+/** Every order, newest first, optionally only one status. Admin use only: callers must check the caller is an admin. */
+export async function listAllOrders(db: Db, status?: OrderStatus): Promise<Order[]> {
+  const rows = db.select().from(orders);
+  return (status ? rows.where(eq(orders.status, status)) : rows).orderBy(desc(orders.createdAt)).limit(200);
+}
