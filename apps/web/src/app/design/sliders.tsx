@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { collectNumbers, type SpecNumber } from "../../lib/agent/spec-numbers";
 
 const MAX_SLIDERS = 60;
-const COMMIT_DELAY_MS = 600;
+const COMMIT_DELAY_MS = 300;
 const OPEN_BELOW = 13;
 
 /** "knob thickness_mm" -> "knob thickness", "r00 end_mm x" -> "r00 end x"; the unit has its own column. */

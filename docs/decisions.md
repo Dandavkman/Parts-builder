@@ -169,3 +169,7 @@ The "Adjust numbers" list now shows names without the `_mm` / `_deg` suffix (the
 
 A live knob test on 2.0 failed because a `hole` can only go in a plate and a body rounded its top and bottom edges together. 2.1 adds `bores` (blind holes along Z) and `edge_fillet_top_mm` / `edge_fillet_bottom_mm` to the body, rather than letting `hole` target bodies, so plate features keep their meaning and older specs are untouched. Bores are refused in shelled bodies and must leave 1.2 mm of wall (the same minimum as the web wall check). Threads are not modelled: the agent is told to drill the tap-drill size (8.8 mm for M10x1.25) and say the user taps it or presses in an insert. The agent switches to 2.1 with `DESIGN_AGENT_SPEC_VERSION=2.1`, only after `fly deploy`. Approved by the Owner 2026-10-28.
 
+
+## 2026-10-28: Viewer seats the part on the floor; sliders send after 300 ms
+
+The viewer now centres the part over the origin with its lowest point at y = 0 and draws the floor grid there, so a tall part no longer pokes through the grid. Sliders send their change 300 ms after the last move instead of 600 ms, which makes edits feel quicker; the rebuild itself still happens on the geometry service, so a cold Fly machine is still slow on the first edit. No change to geometry or the Part Spec.
