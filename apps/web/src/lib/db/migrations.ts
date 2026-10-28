@@ -308,6 +308,19 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `CREATE INDEX IF NOT EXISTS takedown_claims_status_idx ON takedown_claims (status)`,
     ],
   },
+  {
+    id: "0019_design_vehicle_tags",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS design_vehicle_tags (
+        design_id uuid NOT NULL REFERENCES designs(id) ON DELETE CASCADE,
+        vehicle_id text NOT NULL,
+        area text NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT design_vehicle_tags_unique UNIQUE (design_id, vehicle_id)
+      )`,
+      `CREATE INDEX IF NOT EXISTS design_vehicle_tags_vehicle_idx ON design_vehicle_tags (vehicle_id)`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

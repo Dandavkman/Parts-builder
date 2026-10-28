@@ -12,6 +12,8 @@ export interface Vehicle {
   yearTo: number;
   /** Areas with a library scan. Empty means none yet. */
   scanned: ScanArea[];
+  /** Other cars (ids) the same scans fit, such as a shared dash. A design made on this car's scan is tagged with them too. */
+  alsoCovers?: string[];
 }
 
 /**
@@ -48,4 +50,12 @@ export function searchVehicles(query: string, list: Vehicle[] = VEHICLES): Vehic
 
 export function getVehicle(id: string, list: Vehicle[] = VEHICLES): Vehicle | undefined {
   return list.find((v) => v.id === id);
+}
+
+/** Every car a scan of this car covers: the car itself plus the ones it is marked to share with. */
+export function coveredVehicles(vehicleId: string, list: Vehicle[] = VEHICLES): Vehicle[] {
+  const v = getVehicle(vehicleId, list);
+  if (!v) return [];
+  const extra = (v.alsoCovers ?? []).map((id) => getVehicle(id, list)).filter((x): x is Vehicle => Boolean(x));
+  return [v, ...extra];
 }

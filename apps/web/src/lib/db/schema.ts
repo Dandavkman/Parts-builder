@@ -290,6 +290,20 @@ export const scanLicenses = pgTable(
   (t) => [unique("scan_licenses_unique").on(t.ownerId, t.vehicleId, t.area)],
 );
 
+/** Which cars a design fits (B3.6). Set when a design is made on a library scan; one row per car that scan covers. */
+export const designVehicleTags = pgTable(
+  "design_vehicle_tags",
+  {
+    designId: uuid("design_id")
+      .notNull()
+      .references(() => designs.id, { onDelete: "cascade" }),
+    vehicleId: text("vehicle_id").notNull(),
+    area: text("area").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+  },
+  (t) => [unique("design_vehicle_tags_unique").on(t.designId, t.vehicleId)],
+);
+
 /**
  * An intellectual-property claim against a listing (B4.8). status: open, removed (listing taken down),
  * dismissed, counter_filed (seller disputes the removal), restored (listing back up), upheld (stays down).
