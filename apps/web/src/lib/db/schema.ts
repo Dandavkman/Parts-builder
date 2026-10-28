@@ -189,3 +189,22 @@ export const usageCounters = pgTable(
   },
   (t) => [primaryKey({ columns: [t.ownerId, t.period] })],
 );
+
+/** Every safety decision, automatic or by an admin, so each can be traced (plan B2.4). */
+export const safetyReviews = pgTable("safety_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  designId: uuid("design_id")
+    .notNull()
+    .references(() => designs.id, { onDelete: "cascade" }),
+  /** request (the user's message), spec, or admin. */
+  source: text("source").notNull(),
+  status: text("status").notNull(),
+  category: text("category").notNull(),
+  reason: text("reason").notNull(),
+  model: text("model"),
+  decidedBy: text("decided_by"),
+  /** approved or rejected, set when an admin decides. */
+  decision: text("decision"),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});

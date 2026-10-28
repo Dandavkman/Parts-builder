@@ -17,12 +17,16 @@ import {
   withUserMessage,
 } from "../../../lib/agent/store";
 import type { AgentEvent } from "../../../lib/agent/types";
+import { anthropicClassifier, safetyGuardOn } from "../../../lib/safety/classifier";
+import { applyVerdict } from "../../../lib/safety/store";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { checkAiMessage, checkNewDesign, plansEnforced } from "../../../lib/plans";
 import { aiMessagesUsed, countAiMessage, designCount, getPlan } from "../../../lib/plans-store";
 import { requireOwner } from "../../../lib/require-owner";
 
 export const maxDuration = 300;
+
+const BLOCKED_MESSAGE = "We cannot help design this kind of part. It is in a category we do not make.";
 
 /** Web lookups are on unless `DESIGN_AGENT_WEB_SEARCH=off` (for example if the Console has not enabled the tool). */
 const webSearchEnabled = () => process.env.DESIGN_AGENT_WEB_SEARCH !== "off";
@@ -77,12 +81,25 @@ export async function POST(request: Request) {
   let designId = parsed.designId;
   let saved: Awaited<ReturnType<typeof loadHistory>> = [];
   if (designId) {
-    if (!(await getOwnedDesign(db, designId, ownerId))) {
+    const owned = await getOwnedDesign(db, designId, ownerId);
+    if (!owned) {
       return Response.json({ error: "Design not found." }, { status: 404 });
     }
+    if (owned.safetyStatus === "blocked") return Response.json({ error: BLOCKED_MESSAGE, blocked: true }, { status: 403 });
     saved = await loadHistory(db, designId);
   } else {
     designId = await createDesign(db, ownerId, parsed.message);
+  }
+  // Safety guard (B2.4a), off unless SAFETY_GUARD=on. It can only raise a design's status.
+  if (safetyGuardOn()) {
+    try {
+      const verdict = await anthropicClassifier(new Anthropic({ apiKey }), process.env.SAFETY_MODEL || undefined)(parsed.message);
+      const status = await applyVerdict(db, designId, "request", verdict, process.env.SAFETY_MODEL || undefined);
+      if (status === "blocked") return Response.json({ error: verdict.reason || BLOCKED_MESSAGE, blocked: true }, { status: 403 });
+    } catch (error) {
+      console.error("safety guard failed", error);
+      return Response.json({ error: "We could not run the safety check. Please try again." }, { status: 503 });
+    }
   }
   if (parsed.image && !(await addPhoto(db, designId, parsed.image))) {
     return Response.json({ error: "This design already has the most photos allowed." }, { status: 400 });
