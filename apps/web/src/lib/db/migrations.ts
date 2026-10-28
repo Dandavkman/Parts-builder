@@ -262,6 +262,22 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
     id: "0015_store_connect_verified",
     sql: [`ALTER TABLE stores ADD COLUMN IF NOT EXISTS connect_verified boolean NOT NULL DEFAULT false`],
   },
+  {
+    id: "0016_scan_licenses",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS scan_licenses (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_id text NOT NULL,
+        vehicle_id text NOT NULL,
+        area text NOT NULL,
+        source text NOT NULL,
+        ref text,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT scan_licenses_unique UNIQUE (owner_id, vehicle_id, area)
+      )`,
+      `CREATE INDEX IF NOT EXISTS scan_licenses_owner_idx ON scan_licenses (owner_id)`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
