@@ -3,6 +3,7 @@ import type { Db } from "../db/client";
 import { designs, designVersions, orders, quotes } from "../db/schema";
 import type { QuoteLine } from "../quotes/engine";
 import type { ShippingAddress } from "./address";
+import { recordSale } from "../stores/ledger";
 import { canMove, type OrderStatus } from "./status";
 
 export type Order = typeof orders.$inferSelect;
@@ -103,6 +104,8 @@ export async function markPaid(
     .set({ status: next, paymentProvider: payment.provider, paymentRef: payment.ref, paidAt: now, updatedAt: now })
     .where(and(eq(orders.id, orderId), eq(orders.status, "quote")))
     .returning();
+  // A store sale credits the seller's royalty once; the ledger ignores a repeat for the same order.
+  if (updated?.listingId) await recordSale(db, { listingId: updated.listingId, ref: updated.id });
   return updated ?? (await getOrder(db, orderId));
 }
 
