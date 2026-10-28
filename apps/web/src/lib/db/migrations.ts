@@ -325,6 +325,10 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
     id: "0020_orders_listing",
     sql: [`ALTER TABLE orders ADD COLUMN IF NOT EXISTS listing_id uuid REFERENCES listings(id)`],
   },
+  {
+    id: "0021_store_white_label",
+    sql: [`ALTER TABLE stores ADD COLUMN IF NOT EXISTS show_platform_brand boolean NOT NULL DEFAULT false`],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
