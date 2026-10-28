@@ -20,6 +20,8 @@ import type { AgentEvent } from "../../../lib/agent/types";
 import { anthropicClassifier, safetyGuardOn } from "../../../lib/safety/classifier";
 import { applyVerdict } from "../../../lib/safety/store";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
+import { checkAiMessage, checkNewDesign, plansEnforced } from "../../../lib/plans";
+import { aiMessagesUsed, countAiMessage, designCount, getPlan } from "../../../lib/plans-store";
 import { requireOwner } from "../../../lib/require-owner";
 
 export const maxDuration = 300;
@@ -65,6 +67,17 @@ export async function POST(request: Request) {
     return Response.json({ error: "The database is not reachable." }, { status: 503 });
   }
 
+  // Free and Pro limits (B2.1a). Off unless PLANS_ENFORCED=1.
+  if (plansEnforced()) {
+    const plan = await getPlan(db, ownerId);
+    const blocked = checkAiMessage(plan, await aiMessagesUsed(db, ownerId));
+    if (!blocked.ok) return Response.json({ error: blocked.error, upgrade: true }, { status: 402 });
+    if (!parsed.designId) {
+      const tooMany = checkNewDesign(plan, await designCount(db, ownerId));
+      if (!tooMany.ok) return Response.json({ error: tooMany.error, upgrade: true }, { status: 402 });
+    }
+  }
+
   let designId = parsed.designId;
   let saved: Awaited<ReturnType<typeof loadHistory>> = [];
   if (designId) {
@@ -91,6 +104,7 @@ export async function POST(request: Request) {
   if (parsed.image && !(await addPhoto(db, designId, parsed.image))) {
     return Response.json({ error: "This design already has the most photos allowed." }, { status: 400 });
   }
+  await countAiMessage(db, ownerId);
   const references = await loadReferences(db, designId);
   const history = withUserMessage(saved, parsed.message);
   const photos = await loadPhotos(db, designId);
