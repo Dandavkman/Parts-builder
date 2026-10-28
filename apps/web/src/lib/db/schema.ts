@@ -236,3 +236,14 @@ export const waitlist = pgTable("waitlist", {
   email: text("email").primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
+
+/** Fixed-window counters for rate limits: one row per key and window, so concurrent requests all count. */
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    key: text("key").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    hits: integer("hits").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.windowStart] })],
+);

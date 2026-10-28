@@ -1,6 +1,7 @@
 import { notifyOrder } from "../../../../../lib/email/notify";
 import { validEmail } from "../../../../../lib/email/mailer";
 import { DatabaseNotConfigured, getDb } from "../../../../../lib/db/client";
+import { hit, LIMITS, tooMany } from "../../../../../lib/rate-limit";
 import { parseAddress } from "../../../../../lib/orders/address";
 import { createOrder, markPaid } from "../../../../../lib/orders/store";
 import { getPaymentProvider } from "../../../../../lib/payments/provider";
@@ -40,6 +41,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (body.email !== undefined && body.email !== "" && !validEmail(body.email)) return Response.json({ error: "That email address does not look right." }, { status: 400 });
   try {
     const db = await getDb();
+    const limited = await hit(db, LIMITS.orders, who.ownerId);
+    if (!limited.ok) return tooMany(limited);
     const created = await createOrder(db, {
       ownerId: who.ownerId,
       designId: id,
