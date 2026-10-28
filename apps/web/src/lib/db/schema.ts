@@ -147,6 +147,7 @@ export const stores = pgTable("stores", {
   name: text("name").notNull(),
   published: boolean("published").notNull().default(false),
   stripeConnectAccount: text("stripe_connect_account"),
+  connectVerified: boolean("connect_verified").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
 

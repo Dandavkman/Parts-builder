@@ -258,6 +258,10 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `CREATE INDEX IF NOT EXISTS ledger_entries_store_idx ON ledger_entries (store_id, created_at)`,
     ],
   },
+  {
+    id: "0015_store_connect_verified",
+    sql: [`ALTER TABLE stores ADD COLUMN IF NOT EXISTS connect_verified boolean NOT NULL DEFAULT false`],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
