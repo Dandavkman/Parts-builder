@@ -30,16 +30,16 @@ export function OrderActions({ orderId, next }: { orderId: string; next: string[
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-      <select aria-label="New status" value={status} onChange={(e) => setStatus(e.target.value)} className="rounded border border-zinc-300 bg-transparent px-1 py-0.5 dark:border-zinc-700">
+      <select aria-label="New status" value={status} onChange={(e) => setStatus(e.target.value)} className="rounded border border-line-strong bg-transparent px-1 py-0.5">
         {next.map((s) => (
           <option key={s} value={s}>
             {statusLabel(s)}
           </option>
         ))}
       </select>
-      <input aria-label="Partner order reference" placeholder="Partner order ref" value={partnerRef} onChange={(e) => setPartnerRef(e.target.value)} className="w-36 rounded border border-zinc-300 bg-transparent px-1 py-0.5 dark:border-zinc-700" />
-      <input aria-label="Tracking number" placeholder="Tracking number" value={tracking} onChange={(e) => setTracking(e.target.value)} className="w-36 rounded border border-zinc-300 bg-transparent px-1 py-0.5 dark:border-zinc-700" />
-      <button type="button" onClick={() => void apply()} className="rounded border border-zinc-300 px-2 py-0.5 dark:border-zinc-700">
+      <input aria-label="Partner order reference" placeholder="Partner order ref" value={partnerRef} onChange={(e) => setPartnerRef(e.target.value)} className="w-36 rounded border border-line-strong bg-transparent px-1 py-0.5" />
+      <input aria-label="Tracking number" placeholder="Tracking number" value={tracking} onChange={(e) => setTracking(e.target.value)} className="w-36 rounded border border-line-strong bg-transparent px-1 py-0.5" />
+      <button type="button" onClick={() => void apply()} className="rounded border border-line-strong px-2 py-0.5">
         Apply
       </button>
       {message && <span role="status">{message}</span>}

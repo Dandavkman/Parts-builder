@@ -35,3 +35,28 @@ export async function designCount(db: Db, ownerId: string): Promise<number> {
   const [row] = await db.select({ n: count() }).from(designs).where(eq(designs.ownerId, ownerId));
   return Number(row?.n ?? 0);
 }
+
+export interface StripeIds {
+  customerId?: string | null;
+  subscriptionId?: string | null;
+}
+
+/** Remembers the user's Stripe customer and subscription, leaving the plan alone. */
+export async function saveStripeIds(db: Db, ownerId: string, ids: StripeIds): Promise<void> {
+  const set = {
+    ...(ids.customerId !== undefined ? { stripeCustomerId: ids.customerId } : {}),
+    ...(ids.subscriptionId !== undefined ? { stripeSubscriptionId: ids.subscriptionId } : {}),
+    updatedAt: sql`now()`,
+  };
+  await db.insert(subscriptions).values({ ownerId, stripeCustomerId: ids.customerId ?? null, stripeSubscriptionId: ids.subscriptionId ?? null }).onConflictDoUpdate({ target: subscriptions.ownerId, set });
+}
+
+export async function getStripeCustomerId(db: Db, ownerId: string): Promise<string | null> {
+  const [row] = await db.select({ id: subscriptions.stripeCustomerId }).from(subscriptions).where(eq(subscriptions.ownerId, ownerId));
+  return row?.id ?? null;
+}
+
+export async function ownerForSubscription(db: Db, subscriptionId: string): Promise<string | null> {
+  const [row] = await db.select({ ownerId: subscriptions.ownerId }).from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, subscriptionId));
+  return row?.ownerId ?? null;
+}

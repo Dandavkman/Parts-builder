@@ -11,7 +11,7 @@ export default function FaqPage() {
         {FAQ.map((f) => (
           <div key={f.q}>
             <dt className="font-medium">{f.q}</dt>
-            <dd className="mt-1 text-zinc-600 dark:text-zinc-400">{f.a}</dd>
+            <dd className="mt-1 text-subtle">{f.a}</dd>
           </div>
         ))}
       </dl>

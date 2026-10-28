@@ -39,7 +39,7 @@ class LoadError extends Component<{ children: ReactNode; message: string }, { fa
   render() {
     if (!this.state.failed) return this.props.children;
     return (
-      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-zinc-500">
+      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted">
         <p>{this.props.message}</p>
       </div>
     );
