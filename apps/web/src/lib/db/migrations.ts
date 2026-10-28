@@ -286,6 +286,28 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `ALTER TABLE listings ADD COLUMN IF NOT EXISTS review_note text`,
     ],
   },
+  {
+    id: "0018_takedown_claims",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS takedown_claims (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        listing_id uuid NOT NULL REFERENCES listings(id),
+        claimant_name text NOT NULL,
+        claimant_email text NOT NULL,
+        work_description text NOT NULL,
+        status text NOT NULL DEFAULT 'open',
+        previous_listing_status text,
+        decision_note text,
+        decided_by text,
+        decided_at timestamptz,
+        counter_text text,
+        counter_filed_at timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )`,
+      `CREATE INDEX IF NOT EXISTS takedown_claims_listing_idx ON takedown_claims (listing_id)`,
+      `CREATE INDEX IF NOT EXISTS takedown_claims_status_idx ON takedown_claims (status)`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

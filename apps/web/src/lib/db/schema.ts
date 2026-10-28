@@ -289,3 +289,25 @@ export const scanLicenses = pgTable(
   },
   (t) => [unique("scan_licenses_unique").on(t.ownerId, t.vehicleId, t.area)],
 );
+
+/**
+ * An intellectual-property claim against a listing (B4.8). status: open, removed (listing taken down),
+ * dismissed, counter_filed (seller disputes the removal), restored (listing back up), upheld (stays down).
+ */
+export const takedownClaims = pgTable("takedown_claims", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  listingId: uuid("listing_id")
+    .notNull()
+    .references(() => listings.id),
+  claimantName: text("claimant_name").notNull(),
+  claimantEmail: text("claimant_email").notNull(),
+  workDescription: text("work_description").notNull(),
+  status: text("status").notNull().default("open"),
+  previousListingStatus: text("previous_listing_status"),
+  decisionNote: text("decision_note"),
+  decidedBy: text("decided_by"),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  counterText: text("counter_text"),
+  counterFiledAt: timestamp("counter_filed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
