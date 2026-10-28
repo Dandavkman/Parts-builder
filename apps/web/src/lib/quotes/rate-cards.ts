@@ -56,4 +56,12 @@ export const PLACEHOLDER_PARTNERS: PartnerRates[] = [
       nylon_sls: { per_cm3_cents: 22, setup_fee_cents: 1500, min_part_cents: 1500, lead_days: 7 },
     },
   },
+  {
+    id: "partner_c",
+    name: "Example CNC Shop C (placeholder)",
+    shipping_cents: 1500,
+    materials: {
+      al6061_cnc: { per_cm3_cents: 45, setup_fee_cents: 4500, min_part_cents: 3500, lead_days: 12 },
+    },
+  },
 ];

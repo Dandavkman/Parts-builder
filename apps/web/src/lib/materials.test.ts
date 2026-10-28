@@ -47,13 +47,13 @@ describe("assessMaterials", () => {
 describe("recommend", () => {
   const all = assessMaterials(vase(2), [100, 100, 200]);
   it("lists passing materials cheapest first", () => {
-    expect(recommend(all).recommended.map((m) => m.id)).toEqual(["petg", "pla", "tpu", "nylon_sls"].sort((a, b) => order(a) - order(b)));
+    expect(recommend(all).recommended.map((m) => m.id)).toEqual(["petg", "pla", "tpu", "nylon_sls", "al6061_cnc"].sort((a, b) => order(a) - order(b)));
   });
   it("filters by heat, outdoor use, flexibility and load", () => {
-    expect(recommend(all, { heat_c: 90 }).recommended.map((m) => m.id)).toEqual(["nylon_sls"]);
+    expect(recommend(all, { heat_c: 90 }).recommended.map((m) => m.id)).toEqual(["nylon_sls", "al6061_cnc"]);
     expect(recommend(all, { outdoor: true }).recommended.map((m) => m.id)).not.toContain("pla");
     expect(recommend(all, { flexible: true }).recommended.map((m) => m.id)).toEqual(["tpu"]);
-    expect(recommend(all, { load: true }).recommended.map((m) => m.id)).toEqual(["nylon_sls"]);
+    expect(recommend(all, { load: true }).recommended.map((m) => m.id)).toEqual(["nylon_sls", "al6061_cnc"]);
   });
   it("keeps failing materials out of the recommendation", () => {
     const advice = recommend(assessMaterials(vase(1)));
@@ -78,3 +78,33 @@ function order(id: string): number {
   const m = MATERIALS.find((x) => x.id === id)!;
   return m.cost * 10 - m.strength;
 }
+
+describe("CNC aluminum", () => {
+  const bracket = {
+    features: [
+      { id: "p", type: "plate", thickness_mm: 5, outline: { kind: "rectangle", width_mm: 80, length_mm: 40 } },
+      { id: "h", type: "hole", plate: "p", diameter_mm: 6.5, position_mm: [0, 0] },
+      { id: "s", type: "slot", plate: "p" },
+    ],
+  };
+  const cnc = (spec: Record<string, unknown>, size: [number, number, number] = [80, 40, 5]) => assessMaterials(spec, size).find((a) => a.material.id === "al6061_cnc")!;
+
+  it("passes a flat bracket with round holes and slots", () => {
+    expect(cnc(bracket).problems).toEqual([]);
+  });
+  it("rejects a closed hollow body (undercut) but accepts one open at the top", () => {
+    const body = (open: string) => ({ features: [{ id: "b", type: "body", shell: { wall_thickness_mm: 3, open } }] });
+    expect(cnc(body("none"), [50, 50, 50]).problems.join(" ")).toContain("cavity");
+    expect(cnc(body("top"), [50, 50, 50]).problems).toEqual([]);
+  });
+  it("rejects a rectangular cutout for its sharp inside corners", () => {
+    const spec = { features: [...bracket.features, { id: "c", type: "cutout", plate: "p", zone: { kind: "rectangle", width_mm: 10, length_mm: 10 } }] };
+    expect(cnc(spec).problems.join(" ")).toContain("sharp inside corners");
+    const round = { features: [...bracket.features, { id: "c", type: "cutout", plate: "p", zone: { kind: "circle", diameter_mm: 10 } }] };
+    expect(cnc(round).problems).toEqual([]);
+  });
+  it("only applies the milling rules to CNC", () => {
+    const hollow = { features: [{ id: "b", type: "body", shell: { wall_thickness_mm: 3, open: "none" } }] };
+    expect(assessMaterials(hollow, [50, 50, 50]).find((a) => a.material.id === "petg")!.problems).toEqual([]);
+  });
+});

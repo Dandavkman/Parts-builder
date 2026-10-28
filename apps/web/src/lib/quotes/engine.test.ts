@@ -68,3 +68,20 @@ describe("buildQuotes", () => {
     expect(formatCents(1234)).toBe("$12.34");
   });
 });
+
+describe("CNC quote path (B3.8)", () => {
+  const bracket = { features: [{ id: "p", type: "plate", thickness_mm: 5 }, { id: "h", type: "hole", plate: "p", diameter_mm: 6.5 }] };
+  it("quotes a flat bracket for CNC aluminum from the CNC partner", () => {
+    const { quotes } = buildQuotes({ volume_mm3: 20_000, size_mm: [80, 40, 5], spec: bracket, quantity: 1 });
+    const cnc = quotes.filter((q) => q.materialId === "al6061_cnc");
+    expect(cnc).toHaveLength(1);
+    expect(cnc[0].partnerId).toBe("partner_c");
+    expect(cnc[0].placeholder).toBe(true);
+  });
+  it("leaves a closed hollow body out with the reason", () => {
+    const hollow = { features: [{ id: "b", type: "body", shell: { wall_thickness_mm: 3, open: "none" } }] };
+    const { quotes, unquoted } = buildQuotes({ volume_mm3: 20_000, size_mm: [50, 50, 50], spec: hollow, quantity: 1 });
+    expect(quotes.some((q) => q.materialId === "al6061_cnc")).toBe(false);
+    expect(unquoted.find((u) => u.materialId === "al6061_cnc")?.reasons.join(" ")).toContain("cavity");
+  });
+});
