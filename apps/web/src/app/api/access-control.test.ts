@@ -23,7 +23,7 @@ const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 const UUID = "00000000-0000-0000-0000-000000000000";
 
 /** Public on purpose: the Stripe webhook checks a signature, the waitlist takes an email from anyone. */
-const PUBLIC = new Set(["stripe/webhook", "waitlist", "vehicles"]);
+const PUBLIC = new Set(["stripe/webhook", "waitlist", "vehicles", "shop/[slug]"]);
 
 function routeFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>

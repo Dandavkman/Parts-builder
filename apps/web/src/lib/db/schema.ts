@@ -170,6 +170,9 @@ export const listings = pgTable("listings", {
   royaltyCents: integer("royalty_cents").notNull(),
   placeholder: boolean("placeholder").notNull().default(true),
   reviewStatus: text("review_status").notNull().default("pending"),
+  reviewedBy: text("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  reviewNote: text("review_note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
 /** A user's plan. No row means the free plan. Stripe ids are filled in when Stripe Billing is connected. */

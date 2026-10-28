@@ -278,6 +278,14 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `CREATE INDEX IF NOT EXISTS scan_licenses_owner_idx ON scan_licenses (owner_id)`,
     ],
   },
+  {
+    id: "0017_listing_review",
+    sql: [
+      `ALTER TABLE listings ADD COLUMN IF NOT EXISTS reviewed_by text`,
+      `ALTER TABLE listings ADD COLUMN IF NOT EXISTS reviewed_at timestamptz`,
+      `ALTER TABLE listings ADD COLUMN IF NOT EXISTS review_note text`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
