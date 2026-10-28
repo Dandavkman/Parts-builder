@@ -115,6 +115,15 @@ export function Workspace() {
     void loadList();
   }, [loadList]);
 
+  // The dashboard links here with ?open=<design id>.
+  const openedFromLink = useRef(false);
+  useEffect(() => {
+    if (openedFromLink.current) return;
+    openedFromLink.current = true;
+    const id = new URLSearchParams(window.location.search).get("open");
+    if (id) void loadDesign(id, true);
+  }, [loadDesign]);
+
   function newDesign() {
     designIdRef.current = null;
     setChat(initialChat);
