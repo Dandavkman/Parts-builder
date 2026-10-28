@@ -271,3 +271,18 @@ export const ledgerEntries = pgTable(
   },
   (t) => [unique("ledger_entries_unique").on(t.storeId, t.kind, t.ref)],
 );
+
+/** The right to use a library scan area of a car in the workspace. It never includes the scan file itself. source is purchase, pro or admin. */
+export const scanLicenses = pgTable(
+  "scan_licenses",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    ownerId: text("owner_id").notNull(),
+    vehicleId: text("vehicle_id").notNull(),
+    area: text("area").notNull(),
+    source: text("source").notNull(),
+    ref: text("ref"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+  },
+  (t) => [unique("scan_licenses_unique").on(t.ownerId, t.vehicleId, t.area)],
+);
