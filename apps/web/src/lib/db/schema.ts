@@ -80,3 +80,29 @@ export const designReferences = pgTable("design_references", {
   confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
+
+/** One quote per partner and material for a frozen design version (decision D2). Money is US cents; every component is kept so margin is visible. */
+export const quotes = pgTable("quotes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  designId: uuid("design_id")
+    .notNull()
+    .references(() => designs.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  partnerId: text("partner_id").notNull(),
+  partnerName: text("partner_name").notNull(),
+  materialId: text("material_id").notNull(),
+  materialName: text("material_name").notNull(),
+  quantity: integer("quantity").notNull(),
+  partnerPartsCents: integer("partner_parts_cents").notNull(),
+  setupFeeCents: integer("setup_fee_cents").notNull(),
+  partnerCostCents: integer("partner_cost_cents").notNull(),
+  markupCents: integer("markup_cents").notNull(),
+  shippingCents: integer("shipping_cents").notNull(),
+  paymentFeeCents: integer("payment_fee_cents").notNull(),
+  totalCents: integer("total_cents").notNull(),
+  leadDays: integer("lead_days").notNull(),
+  /** True while the rate cards are stand-ins (see rate-cards.ts). */
+  placeholder: boolean("placeholder").notNull().default(true),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});

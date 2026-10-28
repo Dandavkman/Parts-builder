@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { stlBounds } from "./stl";
+import { stlBounds, stlVolumeMm3 } from "./stl";
 
 function binaryStl(triangles: number[][][]): ArrayBuffer {
   const buffer = new ArrayBuffer(84 + 50 * triangles.length);
@@ -31,5 +31,24 @@ describe("stlBounds", () => {
   it("returns null when there are no triangles", () => {
     expect(stlBounds(new ArrayBuffer(10))).toBeNull();
     expect(stlBounds(binaryStl([]))).toBeNull();
+  });
+});
+
+describe("stlVolumeMm3", () => {
+  // A tetrahedron with 6 mm legs has volume 6*6*6/6 = 36 mm3.
+  const o = [0, 0, 0], x = [6, 0, 0], y = [0, 6, 0], z = [0, 0, 6];
+  const tetra = [[o, y, x], [o, x, z], [o, z, y], [x, y, z]];
+
+  it("measures a closed binary STL", () => {
+    expect(stlVolumeMm3(binaryStl(tetra))).toBeCloseTo(36, 6);
+  });
+
+  it("measures an ASCII STL the same way", () => {
+    const text = `solid t\n${tetra.map((t) => `facet normal 0 0 0\nouter loop\n${t.map((v) => `vertex ${v.join(" ")}`).join("\n")}\nendloop\nendfacet`).join("\n")}\nendsolid t`;
+    expect(stlVolumeMm3(new TextEncoder().encode(text).buffer as ArrayBuffer)).toBeCloseTo(36, 6);
+  });
+
+  it("returns null for an empty file", () => {
+    expect(stlVolumeMm3(binaryStl([]))).toBeNull();
   });
 });

@@ -72,6 +72,33 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `ALTER TABLE design_references ADD COLUMN IF NOT EXISTS image_base64 text`,
     ],
   },
+  {
+    id: "0005_quotes",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS quotes (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        design_id uuid NOT NULL REFERENCES designs(id) ON DELETE CASCADE,
+        version integer NOT NULL,
+        partner_id text NOT NULL,
+        partner_name text NOT NULL,
+        material_id text NOT NULL,
+        material_name text NOT NULL,
+        quantity integer NOT NULL,
+        partner_parts_cents integer NOT NULL,
+        setup_fee_cents integer NOT NULL,
+        partner_cost_cents integer NOT NULL,
+        markup_cents integer NOT NULL,
+        shipping_cents integer NOT NULL,
+        payment_fee_cents integer NOT NULL,
+        total_cents integer NOT NULL,
+        lead_days integer NOT NULL,
+        placeholder boolean NOT NULL DEFAULT true,
+        expires_at timestamptz NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )`,
+      `CREATE INDEX IF NOT EXISTS quotes_design_idx ON quotes (design_id, version)`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
