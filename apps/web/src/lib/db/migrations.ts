@@ -239,6 +239,10 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       )`,
     ],
   },
+  {
+    id: "0015_store_connect_verified",
+    sql: [`ALTER TABLE stores ADD COLUMN IF NOT EXISTS connect_verified boolean NOT NULL DEFAULT false`],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */
