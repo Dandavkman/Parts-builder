@@ -55,6 +55,17 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
     },
   },
   {
+    name: "fastener_lookup",
+    description:
+      "Look up the exact hole size for a metric fastener: 'tap' (drill before tapping), 'clearance' (bolt passes through), 'insert' (heat-set insert) or 'counterbore' (socket-head screw). Always use this instead of remembering sizes. Sizes M2 to M12, such as M6 or M10x1.25.",
+    input_schema: {
+      type: "object",
+      properties: { size: { type: "string" }, kind: { type: "string", enum: ["tap", "clearance", "insert", "counterbore"] } },
+      required: ["size", "kind"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "ask_user",
     description: "Ask the user one short clarifying question, such as the material or thickness. The turn ends until they answer.",
     input_schema: {

@@ -40,6 +40,7 @@ Every model message goes in `chat_messages` with token counts, and every `propos
 - `measure`: distance in mm between two anchors.
 - `propose_spec`: sends a full Part Spec to the geometry service. Success, or a plain sentence per problem.
 - `ask_user`: one clarifying question; ends the turn.
+- `fastener_lookup`: exact tap, clearance, heat-set insert or counterbore hole sizes for M2–M12 (`lib/fasteners.ts`). The agent draws plain holes; threads are never modeled.
 
 ## Keeping the prompt honest
 
