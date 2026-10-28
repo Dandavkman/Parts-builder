@@ -54,6 +54,7 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | `DESIGN_AGENT_SPEC_VERSION` | B1.17d (optional; set to `2.0` to let the design agent write Part Spec 2.0 solid bodies such as vases, boxes and knobs, or `2.1` to add blind bores and separate top and bottom round-overs (B1.22). Set it only after `fly deploy` has put that Part Spec on the geometry service, otherwise builds of those specs fail; leave it empty to keep 1.1. Any other value keeps 1.1) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | B1.1 (scan upload) |
 | `GEOMETRY_SERVICE_URL` | B0.7 (address of the Fly.io geometry service) |
+| `PAYMENTS_STUB` | B2.6a (optional; `1` lets checkout mark orders paid with no real payment, for demos and testing. Leave empty in production: ordering then answers "not open yet" until the Stripe provider arrives in B2.6b) |
 | `GEOMETRY_SERVICE_TOKEN` | B1.11c (shared secret; must equal the Fly secret of the same name; server-side only, never `NEXT_PUBLIC_`) |
 | Stripe keys | Phase 2 |
 
