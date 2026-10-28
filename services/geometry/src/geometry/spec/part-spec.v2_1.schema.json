@@ -1,0 +1,1008 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://parts-builder.local/schemas/part-spec.v2_1.json",
+  "title": "PartSpecV2_1",
+  "description": "Part Spec v2.1 (v2.0 plus blind bores and separate top and bottom round-overs on bodies). A part described as features positioned against anchors. All lengths are in millimeters and all angles in degrees. A plate is a flat slab; a body is a solid with a height, optionally hollowed into a container. Features other than plates and bodies refer to a plate by id and use plate-local positions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "spec_version",
+    "name",
+    "features"
+  ],
+  "properties": {
+    "spec_version": {
+      "const": "2.1"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200,
+      "items": {
+        "$ref": "#/$defs/feature"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "description": "Unique feature id within the spec, referenced by other features.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,39}$"
+    },
+    "length_mm": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 2000
+    },
+    "angle_deg": {
+      "type": "number",
+      "minimum": -360,
+      "maximum": 360
+    },
+    "point_mm": {
+      "description": "A point [x, y] in millimeters. In a plate or extrude outline it is in the plate's local frame, origin at the center. In a revolve profile it is [radius, z] from the axis and the base.",
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number"
+      }
+    },
+    "placement": {
+      "description": "Where a feature sits. 'anchor' is an anchor id picked on the scan, or 'origin' for the part's own local origin. Offsets are relative to that anchor, never absolute. Rotation is about the anchor's normal or axis.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "anchor"
+      ],
+      "properties": {
+        "anchor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "offset_mm": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "default": [
+            0,
+            0,
+            0
+          ],
+          "items": {
+            "type": "number"
+          }
+        },
+        "rotation_deg": {
+          "$ref": "#/$defs/angle_deg",
+          "default": 0
+        }
+      }
+    },
+    "feature": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/plate"
+        },
+        {
+          "$ref": "#/$defs/body"
+        },
+        {
+          "$ref": "#/$defs/hole"
+        },
+        {
+          "$ref": "#/$defs/hole_pattern"
+        },
+        {
+          "$ref": "#/$defs/counterbore"
+        },
+        {
+          "$ref": "#/$defs/countersink"
+        },
+        {
+          "$ref": "#/$defs/slot"
+        },
+        {
+          "$ref": "#/$defs/standoff"
+        },
+        {
+          "$ref": "#/$defs/rib"
+        },
+        {
+          "$ref": "#/$defs/bend"
+        },
+        {
+          "$ref": "#/$defs/fillet"
+        },
+        {
+          "$ref": "#/$defs/chamfer"
+        },
+        {
+          "$ref": "#/$defs/cutout"
+        },
+        {
+          "$ref": "#/$defs/emboss_text"
+        }
+      ]
+    },
+    "plate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "outline",
+        "thickness_mm",
+        "placement"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "plate"
+        },
+        "outline": {
+          "$ref": "#/$defs/outline"
+        },
+        "thickness_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "placement": {
+          "$ref": "#/$defs/placement"
+        }
+      }
+    },
+    "hole": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "diameter_mm",
+        "position_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "hole"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        }
+      }
+    },
+    "hole_pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "diameter_mm",
+        "pattern"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "hole_pattern"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "pattern": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "count_x",
+                "count_y",
+                "spacing_x_mm",
+                "spacing_y_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "rectangular"
+                },
+                "center_mm": {
+                  "$ref": "#/$defs/point_mm"
+                },
+                "count_x": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50
+                },
+                "count_y": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50
+                },
+                "spacing_x_mm": {
+                  "$ref": "#/$defs/length_mm"
+                },
+                "spacing_y_mm": {
+                  "$ref": "#/$defs/length_mm"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "count",
+                "radius_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "circular"
+                },
+                "center_mm": {
+                  "$ref": "#/$defs/point_mm"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 50
+                },
+                "radius_mm": {
+                  "$ref": "#/$defs/length_mm"
+                },
+                "start_angle_deg": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "counterbore": {
+      "description": "A through hole with a flat-bottomed recess on the top face, for a bolt head.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "position_mm",
+        "diameter_mm",
+        "bore_diameter_mm",
+        "bore_depth_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "counterbore"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "bore_diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "bore_depth_mm": {
+          "$ref": "#/$defs/length_mm"
+        }
+      }
+    },
+    "countersink": {
+      "description": "A through hole with a conical recess on the top face, for a flat-head screw.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "position_mm",
+        "diameter_mm",
+        "sink_diameter_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "countersink"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "sink_diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "sink_angle_deg": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 180,
+          "default": 90
+        }
+      }
+    },
+    "slot": {
+      "description": "A through slot with rounded ends. length_mm is end to end.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "position_mm",
+        "length_mm",
+        "width_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "slot"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "length_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "width_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "angle_deg": {
+          "$ref": "#/$defs/angle_deg",
+          "default": 0
+        }
+      }
+    },
+    "standoff": {
+      "description": "A round post standing on a plate face. A positive hole_diameter_mm drills it through the post and the plate.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "position_mm",
+        "outer_diameter_mm",
+        "height_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "standoff"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "outer_diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "height_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "hole_diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "face": {
+          "enum": [
+            "top",
+            "bottom"
+          ],
+          "default": "top"
+        }
+      }
+    },
+    "rib": {
+      "description": "A thin wall standing on a plate face along a line. 'rectangular' is a rib of constant height. 'triangular' is a gusset whose height falls from height_mm at start_mm to zero at end_mm.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "start_mm",
+        "end_mm",
+        "thickness_mm",
+        "height_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "rib"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "start_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "end_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "thickness_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "height_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "profile": {
+          "enum": [
+            "rectangular",
+            "triangular"
+          ],
+          "default": "rectangular"
+        },
+        "face": {
+          "enum": [
+            "top",
+            "bottom"
+          ],
+          "default": "top"
+        }
+      }
+    },
+    "bend": {
+      "description": "Joins an edge of one plate to an edge of another through a rounded bend, making an L or other angled bracket. The second plate's own placement is ignored; the bend positions it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "from_plate",
+        "from_edge",
+        "to_plate",
+        "to_edge",
+        "angle_deg",
+        "inner_radius_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "bend"
+        },
+        "from_plate": {
+          "$ref": "#/$defs/id"
+        },
+        "from_edge": {
+          "enum": [
+            "+x",
+            "-x",
+            "+y",
+            "-y"
+          ]
+        },
+        "to_plate": {
+          "$ref": "#/$defs/id"
+        },
+        "to_edge": {
+          "enum": [
+            "+x",
+            "-x",
+            "+y",
+            "-y"
+          ]
+        },
+        "angle_deg": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 179,
+          "default": 90
+        },
+        "inner_radius_mm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 200
+        }
+      }
+    },
+    "fillet": {
+      "description": "Rounds edges of a plate. 'vertical' is the outline corners, 'top' and 'bottom' are the face outlines, 'all' is every edge.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "edges",
+        "radius_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "fillet"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "edges": {
+          "enum": [
+            "vertical",
+            "top",
+            "bottom",
+            "all"
+          ]
+        },
+        "radius_mm": {
+          "$ref": "#/$defs/length_mm"
+        }
+      }
+    },
+    "chamfer": {
+      "description": "Bevels edges of a plate. Edge selection is the same as for fillet.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "edges",
+        "distance_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "chamfer"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "edges": {
+          "enum": [
+            "vertical",
+            "top",
+            "bottom",
+            "all"
+          ]
+        },
+        "distance_mm": {
+          "$ref": "#/$defs/length_mm"
+        }
+      }
+    },
+    "cutout": {
+      "description": "A through cut around a clearance zone on the scan, such as a bolt head or a hose, positioned by an anchor. margin_mm grows the cut beyond the zone shape.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "placement",
+        "zone"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "cutout"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "placement": {
+          "$ref": "#/$defs/placement"
+        },
+        "zone": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "diameter_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "circle"
+                },
+                "diameter_mm": {
+                  "$ref": "#/$defs/length_mm"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "width_mm",
+                "length_mm"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "rectangle"
+                },
+                "width_mm": {
+                  "$ref": "#/$defs/length_mm"
+                },
+                "length_mm": {
+                  "$ref": "#/$defs/length_mm"
+                }
+              }
+            }
+          ]
+        },
+        "margin_mm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 0
+        }
+      }
+    },
+    "emboss_text": {
+      "description": "Text raised from, or engraved into, a plate face. height_mm is the letter height; depth_mm is how far it rises or sinks.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "plate",
+        "position_mm",
+        "text",
+        "height_mm",
+        "depth_mm"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "emboss_text"
+        },
+        "plate": {
+          "$ref": "#/$defs/id"
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "height_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "depth_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20
+        },
+        "mode": {
+          "enum": [
+            "raised",
+            "engraved"
+          ],
+          "default": "raised"
+        },
+        "face": {
+          "enum": [
+            "top",
+            "bottom"
+          ],
+          "default": "top"
+        },
+        "angle_deg": {
+          "$ref": "#/$defs/angle_deg",
+          "default": 0
+        }
+      }
+    },
+    "outline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "width_mm",
+            "length_mm"
+          ],
+          "properties": {
+            "kind": {
+              "const": "rectangle"
+            },
+            "width_mm": {
+              "$ref": "#/$defs/length_mm"
+            },
+            "length_mm": {
+              "$ref": "#/$defs/length_mm"
+            },
+            "corner_radius_mm": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000,
+              "default": 0
+            }
+          }
+        },
+        {
+          "description": "A round plate centered on the plate origin. The edge is a true circle.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "diameter_mm"
+          ],
+          "properties": {
+            "kind": {
+              "const": "circle"
+            },
+            "diameter_mm": {
+              "$ref": "#/$defs/length_mm"
+            }
+          }
+        },
+        {
+          "description": "A closed polygon. The last point connects back to the first.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "points_mm"
+          ],
+          "properties": {
+            "kind": {
+              "const": "polygon"
+            },
+            "points_mm": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 200,
+              "items": {
+                "$ref": "#/$defs/point_mm"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "body": {
+      "description": "A solid with a height, for boxes, vases, cups and knobs. The body frame has its origin at the center of the base, Z up, so the base sits at Z = 0 and the top at Z = height_mm. 'shape' says how it is made; 'shell' hollows it; 'edge_fillet_mm' rounds the outer top and bottom edges, or use edge_fillet_top_mm and edge_fillet_bottom_mm to round them separately; 'bores' drills blind holes; 'texture' adds vertical ridges or grooves on the outside wall.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "shape",
+        "placement"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "body"
+        },
+        "shape": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/extrude"
+            },
+            {
+              "$ref": "#/$defs/revolve"
+            }
+          ]
+        },
+        "shell": {
+          "$ref": "#/$defs/shell"
+        },
+        "edge_fillet_mm": {
+          "description": "Radius that rounds the outer top and bottom edges. Must be smaller than the wall thickness when the body is hollow.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 200
+        },
+        "placement": {
+          "$ref": "#/$defs/placement"
+        },
+        "texture": {
+          "$ref": "#/$defs/texture"
+        },
+        "edge_fillet_top_mm": {
+          "description": "Radius that rounds only the outer top edge. Cannot be combined with edge_fillet_mm.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 200
+        },
+        "edge_fillet_bottom_mm": {
+          "description": "Radius that rounds only the outer bottom edge. Cannot be combined with edge_fillet_mm.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 200
+        },
+        "bores": {
+          "description": "Blind holes drilled into the body, such as the socket of a shift knob.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/bore"
+          }
+        }
+      }
+    },
+    "extrude": {
+      "description": "A prism: the outline, straight up by height_mm. A rectangle outline gives a box; a circle gives a cylinder.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "outline",
+        "height_mm"
+      ],
+      "properties": {
+        "kind": {
+          "const": "extrude"
+        },
+        "outline": {
+          "$ref": "#/$defs/outline"
+        },
+        "height_mm": {
+          "$ref": "#/$defs/length_mm"
+        }
+      }
+    },
+    "shell": {
+      "description": "Hollows the body, leaving walls of wall_thickness_mm. open 'top' removes the top face (a vase, cup or box); 'none' makes a closed hollow part. The base stays as thick as the walls.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wall_thickness_mm",
+        "open"
+      ],
+      "properties": {
+        "wall_thickness_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "open": {
+          "enum": [
+            "top",
+            "none"
+          ]
+        }
+      }
+    },
+    "revolve": {
+      "description": "A solid of revolution about the body's Z axis: vases, cups, knobs, bottles. 'profile_mm' lists [radius, z] points of the outside surface from the base up to the rim, with z strictly increasing (no overhangs, so it prints without supports). The base is a flat disc from the axis out to the first point, and the top is closed flat unless the body is hollowed open at the top. Use many points for a smooth curve.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "profile_mm"
+      ],
+      "properties": {
+        "kind": {
+          "const": "revolve"
+        },
+        "profile_mm": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/point_mm"
+          }
+        }
+      }
+    },
+    "texture": {
+      "description": "A repeating pattern of vertical stripes on the outside wall: 'ridges' stand out by depth_mm, 'grooves' are cut in by depth_mm (and must be shallower than the wall if the body is hollow). 'spacing_mm' is the distance between stripe centers along a flat side, or around the widest part of a round body. Stripes run the full height unless 'z_range_mm' [from, to] limits them. Supported on rectangle and circle extrusions and on revolved bodies.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "width_mm",
+        "depth_mm",
+        "spacing_mm"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "ridges",
+            "grooves"
+          ]
+        },
+        "width_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "depth_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "spacing_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "z_range_mm": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2000
+          }
+        }
+      }
+    },
+    "bore": {
+      "description": "A round hole drilled into a body along its Z axis and stopping at depth_mm (a blind bore). from 'bottom' drills up from the base face and 'top' drills down from the top face. position_mm is [x, y] from the body's center, default [0, 0]. For a threaded hole, use the tap-drill diameter (8.8 mm for M10x1.25), not the thread's outer diameter.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "diameter_mm",
+        "depth_mm",
+        "from"
+      ],
+      "properties": {
+        "diameter_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "depth_mm": {
+          "$ref": "#/$defs/length_mm"
+        },
+        "from": {
+          "enum": [
+            "bottom",
+            "top"
+          ]
+        },
+        "position_mm": {
+          "$ref": "#/$defs/point_mm"
+        }
+      }
+    }
+  }
+}

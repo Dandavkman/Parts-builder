@@ -9,6 +9,7 @@ const versions = [
   { schema: "part-spec.v1.schema.json", out: "part-spec-v1.ts" },
   { schema: "part-spec.v1_1.schema.json", out: "part-spec-v1-1.ts" },
   { schema: "part-spec.v2.schema.json", out: "part-spec-v2.ts" },
+  { schema: "part-spec.v2_1.schema.json", out: "part-spec-v2-1.ts" },
 ];
 
 for (const { schema, out } of versions) {
@@ -60,5 +61,21 @@ await writeFile(
 export const PART_SPEC_V2_SCHEMA: Record<string, unknown> = ${JSON.stringify(schema2, null, 2)};
 
 export const PART_SPEC_V2_EXAMPLES: Record<string, unknown>[] = ${JSON.stringify(examples2, null, 2)};
+`,
+);
+
+// And for Part Spec 2.1 (blind bores, separate round-overs), quoted when DESIGN_AGENT_SPEC_VERSION=2.1.
+// Every 2.0 example is a valid 2.1 spec once its version is bumped (tested).
+const schema21 = JSON.parse(await readFile(`${specDir}part-spec.v2_1.schema.json`, "utf8"));
+const examples21 = examples2.map((e) => ({ ...e, spec_version: "2.1" }));
+for (const file of (await readdir(`${specDir}examples/v2_1`)).filter((f) => f.endsWith(".json")).sort()) {
+  examples21.push(JSON.parse(await readFile(`${specDir}examples/v2_1/${file}`, "utf8")));
+}
+await writeFile(
+  `${agentDir}part-spec-v2-1-reference.ts`,
+  `/* Generated from services/geometry/src/geometry/spec (part-spec.v2_1.schema.json and examples). Do not edit. Run \`pnpm generate\`. */
+export const PART_SPEC_V2_1_SCHEMA: Record<string, unknown> = ${JSON.stringify(schema21, null, 2)};
+
+export const PART_SPEC_V2_1_EXAMPLES: Record<string, unknown>[] = ${JSON.stringify(examples21, null, 2)};
 `,
 );

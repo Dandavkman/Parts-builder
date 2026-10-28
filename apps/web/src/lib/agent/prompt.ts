@@ -1,5 +1,6 @@
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
 import { PART_SPEC_V2_EXAMPLES, PART_SPEC_V2_SCHEMA } from "./generated/part-spec-v2-reference";
+import { PART_SPEC_V2_1_EXAMPLES, PART_SPEC_V2_1_SCHEMA } from "./generated/part-spec-v2-1-reference";
 import type { AgentAnchor, AgentDimension } from "./types";
 
 /** How a spec is put together. The exact fields come from the schema and examples quoted below. */
@@ -21,7 +22,24 @@ Optional "shell": {"wall_thickness_mm": ..., "open": "top"} makes it hollow with
 Height is the Z size. When the user states an overall size, record it with add_dimension and "measures", then make the built part match it exactly: a revolved vase's widest radius is half its width.
 `.trim();
 
+/** Added to the conventions for Part Spec 2.1: blind bores and separate round-overs (task B1.22). */
+export const SPEC_CONVENTIONS_V2_1 = `
+Part Spec 2.1 lets a body carry "bores" and round its top and bottom edges separately. Use "spec_version": "2.1".
+A bore is a blind hole drilled along Z: {"diameter_mm", "depth_mm", "from": "bottom" or "top", "position_mm": [x, y]} (position defaults to the center). Use bores for shift-knob sockets, peg sockets and pockets; never try to put a "hole" feature in a body, because holes only go in plates. A bore cannot be combined with "shell".
+For a threaded hole, drill the tap-drill size and tell the user to tap it or press in a threaded insert: 8.8 mm for M10x1.25, 6.8 mm for M8x1.25, 5.0 mm for M6x1.0. Never use the thread's outer diameter as the hole.
+Use "edge_fillet_top_mm" and "edge_fillet_bottom_mm" to round one edge, or "edge_fillet_mm" for both; do not mix them.
+`.trim();
+
 export function specReference(version: SpecVersion = "1.1"): string {
+  if (version === "2.1") {
+    return [
+      SPEC_CONVENTIONS.replace('"spec_version": "1.1"', '"spec_version": "2.1"'),
+      SPEC_CONVENTIONS_V2.replace('Use "spec_version": "2.0".', 'Use "spec_version": "2.1".'),
+      SPEC_CONVENTIONS_V2_1,
+      `JSON Schema for Part Spec 2.1 (authoritative):\n${JSON.stringify(PART_SPEC_V2_1_SCHEMA)}`,
+      `Valid example specs, one or more per feature:\n${PART_SPEC_V2_1_EXAMPLES.map((e) => JSON.stringify(e)).join("\n")}`,
+    ].join("\n\n");
+  }
   if (version === "2.0") {
     return [
       SPEC_CONVENTIONS.replace('"spec_version": "1.1"', '"spec_version": "2.0"'),
@@ -37,14 +55,15 @@ export function specReference(version: SpecVersion = "1.1"): string {
   ].join("\n\n");
 }
 
-export type SpecVersion = "1.1" | "2.0";
+export type SpecVersion = "1.1" | "2.0" | "2.1";
 
 /**
- * Which Part Spec the agent writes. It stays 1.1 until DESIGN_AGENT_SPEC_VERSION=2.0 is set, which must
- * only happen after the Fly geometry service has been redeployed with Part Spec 2.0.
+ * Which Part Spec the agent writes. It stays 1.1 until DESIGN_AGENT_SPEC_VERSION is set to 2.0 or 2.1, which
+ * must only happen after the Fly geometry service has been redeployed with that Part Spec.
  */
 export function agentSpecVersion(env: Record<string, string | undefined> = process.env): SpecVersion {
-  return env.DESIGN_AGENT_SPEC_VERSION === "2.0" ? "2.0" : "1.1";
+  const v = env.DESIGN_AGENT_SPEC_VERSION;
+  return v === "2.0" || v === "2.1" ? v : "1.1";
 }
 
 /** Rules for parts that go on a vehicle. Unchanged by the general-market revision. */

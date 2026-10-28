@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
+import { PART_SPEC_V2_1_EXAMPLES, PART_SPEC_V2_1_SCHEMA } from "./generated/part-spec-v2-1-reference";
 import { PART_SPEC_V2_EXAMPLES, PART_SPEC_V2_SCHEMA } from "./generated/part-spec-v2-reference";
 import { agentSpecVersion, buildSystemPrompt, EVERYDAY_SAFETY_RULES, VEHICLE_SAFETY_RULES } from "./prompt";
 import { parseRequest } from "./request";
@@ -123,6 +124,7 @@ describe("Part Spec 2.0 prompt (B1.17d)", () => {
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "" })).toBe("1.1");
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "3" })).toBe("1.1");
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "2.0" })).toBe("2.0");
+    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "2.1" })).toBe("2.1");
   });
 
   it("keeps the 1.1 prompt free of the body feature by default", () => {
@@ -147,5 +149,28 @@ describe("Part Spec 2.0 prompt (B1.17d)", () => {
     const quoted = new Set(PART_SPEC_V2_EXAMPLES.flatMap((e) => ((e.features as { type: string }[]) ?? []).map((f) => f.type)));
     for (const t of types) expect(quoted.has(t), `no 2.0 example for ${t}`).toBe(true);
     expect(PART_SPEC_V2_EXAMPLES.every((e) => e.spec_version === "2.0")).toBe(true);
+  });
+});
+
+describe("Part Spec 2.1 prompt (B1.22)", () => {
+  const v21Path = new URL("../../../../../services/geometry/src/geometry/spec/part-spec.v2_1.schema.json", import.meta.url);
+
+  it("quotes the 2.1 schema, every example and the bore conventions", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "2.1");
+    expect(prompt).toContain(JSON.stringify(PART_SPEC_V2_1_SCHEMA));
+    for (const example of PART_SPEC_V2_1_EXAMPLES) expect(prompt).toContain(JSON.stringify(example));
+    expect(prompt).toContain("tap-drill");
+    expect(prompt).toContain('"spec_version": "2.1"');
+    expect(prompt).not.toContain('"spec_version": "2.0"');
+  });
+
+  it("matches the schema file and every example is 2.1", () => {
+    expect(PART_SPEC_V2_1_SCHEMA).toEqual(JSON.parse(readFileSync(v21Path, "utf8")));
+    expect(PART_SPEC_V2_1_EXAMPLES.every((e) => e.spec_version === "2.1")).toBe(true);
+    expect(PART_SPEC_V2_1_EXAMPLES.some((e) => JSON.stringify(e).includes('"bores"'))).toBe(true);
+  });
+
+  it("leaves the 2.0 prompt without bores", () => {
+    expect(buildSystemPrompt(FIXTURE_ANCHORS, [], "2.0")).not.toContain("tap-drill");
   });
 });
