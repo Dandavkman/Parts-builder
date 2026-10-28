@@ -208,6 +208,18 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
     ],
   },
   {
+    id: "0011_order_emails",
+    sql: [
+      `ALTER TABLE orders ADD COLUMN IF NOT EXISTS contact_email text`,
+      `CREATE TABLE IF NOT EXISTS email_log (
+        order_id uuid NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        event text NOT NULL,
+        sent_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (order_id, event)
+      )`,
+    ],
+  },
+  {
     id: "0012_waitlist",
     sql: [
       `CREATE TABLE IF NOT EXISTS waitlist (

@@ -134,6 +134,7 @@ export const orders = pgTable("orders", {
   paidAt: timestamp("paid_at", { withTimezone: true }),
   partnerOrderRef: text("partner_order_ref"),
   trackingNumber: text("tracking_number"),
+  contactEmail: text("contact_email"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
@@ -216,6 +217,19 @@ export const rateCards = pgTable("rate_cards", {
   updatedBy: text("updated_by"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
+
+/** One row per email sent for an order event, so each event is emailed once even if a webhook repeats. */
+export const emailLog = pgTable(
+  "email_log",
+  {
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    event: text("event").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().default(sql`now()`),
+  },
+  (t) => [primaryKey({ columns: [t.orderId, t.event] })],
+);
 
 /** People who asked to be told when ordering opens. Lower-cased email is the key, so signing up twice does nothing. */
 export const waitlist = pgTable("waitlist", {
