@@ -232,3 +232,7 @@ A scheduled GitHub Actions job runs `scripts/backup-db.sh` (`pg_dump | gzip`, up
 ## 2026-10-28 — Error tracking adapter (B2.11c)
 
 `reportError(message, error, context)` replaces the 31 `console.error` calls in routes and email. It always logs; when `SENTRY_DSN` is set it also posts the error to Sentry's HTTP store API. Chosen over the Sentry SDK to avoid a heavy dependency and bundle/build-time config; it can be swapped for the SDK later because every call site goes through this one function. It sends only the error name, message, stack and short tags, never request bodies or headers, and never throws. Sentry's free tier covers the first stage, so no paid service is implied; the Owner creates the project and sets the DSN.
+
+## 2026-10-28 — Seller payout ledger (B4.5a)
+
+An append-only `ledger_entries` table (migration 0014) records what we owe each seller as signed cents: a sale adds the listing's royalty (as fixed when it was listed), a refund subtracts it, a payout subtracts what was paid. A unique key on (store, kind, ref) makes recording the same sale, refund or payout twice a no-op, so webhooks and retries are safe. A payout is refused if it exceeds the balance. `GET /api/stores/ledger` shows a seller only their own store; `POST /api/admin/payouts` records a payout but does not move money. Nothing calls `recordSale` yet: the store checkout (B4.5) will, with the order id as `ref`. Sending money stays manual until Stripe Connect (B4.1) is turned on. Royalty amounts inherit the placeholder fee rule (O4.2) and carry a `placeholder` flag.

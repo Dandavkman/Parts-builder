@@ -239,6 +239,25 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       )`,
     ],
   },
+  {
+    id: "0014_seller_ledger",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS ledger_entries (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        store_id uuid NOT NULL REFERENCES stores(id),
+        listing_id uuid REFERENCES listings(id),
+        kind text NOT NULL,
+        ref text NOT NULL,
+        amount_cents integer NOT NULL,
+        placeholder boolean NOT NULL DEFAULT true,
+        note text,
+        created_by text,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT ledger_entries_unique UNIQUE (store_id, kind, ref)
+      )`,
+      `CREATE INDEX IF NOT EXISTS ledger_entries_store_idx ON ledger_entries (store_id, created_at)`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

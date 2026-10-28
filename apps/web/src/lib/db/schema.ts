@@ -247,3 +247,26 @@ export const rateLimits = pgTable(
   },
   (t) => [primaryKey({ columns: [t.key, t.windowStart] })],
 );
+
+/**
+ * What we owe a seller, as signed cents: royalties add, refunds and payouts subtract. Append-only; one row
+ * per (store, kind, ref), so recording the same sale, refund or payout twice changes nothing.
+ */
+export const ledgerEntries = pgTable(
+  "ledger_entries",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    listingId: uuid("listing_id").references(() => listings.id),
+    kind: text("kind").notNull(),
+    ref: text("ref").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    placeholder: boolean("placeholder").notNull().default(true),
+    note: text("note"),
+    createdBy: text("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+  },
+  (t) => [unique("ledger_entries_unique").on(t.storeId, t.kind, t.ref)],
+);
