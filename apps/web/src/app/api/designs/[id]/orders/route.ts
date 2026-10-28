@@ -49,7 +49,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       const [status, error] = REFUSALS[created.reason];
       return Response.json({ error }, { status });
     }
-    const started = await provider.start(created.order, new URL(request.url).origin);
+    let started;
+    try {
+      started = await provider.start(created.order, new URL(request.url).origin);
+    } catch (error) {
+      console.error("payment could not start", error);
+      return Response.json({ error: "Payment could not be started. Try again in a moment." }, { status: 502 });
+    }
     if (started.paidNow) {
       const paid = await markPaid(db, created.order.id, { provider: provider.name, ref: started.ref });
       return Response.json({ order: paid }, { status: 201 });

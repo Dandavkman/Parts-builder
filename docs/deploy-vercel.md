@@ -56,6 +56,9 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | `GEOMETRY_SERVICE_URL` | B0.7 (address of the Fly.io geometry service) |
 | `PLANS_ENFORCED` | B2.1a (optional; `1` enforces the Free and Pro limits on AI messages, saved designs and STEP export. The limits in `lib/plans.ts` are placeholders until you decide them; leave empty and nobody is blocked) |
 | `ADMIN_USER_IDS` | B2.7 (comma separated Clerk user ids allowed into `/admin/orders`, for example your own user id from the Clerk dashboard; server-side only; empty means nobody is an admin) |
+| `STRIPE_SECRET_KEY` | B2.6b (Stripe secret key, a `sk_test_` key for now; server-side only. When set, checkout uses Stripe instead of the stub. A `sk_live_` key is refused while prices are placeholders) |
+| `STRIPE_WEBHOOK_SECRET` | B2.6b (signing secret of the Stripe webhook endpoint `https://<site>/api/stripe/webhook`, event `checkout.session.completed`; server-side only; without it the webhook answers 503 and orders stay unpaid) |
+| `STRIPE_TAX` | B2.6b (optional; `1` turns on Stripe Tax at checkout, only after Stripe Tax is set up) |
 | `PAYMENTS_STUB` | B2.6a (optional; `1` lets checkout mark orders paid with no real payment, for demos and testing. Leave empty in production: ordering then answers "not open yet" until the Stripe provider arrives in B2.6b) |
 | `GEOMETRY_SERVICE_TOKEN` | B1.11c (shared secret; must equal the Fly secret of the same name; server-side only, never `NEXT_PUBLIC_`) |
 | Stripe keys | Phase 2 |
