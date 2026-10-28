@@ -11,3 +11,5 @@ The look of the app will be redone later. These rules keep that cheap.
 ## Example: the design screen
 
 `design/workspace.tsx` only lays out three panels. All state and server calls are in `design/use-workspace.ts` (a hook that renders nothing); `design-toolbar.tsx`, `chat-panel.tsx` and `part-panel.tsx` read what it returns. To redesign the screen, replace the panels; to change behaviour, change the hook.
+
+The routes the screens call are listed in [api.md](api.md); a test keeps that list complete.
