@@ -18,9 +18,10 @@ export interface AddressForm {
   region: string;
   postal_code: string;
   country: string;
+  email: string;
 }
 
-export const EMPTY_ADDRESS: AddressForm = { name: "", line1: "", line2: "", city: "", region: "", postal_code: "", country: "US" };
+export const EMPTY_ADDRESS: AddressForm = { name: "", line1: "", line2: "", city: "", region: "", postal_code: "", country: "US", email: "" };
 
 /** One line for the quote list: "Nylon PA12 (SLS) from Partner B: $24.10 for 2, about 7 days". */
 export function describeQuote(q: QuoteView): string {
@@ -38,5 +39,6 @@ export function orderRequest(
   const missing = (["name", "line1", "city", "region", "postal_code", "country"] as const).filter((k) => !address[k].trim());
   if (missing.length) return { ok: false, reason: "Fill in the shipping address." };
   if (!confirmNotSafetyCritical || !acceptFitTerms) return { ok: false, reason: "Tick both boxes to order." };
-  return { ok: true, body: { quoteId, shipping: address, confirmNotSafetyCritical, acceptFitTerms } };
+  const { email, ...shipping } = address;
+  return { ok: true, body: { quoteId, shipping, email: email.trim(), confirmNotSafetyCritical, acceptFitTerms } };
 }

@@ -17,6 +17,7 @@ const FIELDS: { key: keyof AddressForm; label: string }[] = [
   { key: "region", label: "State or region" },
   { key: "postal_code", label: "Postal code" },
   { key: "country", label: "Country (2 letters)" },
+  { key: "email", label: "Email for order updates" },
 ];
 
 /** Get quotes for the current version, pick one, and order it. Prices come from the server; the panel says when they are placeholders. */
