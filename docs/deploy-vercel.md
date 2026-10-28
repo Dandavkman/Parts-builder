@@ -60,6 +60,8 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | `SENTRY_DSN` | B2.11c (optional; the project DSN from sentry.io, server-side only. Without it, errors are only logged to the console) |
 | `STRIPE_PRO_PRICE_ID` | B2.1b (optional; id of the recurring Price for Pro made in the Stripe dashboard. With `STRIPE_SECRET_KEY` it turns on `/api/account/upgrade` and `/api/account/portal`) |
 | `PRO_PRICE_CONFIRMED` | B2.1b (optional; `1` once the Pro price and limits are real. Until then a live Stripe key is refused for subscriptions) |
+| `STRIPE_CONNECT` | B4.1 (optional; `1` turns on seller payout setup, with `STRIPE_SECRET_KEY`. Use a test key first) |
+| `CONNECT_TERMS_CONFIRMED` | B4.1 (optional; `1` once the platform fee and payout rules are real. Until then a live Stripe key is refused for Connect) |
 | `ADMIN_USER_IDS` | B2.7 (comma separated Clerk user ids allowed into `/admin/orders`, for example your own user id from the Clerk dashboard; server-side only; empty means nobody is an admin) |
 | `STRIPE_SECRET_KEY` | B2.6b (Stripe secret key, a `sk_test_` key for now; server-side only. When set, checkout uses Stripe instead of the stub. A `sk_live_` key is refused while prices are placeholders) |
 | `STRIPE_WEBHOOK_SECRET` | B2.6b (signing secret of the Stripe webhook endpoint `https://<site>/api/stripe/webhook`, event `checkout.session.completed`; server-side only; without it the webhook answers 503 and orders stay unpaid) |

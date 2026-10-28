@@ -1,3 +1,4 @@
+import { handleConnectEvent } from "../../../../lib/connect/stripe-connect";
 import { DatabaseNotConfigured, getDb } from "../../../../lib/db/client";
 import { handleBillingEvent } from "../../../../lib/billing/stripe-billing";
 import { handleStripeEvent, verifyStripeSignature } from "../../../../lib/payments/stripe";
@@ -20,7 +21,8 @@ export async function POST(request: Request) {
   try {
     const db = await getDb();
     const order = await handleStripeEvent(db, event);
-    const result = order !== "ignored" ? order : await handleBillingEvent(db, event);
+    const billing = order !== "ignored" ? order : await handleBillingEvent(db, event);
+    const result = billing !== "ignored" ? billing : await handleConnectEvent(db, event);
     return Response.json({ received: true, result });
   } catch (error) {
     if (!(error instanceof DatabaseNotConfigured)) await reportError("stripe webhook failed", error);
