@@ -235,3 +235,7 @@ A scheduled GitHub Actions job runs `scripts/backup-db.sh` (`pg_dump | gzip`, up
 ## 2026-10-28 — Error tracking adapter (B2.11c)
 
 `reportError(message, error, context)` replaces the 31 `console.error` calls in routes and email. It always logs; when `SENTRY_DSN` is set it also posts the error to Sentry's HTTP store API. Chosen over the Sentry SDK to avoid a heavy dependency and bundle/build-time config; it can be swapped for the SDK later because every call site goes through this one function. It sends only the error name, message, stack and short tags, never request bodies or headers, and never throws. Sentry's free tier covers the first stage, so no paid service is implied; the Owner creates the project and sets the DSN.
+
+## 2026-10-28 — Design workspace split into a hook and panels
+
+`design/workspace.tsx` (428 lines of state, fetch calls and markup) is now a 20-line layout. State and server calls moved unchanged into `use-workspace.ts`, and the markup into `design-toolbar.tsx`, `chat-panel.tsx` and `part-panel.tsx`, so a redesign touches only presentation. Also fixed a phone-width bug found while checking: the one-column grid grew with its content and made the page 65 px too wide at 375 px; it is now `grid-cols-1`. Checked in a headless browser at 375 px: `/`, `/pricing`, `/faq`, `/design` and `/dashboard` no longer scroll sideways.

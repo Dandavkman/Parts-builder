@@ -7,3 +7,7 @@ The look of the app will be redone later. These rules keep that cheap.
 3. **API routes are the only server interface.** Pages and components talk to `/api/...`; they do not import database code. A new front end can replace every component without touching the backend.
 4. **Small components.** Prefer many small components over a long one. Keep spacing and type sizes as Tailwind scale classes, not one-off pixel values.
 5. **Copy lives in data.** Names, taglines, FAQ and step text are in `lib/brand.ts`, not in JSX.
+
+## Example: the design screen
+
+`design/workspace.tsx` only lays out three panels. All state and server calls are in `design/use-workspace.ts` (a hook that renders nothing); `design-toolbar.tsx`, `chat-panel.tsx` and `part-panel.tsx` read what it returns. To redesign the screen, replace the panels; to change behaviour, change the hook.
