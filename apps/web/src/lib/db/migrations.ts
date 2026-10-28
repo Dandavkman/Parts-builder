@@ -321,6 +321,10 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
       `CREATE INDEX IF NOT EXISTS design_vehicle_tags_vehicle_idx ON design_vehicle_tags (vehicle_id)`,
     ],
   },
+  {
+    id: "0020_orders_listing",
+    sql: [`ALTER TABLE orders ADD COLUMN IF NOT EXISTS listing_id uuid REFERENCES listings(id)`],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import type { AgentAnchor, AgentDimension } from "../agent/types";
 import type { ShippingAddress } from "../orders/address";
 import type { QuoteLine } from "../quotes/engine";
-import { boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 /** Owner is the Clerk user id (or "dev" in the local bypass). A users table arrives with plans in Phase 2. */
 export const designs = pgTable("designs", {
@@ -122,6 +122,8 @@ export const orders = pgTable("orders", {
     .references(() => designs.id),
   version: integer("version").notNull(),
   quoteId: uuid("quote_id").references(() => quotes.id),
+  /** Set when the order was bought from a seller's store listing (B4.5). */
+  listingId: uuid("listing_id").references((): AnyPgColumn => listings.id),
   status: text("status").notNull().default("quote"),
   quoteSnapshot: jsonb("quote_snapshot").$type<QuoteLine>().notNull(),
   specSnapshot: jsonb("spec_snapshot").$type<Record<string, unknown>>().notNull(),
