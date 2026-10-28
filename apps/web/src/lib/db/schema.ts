@@ -216,3 +216,9 @@ export const rateCards = pgTable("rate_cards", {
   updatedBy: text("updated_by"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
+
+/** People who asked to be told when ordering opens. Lower-cased email is the key, so signing up twice does nothing. */
+export const waitlist = pgTable("waitlist", {
+  email: text("email").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
