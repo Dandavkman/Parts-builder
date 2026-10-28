@@ -137,3 +137,36 @@ export const orders = pgTable("orders", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
+
+/** A seller's store. Unpublished until Stripe verifies the seller (B4.1). One store per user for now. */
+export const stores = pgTable("stores", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: text("owner_id").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  published: boolean("published").notNull().default(false),
+  stripeConnectAccount: text("stripe_connect_account"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
+
+/** A design version offered for sale. Prices are frozen at listing time; review_status is pending, approved or rejected (B4.4). */
+export const listings = pgTable("listings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  storeId: uuid("store_id")
+    .notNull()
+    .references(() => stores.id, { onDelete: "cascade" }),
+  designId: uuid("design_id")
+    .notNull()
+    .references(() => designs.id),
+  version: integer("version").notNull(),
+  title: text("title").notNull(),
+  materialId: text("material_id").notNull(),
+  materialName: text("material_name").notNull(),
+  retailCents: integer("retail_cents").notNull(),
+  floorCents: integer("floor_cents").notNull(),
+  platformFeeCents: integer("platform_fee_cents").notNull(),
+  royaltyCents: integer("royalty_cents").notNull(),
+  placeholder: boolean("placeholder").notNull().default(true),
+  reviewStatus: text("review_status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
