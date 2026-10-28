@@ -12,6 +12,7 @@ export interface Limit {
 export const LIMITS = {
   waitlist: { name: "waitlist", max: 5, windowSeconds: 3600 },
   orders: { name: "orders", max: 20, windowSeconds: 3600 },
+  takedowns: { name: "takedowns", max: 5, windowSeconds: 3600 },
 } satisfies Record<string, Limit>;
 
 export type RateResult = { ok: true } | { ok: false; retryAfterSeconds: number };
