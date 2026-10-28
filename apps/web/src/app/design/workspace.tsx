@@ -6,6 +6,7 @@ import { setAtPath, type SpecNumber } from "../../lib/agent/spec-numbers";
 import type { AgentDimension } from "../../lib/agent/types";
 import { shrinkPhoto, type ShrunkPhoto } from "../../lib/photo";
 import { ModelViewer } from "../viewer/plate-viewer";
+import { OrderPanel } from "./order-panel";
 import { Sliders } from "./sliders";
 import { START_CHOICES, type StartChoice } from "./start-choices";
 
@@ -393,6 +394,7 @@ export function Workspace() {
           </ul>
         )}
         {spec && <Sliders spec={spec} disabled={chat.busy} onCommit={(item, value) => void commitSlider(item, value)} />}
+        {designIdRef.current && <OrderPanel key={`${designIdRef.current}-${current}`} designId={designIdRef.current} version={current} />}
         {versions.length > 0 && (
           <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto text-xs" aria-label="Versions">
             {[...versions].reverse().map((v) => (
