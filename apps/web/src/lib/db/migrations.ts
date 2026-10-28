@@ -276,6 +276,7 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
         CONSTRAINT scan_licenses_unique UNIQUE (owner_id, vehicle_id, area)
       )`,
       `CREATE INDEX IF NOT EXISTS scan_licenses_owner_idx ON scan_licenses (owner_id)`,
+    ],
   },
   {
     id: "0017_listing_review",
