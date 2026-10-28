@@ -3,6 +3,8 @@ import { listOwnedDesigns } from "../../lib/agent/store";
 import { matches, orderSummary, orderText, statusLabel } from "../../lib/dashboard";
 import { getDb } from "../../lib/db/client";
 import { listOwnedOrders } from "../../lib/orders/store";
+import { PLAN_LIMITS, plansEnforced, type Plan } from "../../lib/plans";
+import { aiMessagesUsed, getPlan } from "../../lib/plans-store";
 import { requireOwner } from "../../lib/require-owner";
 import { SiteHeader } from "../site-header";
 
@@ -14,12 +16,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   let designs: Awaited<ReturnType<typeof listOwnedDesigns>> = [];
   let orders: Awaited<ReturnType<typeof listOwnedOrders>> = [];
   let problem: string | null = null;
+  let usage: { plan: Plan; ai: number } | null = null;
   if ("response" in who) {
     problem = "Sign in to see your designs and orders.";
   } else {
     try {
       const db = await getDb();
       [designs, orders] = await Promise.all([listOwnedDesigns(db, who.ownerId), listOwnedOrders(db, who.ownerId)]);
+      usage = { plan: await getPlan(db, who.ownerId), ai: await aiMessagesUsed(db, who.ownerId) };
     } catch {
       problem = "The database is not available, so your lists cannot be shown.";
     }
@@ -38,6 +42,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             Search
           </button>
         </form>
+        {usage && (
+          <p className="mt-2 text-sm text-zinc-500">
+            {usage.plan === "pro" ? "Pro plan" : "Free plan"}: {usage.ai} of {PLAN_LIMITS[usage.plan].aiMessagesPerMonth} AI messages used this month, {designs.length} of{" "}
+            {PLAN_LIMITS[usage.plan].savedDesigns} designs saved{plansEnforced() ? "" : " (limits are not enforced yet)"}.
+          </p>
+        )}
         {problem && <p className="mt-4 text-sm text-amber-700">{problem}</p>}
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
