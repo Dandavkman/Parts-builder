@@ -317,3 +317,6 @@ Follow-up: the watercolor sky is sized in one unit (`--u`, 1vw capped at 14px) i
 
 ## 2026-10-31 — Home page picture copy (B2.10b follow-up)
 "of God creating the world" (singular). In the Idea → Product picture the "natural language" line now sits level with the Idea and Product labels as "~~complex design software~~ natural language", in the light highlight colour (white in light mode) with no italics and a faint shadow so it stays legible, and the arrows are thicker SVG arrows. White on the tan background is low contrast by design; the shadow helps, but a darker colour is a one-token change if it proves hard to read.
+
+## 2026-10-31 — Ktiso favicon
+The favicon is a solid brick-red K (`#a8473c`) on a rounded square with a soft sand-to-rose ombre, a simplified version of the site's watercolor sky. It uses Next's file convention in `apps/web/src/app`: `icon.svg` (modern browsers), `icon1.png` (32 px fallback, Safari) and `apple-icon.png` (180 px). The logo does not use the Greek key line, which stays on the website only. The source SVGs, the social profile image and the brand guide are kept in the project files, not the repo. No new environment variables.
