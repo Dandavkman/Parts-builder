@@ -6,18 +6,18 @@ import { BRAND } from "../lib/brand";
 export function SiteHeader({ wide }: { wide?: boolean } = {}) {
   const mode = getAuthMode();
   return (
-    <header className={`mx-auto flex ${wide ? "max-w-5xl" : "max-w-3xl"} items-center justify-between gap-4 px-6 py-5`}>
+    <header className={`mx-auto flex ${wide ? "max-w-5xl" : "max-w-3xl"} flex-wrap items-center justify-between gap-x-4 gap-y-2 px-6 py-4 sm:py-5`}>
       <Link href="/" className="font-caps text-sm uppercase tracking-[0.22em]">
         {BRAND.name}
       </Link>
-      <nav className="flex items-center gap-5 text-sm text-subtle">
+      <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-subtle sm:gap-5">
         <Link href="/#how-it-works" className="hidden hover:underline sm:inline">
           How it works
         </Link>
-        <Link href="/pricing" className="hidden hover:underline sm:inline">
+        <Link href="/pricing" className="hover:underline">
           Pricing
         </Link>
-        <Link href="/faq" className="hidden hover:underline sm:inline">
+        <Link href="/faq" className="hover:underline">
           FAQ
         </Link>
         {mode === "clerk" ? (

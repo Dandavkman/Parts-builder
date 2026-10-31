@@ -108,6 +108,14 @@ body {
 .wash-sky i:nth-child(3) { width: 520px; height: 360px; left: 28%; top: 300px; background: var(--wash-d); }
 .wash-sky i:nth-child(4) { width: 480px; height: 320px; right: 6%; top: 620px; background: var(--wash-c); }
 
+@media (max-width: 640px) {
+  .wash-sky i { filter: blur(40px); }
+  .wash-sky i:nth-child(1) { width: 90vw; height: 60vw; left: -20vw; top: -10px; }
+  .wash-sky i:nth-child(2) { width: 85vw; height: 70vw; left: auto; right: -25vw; top: 160px; }
+  .wash-sky i:nth-child(3) { width: 80vw; height: 60vw; left: -10vw; top: 520px; }
+  .wash-sky i:nth-child(4) { width: 85vw; height: 60vw; right: -20vw; top: 860px; }
+}
+
 .paper-grain {
   position: absolute;
   inset: 0;

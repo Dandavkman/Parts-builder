@@ -22,9 +22,9 @@ export function WaitlistForm() {
 
   return (
     <div className="w-full max-w-lg">
-      <form onSubmit={(e) => void submit(e)} className="flex flex-wrap justify-center gap-2 rounded-full border border-line bg-card p-2 backdrop-blur-sm focus-within:border-accent" aria-label="Join the waitlist">
-        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email address" placeholder="you@example.com" className="min-w-0 flex-1 basis-56 bg-transparent px-4 py-3 outline-none placeholder:text-subtle/80" />
-        <button type="submit" disabled={busy} className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50">
+      <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3 sm:flex-row sm:gap-2 sm:rounded-full sm:border sm:border-line sm:bg-card sm:p-2 sm:backdrop-blur-sm sm:focus-within:border-accent" aria-label="Join the waitlist">
+        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email address" placeholder="you@example.com" className="min-w-0 flex-1 rounded-full border border-line bg-card px-4 py-3 outline-none backdrop-blur-sm placeholder:text-subtle/80 focus:border-accent sm:basis-56 sm:border-0 sm:bg-transparent sm:backdrop-blur-none" />
+        <button type="submit" disabled={busy} className="w-full rounded-full bg-primary px-6 py-3 text-sm sm:w-auto font-medium text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50">
           Join the waitlist
         </button>
       </form>
