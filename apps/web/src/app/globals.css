@@ -78,10 +78,10 @@
   --color-warning-line: var(--warning-line);
   --color-danger: var(--danger);
   --color-danger-line: var(--danger-line);
-  --font-display: var(--font-cormorant), "Iowan Old Style", Georgia, serif;
-  --font-caps: var(--font-cinzel), "Trajan Pro", Georgia, serif;
-  --font-greek: var(--font-garamond), "Iowan Old Style", Georgia, serif;
-  --font-sans: var(--font-hanken), system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --font-caps: "Cinzel", "Trajan Pro", Georgia, serif;
+  --font-greek: "EB Garamond", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Hanken Grotesk", system-ui, sans-serif;
 }
 
 body {
