@@ -14,8 +14,12 @@ export const ETYMOLOGY = {
 } as const;
 
 /** The six steps of the Owner's storyboard, in order. Used by the landing page and the how-it-works section. */
-export const STEPS: { title: string; body: string }[] = [
-  { title: "Snap a photo and say what you want", body: "Take a picture of the thing, or the place it has to fit, and describe the part in your own words. Give one real measurement so we get the size right." },
+export const STEPS: { title: string; body: string; options?: string[] }[] = [
+  {
+    title: "Describe the part and give us a starting point",
+    body: "Say what you want in your own words, then start from whichever of these suits you.",
+    options: ["Tell us your measurements", "Take a picture", "Tell us what you're building on and we'll research the platform"],
+  },
   { title: "Revise it in chat", body: "See the 3D part, then ask for changes: a little taller, a bigger hole, a different pattern. Every change is saved, and you can go back." },
   { title: "Get a material recommendation", body: "We suggest a material and process for what the part has to do, and tell you why." },
   { title: "Compare quotes", body: "We ask several manufacturers and show you each price, so you choose." },

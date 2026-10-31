@@ -9,7 +9,7 @@ import * as schema from "./db/schema";
 describe("public copy", () => {
   it("follows the storyboard's six steps in order", () => {
     expect(STEPS).toHaveLength(6);
-    expect(STEPS[0].title).toMatch(/photo/i);
+    expect(STEPS[0].options).toEqual(["Tell us your measurements", "Take a picture", "Tell us what you're building on and we'll research the platform"]);
     expect(STEPS[3].title).toMatch(/quotes/i);
     expect(STEPS[5].title).toMatch(/sell/i);
   });

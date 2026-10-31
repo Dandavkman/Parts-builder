@@ -41,6 +41,16 @@ export default function Home() {
               <span className="font-caps text-xs uppercase tracking-[0.3em] text-accent">Step {i + 1}</span>
               <h3 className="mt-2 mb-2 font-display text-2xl font-medium leading-tight">{s.title}</h3>
               <p className="text-[15px] text-subtle">{s.body}</p>
+              {s.options && (
+                <ul className="mt-3 grid gap-2 text-[15px]">
+                  {s.options.map((o) => (
+                    <li key={o} className="flex gap-2">
+                      <span aria-hidden className="text-accent">•</span>
+                      <span>{o}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ol>
