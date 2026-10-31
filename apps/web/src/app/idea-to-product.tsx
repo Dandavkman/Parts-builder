@@ -96,7 +96,7 @@ export function IdeaToProduct() {
       </div>
       <Arrow className="row-start-2 hidden md:col-start-4 md:block" />
       <p className="col-span-3 col-start-1 row-start-3 m-0 self-end text-center font-display text-xl font-medium leading-tight text-[var(--highlight)] [text-shadow:0_1px_3px_color-mix(in_srgb,var(--ink)_60%,transparent)] sm:text-2xl md:col-span-1 md:col-start-3 md:row-start-1">
-        <s className="opacity-80">complex design software</s> natural language
+        <s className="relative no-underline opacity-80 after:absolute after:inset-x-0 after:top-[64%] after:h-[1.5px] after:bg-current after:content-['']">complex design software</s> natural language
       </p>
       <p className="col-span-3 col-start-1 row-start-4 m-0 rounded-[18px] border border-line bg-card p-4 text-center font-display text-xl leading-snug backdrop-blur-sm md:col-span-1 md:col-start-3 md:row-start-2">“{PROMPT}”</p>
     </div>
