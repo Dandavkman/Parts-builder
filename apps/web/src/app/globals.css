@@ -88,11 +88,13 @@ body {
   @apply bg-page font-sans text-ink antialiased;
 }
 
-/* Watercolor sky behind public pages: four blurred washes, bled at the edges by an SVG displacement filter. */
+/* Watercolor sky behind public pages: four blurred washes, bled at the edges by an SVG displacement filter.
+ * Everything is sized in --u (1vw, capped on very wide screens), so the sky keeps the same proportions at every screen width. */
 .wash-sky {
+  --u: min(1vw, 14px);
   position: absolute;
   inset: 0 0 auto 0;
-  height: 980px;
+  height: calc(var(--u) * 76);
   z-index: 0;
   pointer-events: none;
   filter: url(#bleed);
@@ -100,21 +102,13 @@ body {
 .wash-sky i {
   position: absolute;
   border-radius: 50%;
-  filter: blur(60px);
+  filter: blur(calc(var(--u) * 4.7));
   opacity: 0.9;
 }
-.wash-sky i:nth-child(1) { width: 620px; height: 420px; left: -120px; top: -60px; background: var(--wash-b); }
-.wash-sky i:nth-child(2) { width: 560px; height: 440px; right: -100px; top: 40px; background: var(--wash-a); }
-.wash-sky i:nth-child(3) { width: 520px; height: 360px; left: 28%; top: 300px; background: var(--wash-d); }
-.wash-sky i:nth-child(4) { width: 480px; height: 320px; right: 6%; top: 620px; background: var(--wash-c); }
-
-@media (max-width: 640px) {
-  .wash-sky i { filter: blur(40px); }
-  .wash-sky i:nth-child(1) { width: 90vw; height: 60vw; left: -20vw; top: -10px; }
-  .wash-sky i:nth-child(2) { width: 85vw; height: 70vw; left: auto; right: -25vw; top: 160px; }
-  .wash-sky i:nth-child(3) { width: 80vw; height: 60vw; left: -10vw; top: 520px; }
-  .wash-sky i:nth-child(4) { width: 85vw; height: 60vw; right: -20vw; top: 860px; }
-}
+.wash-sky i:nth-child(1) { width: calc(var(--u) * 48); height: calc(var(--u) * 33); left: calc(var(--u) * -9); top: calc(var(--u) * -5); background: var(--wash-b); }
+.wash-sky i:nth-child(2) { width: calc(var(--u) * 44); height: calc(var(--u) * 34); right: calc(var(--u) * -8); top: calc(var(--u) * 3); background: var(--wash-a); }
+.wash-sky i:nth-child(3) { width: calc(var(--u) * 41); height: calc(var(--u) * 28); left: 28%; top: calc(var(--u) * 23); background: var(--wash-d); }
+.wash-sky i:nth-child(4) { width: calc(var(--u) * 38); height: calc(var(--u) * 25); right: 6%; top: calc(var(--u) * 48); background: var(--wash-c); }
 
 .paper-grain {
   position: absolute;

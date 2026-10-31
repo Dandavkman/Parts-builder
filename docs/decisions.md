@@ -312,3 +312,5 @@ Follow-up (same PR): step 1 of the six steps now lists three ways to start (your
 
 ## 2026-10-31 — Mobile polish for the home page (B2.10b follow-up)
 Phone layout now matches the desktop look: the waitlist is a full-width email pill with a full-width button under it, the watercolor washes scale to the screen width so all four colours show, Idea → Product stays side by side with the prompt window beneath, the header keeps Pricing and FAQ visible, and headings are balanced. Presentation only, no behavior or copy changes.
+
+Follow-up: the watercolor sky is sized in one unit (`--u`, 1vw capped at 14px) instead of fixed pixels with a phone override, so it keeps the same proportions at every screen width. On a phone it is a smaller cluster at the top of the page rather than a different background.
