@@ -1,7 +1,39 @@
 "use client";
 
+import { parseChatText, type Span } from "../../lib/agent/chat-text";
 import { START_CHOICES } from "./start-choices";
 import type { Workspace } from "./use-workspace";
+
+function Spans({ spans }: { spans: Span[] }) {
+  return (
+    <>
+      {spans.map((s, i) => (s.bold ? <strong key={i}>{s.text}</strong> : <span key={i}>{s.text}</span>))}
+    </>
+  );
+}
+
+/** An agent message: paragraphs, bullet lists and bold, with no HTML from the model ever inserted. */
+function AssistantText({ text }: { text: string }) {
+  return (
+    <div className="mr-8 space-y-2 rounded bg-raised px-3 py-2">
+      {parseChatText(text).map((block, i) =>
+        block.type === "list" ? (
+          <ul key={i} className="list-disc space-y-1 pl-5">
+            {block.items.map((item, j) => (
+              <li key={j}>
+                <Spans spans={item} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p key={i} className="whitespace-pre-wrap">
+            <Spans spans={block.spans} />
+          </p>
+        ),
+      )}
+    </div>
+  );
+}
 
 /** The conversation: start choices, messages, the photo tray and the message form. */
 export function ChatPanel({ w }: { w: Workspace }) {
@@ -24,22 +56,24 @@ export function ChatPanel({ w }: { w: Workspace }) {
             ))}
           </div>
         )}
-        {chat.items.map((item, i) => (
+        {chat.items.map((item, i) =>
+          item.kind === "assistant" ? (
+            <AssistantText key={i} text={item.text} />
+          ) : (
           <p
             key={i}
             className={
               item.kind === "user"
                 ? "ml-8 rounded bg-primary px-3 py-2 text-on-primary"
-                : item.kind === "assistant"
-                  ? "mr-8 whitespace-pre-wrap rounded bg-raised px-3 py-2"
-                  : item.kind === "error"
-                    ? "rounded border border-danger-line px-3 py-2 text-danger"
-                    : "px-1 text-xs text-muted"
+                : item.kind === "error"
+                  ? "rounded border border-danger-line px-3 py-2 text-danger"
+                  : "px-1 text-xs text-muted"
             }
           >
             {item.text}
           </p>
-        ))}
+          ),
+        )}
         {chat.busy && <p className="px-1 text-xs text-muted">Working...</p>}
       </div>
       {photo && (

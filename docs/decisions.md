@@ -2,6 +2,9 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-31: Agent messages show bold and bullets, never HTML (B1.9e)
+
+The agent writes light markdown, and the chat showed the raw `**` marks. `lib/agent/chat-text.ts` turns a message into paragraphs, bullet lists and bold spans, and the chat renders them as React elements. It supports only `**bold**` and `-` bullets; there is no library and no HTML from the model is ever inserted, so a message cannot add links, images or scripts. Anything else is plain text.
 ## 2026-10-31: Smoother revolved shapes and one fit question (B1.8e)
 
 The first live shift knob (a revolved egg) looked like stacked rings in the viewer. The viewer mesh was not the cause: tessellation was already fine (0.01 mm), and a finer angular tolerance gave the same triangle count. The agent had simply drawn the curve with few profile points. The prompt now says a curved revolve profile needs at least 24 points spaced evenly in z (the schema allows 100). The same change asks the agent to ask one short question with `ask_user` when a part must fit something real and the size that decides the fit (lever or pipe size, thread, height) is missing, and otherwise to say what it assumed. No schema or builder change.
