@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAuthMode } from "./auth-mode";
+import { PROTECTED_PATHS, getAuthMode } from "./auth-mode";
 
 const keys = { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_x", CLERK_SECRET_KEY: "sk_test_x" };
 
@@ -37,5 +37,17 @@ describe("getAuthMode", () => {
     expect(
       getAuthMode({ ...keys, NODE_ENV: "development", ALLOW_UNAUTHENTICATED_DEV: "true" }),
     ).toBe("clerk");
+  });
+});
+
+describe("public home page", () => {
+  it("keeps the design tool behind sign-in while the home page stays public", () => {
+    expect(PROTECTED_PATHS).toContain("/design(.*)");
+    expect(PROTECTED_PATHS).toContain("/api/agent(.*)");
+    const publicPaths = ["/", "/faq", "/pricing", "/terms", "/privacy", "/api/waitlist"];
+    for (const path of publicPaths) {
+      const hit = PROTECTED_PATHS.some((p) => new RegExp(`^${p}$`).test(path));
+      expect(hit, path).toBe(false);
+    }
   });
 });

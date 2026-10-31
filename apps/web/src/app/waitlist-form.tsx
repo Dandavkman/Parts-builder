@@ -21,12 +21,14 @@ export function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className="mt-4 flex flex-wrap gap-2" aria-label="Join the waitlist">
-      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email address" placeholder="you@example.com" className="w-64 rounded border border-line-strong bg-transparent px-3 py-2" />
-      <button type="submit" disabled={busy} className="rounded bg-primary px-4 py-2 text-on-primary disabled:opacity-50">
-        Join the waitlist
-      </button>
-      {message && <p role="status" className="w-full text-sm">{message}</p>}
-    </form>
+    <div className="w-full max-w-lg">
+      <form onSubmit={(e) => void submit(e)} className="flex flex-wrap justify-center gap-2 rounded-full border border-line bg-card p-2 backdrop-blur-sm focus-within:border-accent" aria-label="Join the waitlist">
+        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email address" placeholder="you@example.com" className="min-w-0 flex-1 basis-56 bg-transparent px-4 py-3 outline-none placeholder:text-subtle/80" />
+        <button type="submit" disabled={busy} className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-on-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50">
+          Join the waitlist
+        </button>
+      </form>
+      {message && <p role="status" className="mt-3 text-center text-sm">{message}</p>}
+    </div>
   );
 }

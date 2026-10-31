@@ -1,31 +1,38 @@
 import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { getAuthMode } from "../lib/auth-mode";
+import { BRAND } from "../lib/brand";
 
-export function SiteHeader() {
+export function SiteHeader({ wide }: { wide?: boolean } = {}) {
   const mode = getAuthMode();
   return (
-    <header className="flex items-center justify-between border-b border-line px-6 py-3">
-      <Link href="/" className="font-semibold tracking-tight">
-        Parts Builder
+    <header className={`mx-auto flex ${wide ? "max-w-5xl" : "max-w-3xl"} items-center justify-between gap-4 px-6 py-5`}>
+      <Link href="/" className="font-caps text-sm uppercase tracking-[0.22em]">
+        {BRAND.name}
       </Link>
-      <nav className="flex items-center gap-5 text-sm">
-        <Link href="/dashboard" className="hover:underline">
-          Dashboard
+      <nav className="flex items-center gap-5 text-sm text-subtle">
+        <Link href="/#how-it-works" className="hidden hover:underline sm:inline">
+          How it works
         </Link>
-        <Link href="/design" className="hover:underline">
-          Design
+        <Link href="/pricing" className="hidden hover:underline sm:inline">
+          Pricing
         </Link>
-        <Link href="/viewer" className="hover:underline">
-          Viewer
+        <Link href="/faq" className="hidden hover:underline sm:inline">
+          FAQ
         </Link>
         {mode === "clerk" ? (
           <>
             <Show when="signed-in">
+              <Link href="/dashboard" className="hover:underline">
+                Dashboard
+              </Link>
+              <Link href="/design" className="hover:underline">
+                Design
+              </Link>
               <UserButton />
             </Show>
             <Show when="signed-out">
-              <Link href="/sign-in" className="rounded bg-primary px-3 py-1.5 text-on-primary">
+              <Link href="/sign-in" className="hover:underline">
                 Sign in
               </Link>
             </Show>

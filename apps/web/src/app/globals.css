@@ -5,20 +5,29 @@
  * (bg-page, text-muted, border-line, bg-primary ...) and never a raw palette colour, so a redesign
  * means editing this file. A test (design-tokens.test.ts) fails if a raw palette class sneaks back in.
  * Light values are on :root; dark values follow the system setting.
+ *
+ * Look: warm tan paper, brick red accent, brown ink, low contrast, soft watercolor washes.
  */
 :root {
   color-scheme: light dark;
 
-  --page: var(--color-zinc-50);
-  --ink: var(--color-zinc-900);
-  --muted: var(--color-zinc-500);
-  --subtle: var(--color-zinc-600);
-  --line: var(--color-zinc-200);
-  --line-strong: var(--color-zinc-300);
-  --raised: var(--color-zinc-100);
-  --sunken: var(--color-zinc-100);
-  --primary: var(--color-zinc-900);
-  --on-primary: white;
+  --page: #f6efe4;
+  --ink: #4d3b33;
+  --muted: #8a7567;
+  --subtle: #7a6558;
+  --line: rgb(77 59 51 / 0.18);
+  --line-strong: rgb(77 59 51 / 0.32);
+  --raised: #efe3d2;
+  --sunken: #efe3d2;
+  --primary: #a8473c;
+  --on-primary: #fff8f0;
+  --accent: #a8473c;
+  --card: rgb(255 251 244 / 0.62);
+  --highlight: #ffffff;
+  --wash-a: #ebc3b6;
+  --wash-b: #ead9bc;
+  --wash-c: #f0dfc6;
+  --wash-d: #e7c9b0;
   --warning-soft: var(--color-amber-100);
   --warning-ink: var(--color-amber-900);
   --warning-text: var(--color-amber-700);
@@ -29,15 +38,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --page: var(--color-zinc-950);
-    --ink: var(--color-zinc-100);
-    --subtle: var(--color-zinc-400);
-    --line: var(--color-zinc-800);
-    --line-strong: var(--color-zinc-700);
-    --raised: var(--color-zinc-800);
-    --sunken: var(--color-zinc-900);
-    --primary: var(--color-zinc-100);
-    --on-primary: var(--color-zinc-900);
+    --page: #241b17;
+    --ink: #f2e7da;
+    --muted: #a8917f;
+    --subtle: #c4af9c;
+    --line: rgb(242 231 218 / 0.16);
+    --line-strong: rgb(242 231 218 / 0.3);
+    --raised: #33261f;
+    --sunken: #2c211b;
+    --primary: #e08a78;
+    --on-primary: #241b17;
+    --accent: #e08a78;
+    --card: rgb(60 44 36 / 0.55);
+    --highlight: #f2e7da;
+    --wash-a: #5a2e26;
+    --wash-b: #4a3a28;
+    --wash-c: #40301f;
+    --wash-d: #52352a;
     --danger: var(--color-red-400);
   }
 }
@@ -53,14 +70,72 @@
   --color-sunken: var(--sunken);
   --color-primary: var(--primary);
   --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-card: var(--card);
   --color-warning-soft: var(--warning-soft);
   --color-warning-ink: var(--warning-ink);
   --color-warning-text: var(--warning-text);
   --color-warning-line: var(--warning-line);
   --color-danger: var(--danger);
   --color-danger-line: var(--danger-line);
+  --font-display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --font-caps: "Cinzel", "Trajan Pro", Georgia, serif;
+  --font-greek: "EB Garamond", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Hanken Grotesk", system-ui, sans-serif;
 }
 
 body {
-  @apply bg-page text-ink antialiased;
+  @apply bg-page font-sans text-ink antialiased;
+}
+
+/* Watercolor sky behind public pages: four blurred washes, bled at the edges by an SVG displacement filter. */
+.wash-sky {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 980px;
+  z-index: 0;
+  pointer-events: none;
+  filter: url(#bleed);
+}
+.wash-sky i {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.9;
+}
+.wash-sky i:nth-child(1) { width: 620px; height: 420px; left: -120px; top: -60px; background: var(--wash-b); }
+.wash-sky i:nth-child(2) { width: 560px; height: 440px; right: -100px; top: 40px; background: var(--wash-a); }
+.wash-sky i:nth-child(3) { width: 520px; height: 360px; left: 28%; top: 300px; background: var(--wash-d); }
+.wash-sky i:nth-child(4) { width: 480px; height: 320px; right: 6%; top: 620px; background: var(--wash-c); }
+
+.paper-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  mix-blend-mode: multiply;
+}
+@media (prefers-color-scheme: dark) {
+  .paper-grain { mix-blend-mode: screen; opacity: 0.1; }
+}
+
+/* Greek key border. The stroke colour is the accent red in light and the soft red in dark. */
+.meander {
+  height: 14px;
+  opacity: 0.7;
+  background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Cpath d='M0 13V1h13v9H6V5h4' fill='none' stroke='black' stroke-width='1.2'/%3E%3Cpath d='M14 13V1h13' fill='none' stroke='black' stroke-width='1.2'/%3E%3C/svg%3E") repeat-x;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Cpath d='M0 13V1h13v9H6V5h4' fill='none' stroke='black' stroke-width='1.2'/%3E%3Cpath d='M14 13V1h13' fill='none' stroke='black' stroke-width='1.2'/%3E%3C/svg%3E") repeat-x;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise > * { animation: rise 0.9s both; }
+  .rise > *:nth-child(2) { animation-delay: 0.1s; }
+  .rise > *:nth-child(3) { animation-delay: 0.2s; }
+  .rise > *:nth-child(4) { animation-delay: 0.3s; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
 }

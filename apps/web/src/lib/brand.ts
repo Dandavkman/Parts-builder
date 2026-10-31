@@ -1,14 +1,25 @@
-/** The product's name and tagline in one place. PLACEHOLDERS until the Owner picks the real name (O0.1); change them here only. */
+/** The product's name and tagline in one place; change them here only. The name was chosen by the Owner on 2026-10-31. The tagline is still a placeholder. */
 export const BRAND = {
-  name: "Parts Builder",
+  name: "Ktiso",
   tagline: "Describe the part. We design it with you and make it.",
   /** Where legal and contact mail goes. PLACEHOLDER. */
   contactEmail: "hello@example.com",
 } as const;
 
+/** Where the name comes from. Shown in the landing page hero. */
+export const ETYMOLOGY = {
+  greek: "κτίζω",
+  meaning: "to create",
+  senses: ["of God creating the worlds", "to form, shape"],
+} as const;
+
 /** The six steps of the Owner's storyboard, in order. Used by the landing page and the how-it-works section. */
-export const STEPS: { title: string; body: string }[] = [
-  { title: "Snap a photo and say what you want", body: "Take a picture of the thing, or the place it has to fit, and describe the part in your own words. Give one real measurement so we get the size right." },
+export const STEPS: { title: string; body: string; options?: string[] }[] = [
+  {
+    title: "Describe the part and give us a starting point",
+    body: "Say what you want in your own words, then start from whichever of these suits you.",
+    options: ["Tell us your measurements", "Take a picture", "Tell us what you're building on and we'll research the platform"],
+  },
   { title: "Revise it in chat", body: "See the 3D part, then ask for changes: a little taller, a bigger hole, a different pattern. Every change is saved, and you can go back." },
   { title: "Get a material recommendation", body: "We suggest a material and process for what the part has to do, and tell you why." },
   { title: "Compare quotes", body: "We ask several manufacturers and show you each price, so you choose." },
