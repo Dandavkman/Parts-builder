@@ -10,7 +10,7 @@ export const BRAND = {
 export const ETYMOLOGY = {
   greek: "κτίζω",
   meaning: "to create",
-  senses: ["of God creating the worlds", "to form, shape"],
+  senses: ["of God creating the world", "to form, shape"],
 } as const;
 
 /** The six steps of the Owner's storyboard, in order. Used by the landing page and the how-it-works section. */

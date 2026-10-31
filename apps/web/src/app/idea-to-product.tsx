@@ -8,14 +8,14 @@ const PROMPT = "A flat bracket, 60 mm wide, with two slots for the bolts.";
 
 function Arrow({ className = "" }: { className?: string }) {
   return (
-    <span aria-hidden className={`text-3xl leading-none text-accent ${className}`}>
-      →
-    </span>
+    <svg aria-hidden viewBox="0 0 56 24" className={`h-6 w-12 text-accent sm:w-14 ${className}`} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12h46M39 3l11 9-11 9" />
+    </svg>
   );
 }
 
-function Label({ children }: { children: string }) {
-  return <b className="font-caps text-base font-medium uppercase tracking-[0.2em] sm:text-2xl sm:tracking-[0.28em]">{children}</b>;
+function Label({ children, className = "" }: { children: string; className?: string }) {
+  return <b className={`self-end font-caps text-base font-medium uppercase tracking-[0.2em] sm:text-2xl sm:tracking-[0.28em] ${className}`}>{children}</b>;
 }
 
 function Sketch() {
@@ -81,23 +81,24 @@ function Part() {
 }
 
 export function IdeaToProduct() {
-  // On a phone: Idea → Product side by side, the prompt window underneath. From md up: Idea → prompt → Product in one row.
+  // Phone: Idea and Product labels, their pictures, then the "natural language" line and the prompt window.
+  // From md up: one row of five columns, with the "natural language" line level with the Idea and Product labels.
   return (
-    <div className="grid w-full max-w-4xl grid-cols-[1fr_auto_1fr] items-center justify-items-center gap-x-3 gap-y-6 md:grid-cols-[1fr_auto_minmax(190px,250px)_auto_1fr] md:gap-4">
-      <div className="col-start-1 row-start-1 grid justify-items-center gap-2 md:col-auto md:row-auto">
-        <Label>Idea</Label>
+    <div className="grid w-full max-w-4xl grid-cols-[1fr_auto_1fr] items-center justify-items-center gap-x-3 gap-y-4 md:grid-cols-[1fr_auto_minmax(190px,250px)_auto_1fr] md:gap-x-4">
+      <Label className="col-start-1 row-start-1">Idea</Label>
+      <Label className="col-start-3 row-start-1 md:col-start-5">Product</Label>
+      <div className="col-start-1 row-start-2 flex justify-center">
         <Sketch />
       </div>
-      <Arrow className="col-start-2 row-start-1 md:col-auto md:row-auto" />
-      <div className="col-span-3 row-start-2 grid min-w-0 justify-items-center gap-3 md:col-span-1 md:row-auto">
-        <p className="m-0 text-center font-display text-lg italic leading-snug text-subtle">using natural language instead of complex design software</p>
-        <p className="m-0 rounded-[18px] border border-line bg-card p-4 text-center font-display text-xl leading-snug backdrop-blur-sm">“{PROMPT}”</p>
-      </div>
-      <Arrow className="hidden md:block" />
-      <div className="col-start-3 row-start-1 grid justify-items-center gap-2 md:col-auto md:row-auto">
-        <Label>Product</Label>
+      <Arrow className="col-start-2 row-start-2" />
+      <div className="col-start-3 row-start-2 flex justify-center md:col-start-5">
         <Part />
       </div>
+      <Arrow className="row-start-2 hidden md:col-start-4 md:block" />
+      <p className="col-span-3 col-start-1 row-start-3 m-0 self-end text-center font-display text-xl font-medium leading-tight text-[var(--highlight)] [text-shadow:0_1px_3px_color-mix(in_srgb,var(--ink)_60%,transparent)] sm:text-2xl md:col-span-1 md:col-start-3 md:row-start-1">
+        <s className="opacity-80">complex design software</s> natural language
+      </p>
+      <p className="col-span-3 col-start-1 row-start-4 m-0 rounded-[18px] border border-line bg-card p-4 text-center font-display text-xl leading-snug backdrop-blur-sm md:col-span-1 md:col-start-3 md:row-start-2">“{PROMPT}”</p>
     </div>
   );
 }
