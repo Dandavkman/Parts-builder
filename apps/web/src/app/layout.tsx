@@ -7,7 +7,7 @@ import "./globals.css";
 
 /** Loaded by the browser, not at build time, so the build needs no network access to Google. */
 const FONTS_URL =
-  "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=EB+Garamond:ital@1&family=Hanken+Grotesk:wght@400;500&display=swap";
+  "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=EB+Garamond:ital@1&family=Hanken+Grotesk:wght@400;500&display=swap";
 
 export const metadata: Metadata = {
   title: { default: BRAND.name, template: `%s | ${BRAND.name}` },
