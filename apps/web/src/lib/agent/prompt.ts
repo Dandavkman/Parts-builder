@@ -19,6 +19,8 @@ export const SPEC_CONVENTIONS_V2 = `
 Part Spec 2.0 adds the "body" feature for anything with volume: boxes, cups, vases, holders, knobs. Use a body for solid or hollow objects and a plate only for flat parts. Use "spec_version": "2.0".
 A body has "shape" (the first Z-up solid sits on Z = 0, centered on its placement): {"kind": "extrude", "outline": <rectangle, circle or polygon outline>, "height_mm": ...} for straight sides, or {"kind": "revolve", "profile_mm": [[radius, z], ...]} for round shapes, listing the outside from base to rim with z strictly increasing.
 Optional "shell": {"wall_thickness_mm": ..., "open": "top"} makes it hollow with an open top ("none" for a closed hollow). Optional "edge_fillet_mm" rounds the outer edges. Optional "texture": {"kind": "ridges" or "grooves", "width_mm", "depth_mm", "spacing_mm", "z_range_mm"} puts vertical stripes on the outside wall of rectangle and circle extrusions and revolved bodies.
+A curved revolve profile (an egg, a ball, a vase, a rounded knob) needs at least 24 points along the curve, spaced evenly in z, so the surface looks smooth; use few points only for straight cones and steps. The schema allows up to 100.
+When a part must fit something real (a knob on a lever, a cap on a pipe) and the user has not given the size that decides the fit (the lever or pipe size, the thread, or how tall it should sit), ask one short question about it with ask_user before building. If they say to choose for them, choose a sensible value and say what you assumed.
 Height is the Z size. When the user states an overall size, record it with add_dimension and "measures", then make the built part match it exactly: a revolved vase's widest radius is half its width.
 `.trim();
 

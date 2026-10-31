@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: date, decision, why, and who made it.
 
+## 2026-10-31: Smoother revolved shapes and one fit question (B1.8e)
+
+The first live shift knob (a revolved egg) looked like stacked rings in the viewer. The viewer mesh was not the cause: tessellation was already fine (0.01 mm), and a finer angular tolerance gave the same triangle count. The agent had simply drawn the curve with few profile points. The prompt now says a curved revolve profile needs at least 24 points spaced evenly in z (the schema allows 100). The same change asks the agent to ask one short question with `ask_user` when a part must fit something real and the size that decides the fit (lever or pipe size, thread, height) is missing, and otherwise to say what it assumed. No schema or builder change.
+
 ## 2026-10-26: Serve a general market, with scans optional
 
 From the Owner's six-step storyboard (photo and prompt, chat revision, material recommendation, quotes from several manufacturers, delivery, storefront with royalties). Proposed, in `docs/plan.md` under "Revision: a general market": (1) a design starts from a photo with known dimensions, researched published measurements, a scan, or words alone; (2) a *reference* (photo, researched or scan) replaces "scan" as the thing anchors come from, and anchors gain a `dimension` type; (3) Part Spec 2.0 adds solids (extrude, revolve, shell, patterns, surface texture), because the current features only build plates; (4) FDM materials join the material table; (5) quotes may come from several partners. The AI-writes-a-Part-Spec rule, millimeters, design ownership and the web-app-writes-the-database rule are unchanged. The Owner answered the five open decisions the same day: D1 the proposed blocked and needs-review categories are in force; D2 quote several manufacturers; D3 keep the Miata as the first fit-tested vertical plus an everyday-objects benchmark set; D4 shrunk photos stored in Postgres until R2; D5 cap web lookups per design. Code impact is estimated in `docs/market-change-estimate.md`. Proposed by the Builder, approved by the Owner in the project thread.
