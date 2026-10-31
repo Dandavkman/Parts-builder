@@ -28,12 +28,12 @@ export default function Home() {
         </p>
       </div>
 
-      <div className="mt-14 flex justify-center">
+      <div className="mt-10 flex justify-center sm:mt-14">
         <IdeaToProduct />
       </div>
 
-      <section id="how-it-works" className="scroll-mt-16 pt-24 pb-10">
-        <h2 className="text-center font-display text-[clamp(32px,5vw,48px)] font-normal">From idea to part in six steps</h2>
+      <section id="how-it-works" className="scroll-mt-16 pt-16 pb-10 sm:pt-24">
+        <h2 className="text-balance text-center font-display text-[clamp(32px,5vw,48px)] font-normal">From idea to part in six steps</h2>
         <p className="mx-auto mt-2 mb-11 max-w-prose text-center text-subtle">Start with a photo and a sentence. End with a part in your hands. Every step is yours to change.</p>
         <ol className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(270px,1fr))]">
           {STEPS.map((s, i) => (
@@ -56,8 +56,8 @@ export default function Home() {
         </ol>
       </section>
 
-      <div className="py-12 text-center">
-        <div aria-hidden className="meander mx-auto max-w-60" />
+      <div className="py-10 text-center sm:py-12">
+        <div aria-hidden className="meander mx-auto max-w-xs" />
         <p className="mt-4 font-display text-2xl italic text-subtle">Your idea, in your hands.</p>
       </div>
     </PublicShell>

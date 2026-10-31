@@ -6,16 +6,16 @@ const ISO = "translate(89.6 30) matrix(.866 .5 -.866 .5 0 0) scale(.75)";
 const SLOTS = [26, 108] as const;
 const PROMPT = "A flat bracket, 60 mm wide, with two slots for the bolts.";
 
-function Arrow() {
+function Arrow({ className = "" }: { className?: string }) {
   return (
-    <span aria-hidden className="rotate-90 text-3xl leading-none text-accent md:rotate-0">
+    <span aria-hidden className={`text-3xl leading-none text-accent ${className}`}>
       →
     </span>
   );
 }
 
 function Label({ children }: { children: string }) {
-  return <b className="font-caps text-xl font-medium uppercase tracking-[0.28em] sm:text-2xl">{children}</b>;
+  return <b className="font-caps text-base font-medium uppercase tracking-[0.2em] sm:text-2xl sm:tracking-[0.28em]">{children}</b>;
 }
 
 function Sketch() {
@@ -81,19 +81,20 @@ function Part() {
 }
 
 export function IdeaToProduct() {
+  // On a phone: Idea → Product side by side, the prompt window underneath. From md up: Idea → prompt → Product in one row.
   return (
-    <div className="grid w-full max-w-4xl items-center justify-items-center gap-4 md:grid-cols-[1fr_auto_minmax(190px,250px)_auto_1fr]">
-      <div className="grid justify-items-center gap-2">
+    <div className="grid w-full max-w-4xl grid-cols-[1fr_auto_1fr] items-center justify-items-center gap-x-3 gap-y-6 md:grid-cols-[1fr_auto_minmax(190px,250px)_auto_1fr] md:gap-4">
+      <div className="col-start-1 row-start-1 grid justify-items-center gap-2 md:col-auto md:row-auto">
         <Label>Idea</Label>
         <Sketch />
       </div>
-      <Arrow />
-      <div className="grid min-w-0 justify-items-center gap-3">
+      <Arrow className="col-start-2 row-start-1 md:col-auto md:row-auto" />
+      <div className="col-span-3 row-start-2 grid min-w-0 justify-items-center gap-3 md:col-span-1 md:row-auto">
         <p className="m-0 text-center font-display text-lg italic leading-snug text-subtle">using natural language instead of complex design software</p>
         <p className="m-0 rounded-[18px] border border-line bg-card p-4 text-center font-display text-xl leading-snug backdrop-blur-sm">“{PROMPT}”</p>
       </div>
-      <Arrow />
-      <div className="grid justify-items-center gap-2">
+      <Arrow className="hidden md:block" />
+      <div className="col-start-3 row-start-1 grid justify-items-center gap-2 md:col-auto md:row-auto">
         <Label>Product</Label>
         <Part />
       </div>
