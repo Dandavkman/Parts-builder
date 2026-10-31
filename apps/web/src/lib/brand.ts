@@ -1,9 +1,16 @@
-/** The product's name and tagline in one place. PLACEHOLDERS until the Owner picks the real name (O0.1); change them here only. */
+/** The product's name and tagline in one place; change them here only. The name was chosen by the Owner on 2026-10-31. The tagline is still a placeholder. */
 export const BRAND = {
-  name: "Parts Builder",
+  name: "Ktiso",
   tagline: "Describe the part. We design it with you and make it.",
   /** Where legal and contact mail goes. PLACEHOLDER. */
   contactEmail: "hello@example.com",
+} as const;
+
+/** Where the name comes from. Shown in the landing page hero. */
+export const ETYMOLOGY = {
+  greek: "κτίζω",
+  meaning: "to create",
+  senses: ["of God creating the worlds", "to form, shape"],
 } as const;
 
 /** The six steps of the Owner's storyboard, in order. Used by the landing page and the how-it-works section. */

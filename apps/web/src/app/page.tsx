@@ -1,42 +1,55 @@
-import Link from "next/link";
-import { BRAND, STEPS } from "../lib/brand";
+import { BRAND, ETYMOLOGY, STEPS } from "../lib/brand";
+import { IdeaToProduct } from "./idea-to-product";
 import { PublicShell } from "./public-shell";
 import { WaitlistForm } from "./waitlist-form";
 
 export default function Home() {
   return (
-    <PublicShell>
-      <h1 className="text-4xl font-semibold tracking-tight">{BRAND.tagline}</h1>
-      <p className="mt-4 text-lg text-subtle">
-        Start from a photo, published measurements or a 3D scan, refine the design in chat, then order it made.
-      </p>
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Link href="/design" className="rounded bg-primary px-5 py-2.5 text-on-primary">
-          Start a design
-        </Link>
-        <Link href="/dashboard" className="rounded border border-line-strong px-5 py-2.5">
-          My dashboard
-        </Link>
+    <PublicShell wide>
+      <div className="rise grid justify-items-center gap-0 pt-8 text-center">
+        <h1 className="font-display text-[clamp(56px,10vw,104px)] font-normal leading-none tracking-tight">{BRAND.name}</h1>
+        <p className="mt-5 font-caps text-[clamp(15px,2.2vw,20px)] uppercase tracking-[0.3em] text-accent">
+          From the Greek <span className="font-greek text-[1.5em] normal-case italic tracking-[0.04em]">{ETYMOLOGY.greek}</span>
+        </p>
+        <p className="mt-3 font-display text-[clamp(22px,3vw,30px)] text-subtle">{ETYMOLOGY.meaning}</p>
+        <ol className="mt-5 grid gap-2 text-left font-display text-[clamp(19px,2.4vw,23px)] leading-snug text-subtle">
+          {ETYMOLOGY.senses.map((sense, i) => (
+            <li key={sense} className="grid grid-cols-[1.6em_1fr] gap-1">
+              <b className="pt-[0.5em] font-caps text-xs font-medium tracking-widest text-accent">{i + 1}.</b>
+              <span>{sense}</span>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-8 flex w-full justify-center">
+          <WaitlistForm />
+        </div>
+        <p className="mt-3 text-sm text-subtle">
+          Designing is open now. Ordering opens soon. <a href="#how-it-works" className="underline">See how it works</a>
+        </p>
       </div>
 
-      <h2 className="mt-14 text-2xl font-semibold">How it works</h2>
-      <ol className="mt-4 space-y-5">
-        {STEPS.map((s, i) => (
-          <li key={s.title} className="flex gap-4">
-            <span aria-hidden className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm text-on-primary">
-              {i + 1}
-            </span>
-            <div>
-              <h3 className="font-medium">{s.title}</h3>
-              <p className="text-subtle">{s.body}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
+      <div className="mt-14 flex justify-center">
+        <IdeaToProduct />
+      </div>
 
-      <h2 className="mt-14 text-2xl font-semibold">Get told when ordering opens</h2>
-      <p className="mt-2 text-subtle">Designing is open now. Ordering is coming soon.</p>
-      <WaitlistForm />
+      <section id="how-it-works" className="pt-24 pb-10">
+        <h2 className="text-center font-display text-[clamp(32px,5vw,48px)] font-normal">From idea to part in six steps</h2>
+        <p className="mx-auto mt-2 mb-11 max-w-prose text-center text-subtle">Start with a photo and a sentence. End with a part in your hands. Every step is yours to change.</p>
+        <ol className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(270px,1fr))]">
+          {STEPS.map((s, i) => (
+            <li key={s.title} className="min-w-0 rounded-sm border border-line bg-card p-6 backdrop-blur-sm">
+              <span className="font-caps text-xs uppercase tracking-[0.3em] text-accent">Step {i + 1}</span>
+              <h3 className="mt-2 mb-2 font-display text-2xl font-medium leading-tight">{s.title}</h3>
+              <p className="text-[15px] text-subtle">{s.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <div className="py-12 text-center">
+        <div aria-hidden className="meander mx-auto max-w-60" />
+        <p className="mt-4 font-display text-2xl italic text-subtle">Your idea, in your hands.</p>
+      </div>
     </PublicShell>
   );
 }
