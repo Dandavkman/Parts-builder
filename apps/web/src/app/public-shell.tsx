@@ -8,10 +8,12 @@ import { SiteHeader } from "./site-header";
 export function PublicShell({ title, wide, children }: { title?: string; wide?: boolean; children: ReactNode }) {
   const width = wide ? "max-w-5xl" : "max-w-3xl";
   return (
-    <div className="relative overflow-x-hidden">
+    <div className="relative overflow-x-clip">
       <Backdrop />
       <div className="relative z-10">
-        <SiteHeader wide={wide} />
+        <div className="sticky top-0 z-20 border-b border-line bg-page/80 backdrop-blur-md">
+          <SiteHeader wide={wide} />
+        </div>
         <main className={`mx-auto ${width} px-6 py-14`}>
           {title && <h1 className="font-display text-4xl font-medium tracking-tight">{title}</h1>}
           {children}

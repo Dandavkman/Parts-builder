@@ -32,7 +32,7 @@ export default function Home() {
         <IdeaToProduct />
       </div>
 
-      <section id="how-it-works" className="pt-24 pb-10">
+      <section id="how-it-works" className="scroll-mt-16 pt-24 pb-10">
         <h2 className="text-center font-display text-[clamp(32px,5vw,48px)] font-normal">From idea to part in six steps</h2>
         <p className="mx-auto mt-2 mb-11 max-w-prose text-center text-subtle">Start with a photo and a sentence. End with a part in your hands. Every step is yours to change.</p>
         <ol className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(270px,1fr))]">
