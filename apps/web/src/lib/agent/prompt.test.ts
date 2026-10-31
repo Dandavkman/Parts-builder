@@ -173,4 +173,10 @@ describe("Part Spec 2.1 prompt (B1.22)", () => {
   it("leaves the 2.0 prompt without bores", () => {
     expect(buildSystemPrompt(FIXTURE_ANCHORS, [], "2.0")).not.toContain("tap-drill");
   });
+
+  it("tells the agent to use many profile points and to ask about the size that decides a fit", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "2.1");
+    expect(prompt).toContain("at least 24 points along the curve");
+    expect(prompt).toContain("ask one short question about it with ask_user");
+  });
 });
