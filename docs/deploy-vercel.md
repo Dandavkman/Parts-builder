@@ -47,7 +47,7 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 
 Added 2026-11-01. In Vercel, Settings, Domains: `ktiso.app` is connected to Production with no redirect (it is the main address), and `www.ktiso.app` redirects to it. In Cloudflare, DNS records: an `A` record for `@` pointing at `76.76.21.21` and a `CNAME` for `www` pointing at `cname.vercel-dns.com`, both **DNS only** (grey cloud) so Vercel can issue the HTTPS certificate. `.app` domains work only over HTTPS. Use the values Vercel shows if they differ.
 
-Then set `SITE_URL=https://ktiso.app` (Production) and redeploy. It feeds the sitemap, robots file, the page `metadataBase` and each page's canonical link. Other services tied to the domain: Clerk production instance (domain and its CNAME records), the Stripe webhook `https://ktiso.app/api/stripe/webhook`, and Resend (verify `ktiso.app`, then set `EMAIL_FROM`). `hello@ktiso.app` needs an inbox, for example Cloudflare Email Routing.
+Then set `SITE_URL=https://ktiso.app` (Production) and redeploy. It feeds the sitemap, robots file, the page `metadataBase` and each page's canonical link. Other services tied to the domain: Clerk production instance (domain and its CNAME records), the Stripe webhook `https://ktiso.app/api/stripe/webhook`, and Resend (verify `ktiso.app`, then set `EMAIL_FROM`). `contact@ktiso.app` needs an inbox, for example Cloudflare Email Routing.
 
 ## Variables added later
 
