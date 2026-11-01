@@ -6,7 +6,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { runnerFor, type Db } from "../db/client";
 import { migrate } from "../db/migrations";
 import * as schema from "../db/schema";
-import { setPlan } from "../plans-store";
 import { memoryStorage } from "../storage/memory";
 import { DownloadRefused } from "../storage/types";
 import { accessFor, canUseScan, grantLicense } from "./licenses";
@@ -30,13 +29,11 @@ describe("scan licenses", () => {
     expect(await grantLicense(db, { ownerId: "u1", vehicleId: "mazda-mx5-na", area: "trunk", source: "admin" })).toMatchObject({ ok: false, status: 409 });
   });
 
-  it("lets a license holder or a Pro user use a scanned area, nobody else", async () => {
+  it("lets only a license holder use a scanned area", async () => {
     expect(await canUseScan(db, "u1", "mazda-mx5-na", "dash")).toBe(true);
     expect(await canUseScan(db, "u1", "mazda-mx5-na", "center-console")).toBe(false);
     expect(await canUseScan(db, "u2", "mazda-mx5-na", "dash")).toBe(false);
-    await setPlan(db, "u3", "pro");
-    expect(await canUseScan(db, "u3", "mazda-mx5-na", "center-console")).toBe(true);
-    expect(await canUseScan(db, "u3", "mazda-mx5-na", "trunk")).toBe(false);
+    expect(await canUseScan(db, "u3", "mazda-mx5-na", "center-console")).toBe(false);
   });
 
   it("reports access per scanned area", async () => {
@@ -44,7 +41,7 @@ describe("scan licenses", () => {
       { area: "dash", allowed: true, via: "license" },
       { area: "center-console", allowed: false, via: null },
     ]);
-    expect((await accessFor(db, "u3", "mazda-mx5-na"))!.every((a) => a.via === "pro")).toBe(true);
+    expect((await accessFor(db, "u3", "mazda-mx5-na"))!.every((a) => a.via === null)).toBe(true);
     expect(await accessFor(db, "u1", "nope")).toBeNull();
   });
 });

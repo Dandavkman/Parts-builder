@@ -60,13 +60,11 @@ Then set `SITE_URL=https://ktiso.app` (Production) and redeploy. It feeds the si
 | `DESIGN_AGENT_SPEC_VERSION` | B1.17d (optional; set to `2.0` to let the design agent write Part Spec 2.0 solid bodies such as vases, boxes and knobs, or `2.1` to add blind bores and separate top and bottom round-overs (B1.22). Set it only after `fly deploy` has put that Part Spec on the geometry service, otherwise builds of those specs fail; leave it empty to keep 1.1. Any other value keeps 1.1) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | B1.1 (scan upload) |
 | `GEOMETRY_SERVICE_URL` | B0.7 (address of the Fly.io geometry service) |
-| `PLANS_ENFORCED` | B2.1a (optional; `1` enforces the Free and Pro limits on AI messages, saved designs and STEP export. The limits in `lib/plans.ts` are placeholders until you decide them; leave empty and nobody is blocked) |
+| `LIMITS_ENFORCED` | B2.1 (optional; `1` enforces the abuse limits on AI messages and saved designs, the same for everyone. The limits in `lib/limits.ts` are placeholders until you decide them; leave empty and nobody is blocked. Replaces `PLANS_ENFORCED`; delete `PLANS_ENFORCED`, `STRIPE_PRO_PRICE_ID` and `PRO_PRICE_CONFIRMED` from Vercel if you set them) |
 | `RESEND_API_KEY` | B2.9 (optional; API key from resend.com, server-side only. With `EMAIL_FROM` it turns on order emails; without them emails are only logged) |
 | `EMAIL_FROM` | B2.9 (optional; the From line, for example `Parts Builder <orders@yourdomain.com>`, on a domain verified in Resend) |
 | `SITE_URL` | B3.2 (optional; the public address, for the sitemap, page metadata and canonical links, for example `https://yourdomain.com`. Falls back to the Vercel production URL) |
 | `SENTRY_DSN` | B2.11c (optional; the project DSN from sentry.io, server-side only. Without it, errors are only logged to the console) |
-| `STRIPE_PRO_PRICE_ID` | B2.1b (optional; id of the recurring Price for Pro made in the Stripe dashboard. With `STRIPE_SECRET_KEY` it turns on `/api/account/upgrade` and `/api/account/portal`) |
-| `PRO_PRICE_CONFIRMED` | B2.1b (optional; `1` once the Pro price and limits are real. Until then a live Stripe key is refused for subscriptions) |
 | `STRIPE_CONNECT` | B4.1 (optional; `1` turns on seller payout setup, with `STRIPE_SECRET_KEY`. Use a test key first) |
 | `CONNECT_TERMS_CONFIRMED` | B4.1 (optional; `1` once the platform fee and payout rules are real. Until then a live Stripe key is refused for Connect) |
 | `ADMIN_USER_IDS` | B2.7 (comma separated Clerk user ids allowed into `/admin/orders`, for example your own user id from the Clerk dashboard; server-side only; empty means nobody is an admin) |
