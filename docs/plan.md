@@ -44,6 +44,7 @@ The Owner's storyboard describes six steps, and none of them is about cars:
 - [x] **D3. Launch focus. Decided: yes.** Keep the Miata NA as the first fit-tested vertical (its scan and benchmarks are in progress), and add a second benchmark set of everyday objects (vase, box, holder, knob, bracket) that needs no scan. G1 then has two parts (see Phase 1).
 - [x] **D4. Where photos are stored. Decided: proposal accepted.** Until R2 keys exist (O0.3, O0.5), the browser shrinks each photo to at most 1,600 px on the long side (about 300 KB) and the web app stores it in Postgres. Later, photos move to R2. This is a free change inside the current stack.
 - [x] **D5. Cost of looking up measurements. Decided: agreed.** The agent's web lookup is billed per search by the Claude API, on top of tokens. A per-design cap on lookups (default 5) and a line in the AI cost dashboard (B2.11). The Builder confirms the current price before building B1.16.
+- [x] **D6. Pricing model. Decided 2026-11-01: no subscription.** Ktiso earns a margin on each order: the customer pays manufacturing cost + shipping + our margin %, shown as one combined price. The margin is a percentage of the manufacturing cost (partner parts + setup fee); shipping is passed on at cost. The 40% in the rate cards is a placeholder until the Owner sets the real number (O2.3). There are no Free/Pro plans; limits are the same for everyone and exist only to stop abuse. The Builder removes the plan and billing code in a follow-up task (B2.1).
 
 ## How to use this plan
 
@@ -93,14 +94,13 @@ People design parts by chatting with an AI, starting from a photo with known dim
 
 | Stream | Starts | How it's charged | What the Builder must support |
 | --- | --- | --- | --- |
-| Print margin | Phase 2 | Markup on the chosen partner's price for every order | Quote engine with editable rate cards and markup; with several partners, one quote each (decision D2) |
-| Pro plan | Phase 2 | Monthly subscription | Plan limits (AI turns, saved designs, STEP export) |
-| Scan library | Phase 3 | Per scan or included in Pro | Licenses that let a user design against a scan without downloading it |
+| Print margin | Phase 2 | The customer pays manufacturing cost + shipping + our margin (a percentage of the manufacturing cost; shipping is passed on at cost). There is no subscription (decision D6). | Quote engine with editable rate cards and margin %; with several partners, one quote each (decision D2) |
+| Scan library | Phase 3 | Per scan | Licenses that let a user design against a scan without downloading it |
 | Store commission and designer royalty | Phase 4 | Platform fee on each store sale, plus the print margin; the designer keeps the royalty | Stripe Connect payouts and a price floor per listing |
 
 **Rules every Builder task must respect.**
 
-1. **The user owns their design.** Never lock users out of their own design files; Pro gates the STEP export, not ownership.
+1. **The user owns their design.** Never lock users out of their own design files. STL and STEP export are free for everyone.
 2. **Library scans are never downloadable** (when a library exists). Users design against them in the browser only. This protects the scan library's value.
 3. **Safety categories are enforced in code**, not just in the terms of service (see *Product scope and ground rules*).
 4. **Every order must be traceable** to an exact frozen design version, material, check results and the user who accepted the safety terms.
@@ -189,7 +189,7 @@ The trade-off is that users can only make shapes the feature list supports. That
 | Job queue | Redis with BullMQ on the web side; Python workers pull jobs | Scan processing and CAD builds take seconds to minutes |
 | Geometry service | Python 3.12, FastAPI, CadQuery (OpenCascade kernel), trimesh, Open3D, manifold3d | Exact CAD (STEP) plus fast mesh work on scans |
 | Design agent | Claude API with tool use, called from the web app's server | Plans and edits the Part Spec through tools |
-| Payments | Stripe Checkout, Billing, Tax; Stripe Connect Express in Phase 4 | Orders, subscriptions and designer payouts |
+| Payments | Stripe Checkout (one-time payments), Tax; Stripe Connect Express in Phase 4 | Orders and designer payouts |
 | Hosting | Vercel for the web app; Fly.io machines for geometry workers | Workers need 4–8 GB of memory and can scale to zero |
 | Email, errors, analytics | Resend, Sentry, PostHog | Standard and inexpensive to start |
 
@@ -246,7 +246,7 @@ CLAUDE.md               Rules for the Builder (copied from the handoff protocol)
 | quotes | design version, partner, material, quantity (several quotes per design version, one per partner), partner cost, markup, fees, shipping, total, expiry | 2 |
 | orders | user, quote, Stripe ids, status, shipping address, partner order reference, tracking, safety confirmation | 2 |
 | safety\_reviews | design version, classifier result, reviewer, decision, notes | 2 |
-| subscriptions | user, Stripe subscription, plan, usage counters | 2 |
+| usage_counters | user, month, AI messages used (for abuse limits; no plans) | 2 |
 | scan\_licenses | user, library scan, purchased at, expiry | 3 |
 | stores | owner, slug, custom domain, branding, Stripe Connect account | 4 |
 | listings | store, frozen design version, retail price, price floor, compatible vehicles, review status | 4 |
@@ -341,7 +341,7 @@ Phase 2 turns the prototype into a business that takes money: accounts and plans
 
 | ID | Task | Done when | Needs |
 | --- | --- | --- | --- |
-| B2.1 | **Plans and limits.** Free and Pro plans through Stripe Billing. Enforce limits on AI messages per month, saved designs and STEP export. Show usage in the account page. | A free user hitting the limit sees an upgrade prompt; Pro removes it | O2.3 |
+| B2.1 | **Abuse limits.** One set of limits for everyone (AI messages per month, saved designs), there are no plans or paid tiers. Show usage in the account page. Remove the Free/Pro plans, Stripe Billing and subscription code (decision D6). | A user hitting a limit sees a clear message with when it resets; no upgrade prompt exists | O2.3 |
 | B2.2 | **Dashboard.** Lists of my scans, my designs and my orders, with search and status. | All three lists load in under 1 second with 100 items | B1.9 |
 | B2.3 | **Printability checks.** (The wall and hole rules for FDM arrive earlier in B1.18.) Per material, from the material table: minimum wall thickness (with thin spots highlighted), minimum hole size, fits the build size, closed solid with no gaps. Show pass or fail per material. | Each rule has a test part that fails it and one that passes | O1.5 |
 | B2.4 | **Safety guard.** A fast Claude model labels each design request and finished spec with a category (the car categories plus the everyday categories from D1). Blocked stops the session. Needs review allows designing but holds ordering until an admin approves. Log every decision. | All examples in the category table are labeled correctly; an admin can approve or reject from the queue | B2.7 |
@@ -358,7 +358,7 @@ Phase 2 turns the prototype into a business that takes money: accounts and plans
 
 - [ ] **O2.1** **Owner decides** the launch print partner (one primary, one backup). Open business accounts and confirm in writing that reselling is allowed.
 - [ ] **O2.2** Final legal documents with the lawyer: terms of service, privacy policy, design ownership terms, the blocked and needs-review lists, use disclaimer, and the fit-failure policy. Bind product liability insurance **before the first paid order**.
-- [ ] **O2.3** **Owner decides** pricing: markup per material, the Pro plan price and limits, shipping charges, and what happens when a part doesn't fit (reprint, refund or store credit).
+- [ ] **O2.3** **Owner decides** pricing: the margin % (40% is a placeholder), the abuse limits, shipping charges, and what happens when a part doesn't fit (reprint, refund or store credit).
 - [ ] **O2.4** Activate Stripe live mode. Ask the accountant which states you must collect sales tax in and set up Stripe Tax to match.
 - [ ] **O2.5** Run a closed beta with the alpha testers. Place the first 10 orders yourself through the admin console. Inspect each part when it arrives from the partner before forwarding it, until quality is proven.
 - [ ] **O2.6** Photograph and film real parts installed on cars for the site and social posts.
@@ -376,7 +376,7 @@ Phase 3 removes the biggest barrier to signing up for car designs, which is owni
 | ID | Task | Done when | Needs |
 | --- | --- | --- | --- |
 | B3.1 | **Vehicle catalog.** Make, model, generation and year range, with which library scans cover which areas of each car. | Search finds a car by any of those fields | — |
-| B3.2 | **Library pages.** A page per car showing the available scan areas, a low-detail preview, and the price or "included in Pro". | Pages are public and indexable by search engines | B3.1 |
+| B3.2 | **Library pages.** A page per car showing the available scan areas, a low-detail preview, and the price . | Pages are public and indexable by search engines | B3.1 |
 | B3.3 | **Scan licenses.** Buying or unlocking a library scan creates a license. Licensed scans open in the workspace but are **never downloadable**. The full-resolution file never reaches the browser; checks run on the server. | A licensed user cannot get the scan file through any API route (tested) | B3.2 |
 | B3.4 | **Pre-placed anchors.** Admins add standard anchors to library scans (factory bolt holes, mounting faces) so users start with them. | A new user designs a benchmark part on a library scan without placing any anchors | B3.3 |
 | B3.5 | **Community scan submissions.** Users submit their scans to the library. An admin approves them, and the submitter earns a revenue share set by the Owner. | Submission, review and payout record work end to end | O3.4 |
@@ -552,7 +552,7 @@ The two risks most likely to sink the business are parts that don't fit and a pa
 | Parts don't fit the real car | Benchmark hole error above 0.5 mm; fit-failure rate above target | Calibrated scans, anchor fit errors shown to users, fit check before checkout, physical test of every benchmark part |
 | A part fails and causes harm | Any needs-review or blocked request getting through | Blocked categories in code, admin review, user confirmation at checkout, insurance before the first order |
 | The AI can't design what users ask for | Benchmark success rate flat; many abandoned designs | Grow the Part Spec features from real failed requests; sliders as a fallback |
-| Print costs leave no margin | Stored margin per order trending down | Default to nylon, compare partners, raise markup, push Pro plan |
+| Print costs leave no margin | Stored margin per order trending down | Default to nylon, compare partners, raise the margin % |
 | Copied factory parts and trademarks in stores | Takedown requests | Listing review, takedown process, seller agreement |
 | Library scans leak | A library scan shows up elsewhere | Never send full-resolution library scans to the browser; watermark previews |
 | Scans from users are too rough | Calibration errors above 0.3 mm | Scanning guide, accuracy warning in the workspace, push users to the library, offer photo or lookup starts where exact fit is not needed |
@@ -568,7 +568,7 @@ The two risks most likely to sink the business are parts that don't fit and a pa
 - [ ] Launch car platform and first part type (O0.4) — blocks B1.12 benchmarks
 - [ ] Revision decisions D1 to D5: all answered on 2026-10-26
 - [ ] Launch print partner and backup (O2.1) — blocks B2.8
-- [ ] Markup, Pro plan price and limits, fit-failure policy (O2.3) — blocks B2.1, B2.5
+- [ ] Margin %, abuse limits, fit-failure policy (O2.3) — blocks B2.1, B2.5
 - [ ] Fit-failure rate target for G2 (G2) — blocks starting Phase 3
 - [ ] Next 10 platforms (O3.1) — blocks the scanning program
 - [ ] Library pricing and scan submission revenue share (O3.4) — blocks B3.5
