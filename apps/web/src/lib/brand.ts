@@ -2,8 +2,8 @@
 export const BRAND = {
   name: "Ktiso",
   tagline: "Describe the part. We design it with you and make it.",
-  /** Where legal and contact mail goes. PLACEHOLDER. */
-  contactEmail: "hello@example.com",
+  /** Where legal and contact mail goes. The address needs an inbox (for example Cloudflare Email Routing) before it is real. */
+  contactEmail: "hello@ktiso.app",
 } as const;
 
 /** Where the name comes from. Shown in the landing page hero. */

@@ -43,6 +43,12 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | The build fails (red) | Open the build log and copy the red error lines to me. Do not copy any keys. |
 | Clerk shows an error, or sign-in loops | Send me the exact words on screen. |
 
+## Custom domain (ktiso.app)
+
+Added 2026-11-01. In Vercel, Settings, Domains: `ktiso.app` is connected to Production with no redirect (it is the main address), and `www.ktiso.app` redirects to it. In Cloudflare, DNS records: an `A` record for `@` pointing at `76.76.21.21` and a `CNAME` for `www` pointing at `cname.vercel-dns.com`, both **DNS only** (grey cloud) so Vercel can issue the HTTPS certificate. `.app` domains work only over HTTPS. Use the values Vercel shows if they differ.
+
+Then set `SITE_URL=https://ktiso.app` (Production) and redeploy. It feeds the sitemap, robots file, the page `metadataBase` and each page's canonical link. Other services tied to the domain: Clerk production instance (domain and its CNAME records), the Stripe webhook `https://ktiso.app/api/stripe/webhook`, and Resend (verify `ktiso.app`, then set `EMAIL_FROM`). `hello@ktiso.app` needs an inbox, for example Cloudflare Email Routing.
+
 ## Variables added later
 
 | Variable | Needed from |
@@ -57,7 +63,7 @@ You need: the Clerk keys (`pk_test_...` and `sk_test_...`, from task O0.3) and a
 | `PLANS_ENFORCED` | B2.1a (optional; `1` enforces the Free and Pro limits on AI messages, saved designs and STEP export. The limits in `lib/plans.ts` are placeholders until you decide them; leave empty and nobody is blocked) |
 | `RESEND_API_KEY` | B2.9 (optional; API key from resend.com, server-side only. With `EMAIL_FROM` it turns on order emails; without them emails are only logged) |
 | `EMAIL_FROM` | B2.9 (optional; the From line, for example `Parts Builder <orders@yourdomain.com>`, on a domain verified in Resend) |
-| `SITE_URL` | B3.2 (optional; the public address, for the sitemap, for example `https://yourdomain.com`. Falls back to the Vercel production URL) |
+| `SITE_URL` | B3.2 (optional; the public address, for the sitemap, page metadata and canonical links, for example `https://yourdomain.com`. Falls back to the Vercel production URL) |
 | `SENTRY_DSN` | B2.11c (optional; the project DSN from sentry.io, server-side only. Without it, errors are only logged to the console) |
 | `STRIPE_PRO_PRICE_ID` | B2.1b (optional; id of the recurring Price for Pro made in the Stripe dashboard. With `STRIPE_SECRET_KEY` it turns on `/api/account/upgrade` and `/api/account/portal`) |
 | `PRO_PRICE_CONFIRMED` | B2.1b (optional; `1` once the Pro price and limits are real. Until then a live Stripe key is refused for subscriptions) |

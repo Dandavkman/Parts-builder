@@ -3,16 +3,22 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { getAuthMode } from "../lib/auth-mode";
 import { BRAND } from "../lib/brand";
+import { siteUrl } from "../lib/site";
 import "./globals.css";
 
 /** Loaded by the browser, not at build time, so the build needs no network access to Google. */
 const FONTS_URL =
   "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=EB+Garamond:ital@1&family=Hanken+Grotesk:wght@400;500&display=swap";
 
-export const metadata: Metadata = {
-  title: { default: BRAND.name, template: `%s | ${BRAND.name}` },
-  description: "Design custom parts from a photo, measurements or a scan, and have them made.",
-};
+/** Built per request so SITE_URL is read at run time, not at build time. "./" makes each page's canonical link its own address. */
+export function generateMetadata(): Metadata {
+  return {
+    metadataBase: new URL(siteUrl()),
+    title: { default: BRAND.name, template: `%s | ${BRAND.name}` },
+    description: "Design custom parts from a photo, measurements or a scan, and have them made.",
+    alternates: { canonical: "./" },
+  };
+}
 
 // The auth mode is read from the environment on every request, not frozen at build time.
 export const dynamic = "force-dynamic";
