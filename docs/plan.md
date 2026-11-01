@@ -363,6 +363,7 @@ Phase 2 turns the prototype into a business that takes money: accounts and plans
 - [ ] **O2.5** Run a closed beta with the alpha testers. Place the first 10 orders yourself through the admin console. Inspect each part when it arrives from the partner before forwarding it, until quality is proven.
 - [ ] **O2.6** Photograph and film real parts installed on cars for the site and social posts.
 - [ ] **O2.7** Launch publicly on the launch car's forums, Discord servers, Reddit and Instagram. Answer every comment personally for the first month.
+- [ ] **O2.8** **Owner decides** whether to turn on auto-renew for ktiso.app (Cloudflare Registrar, $14.20 a year, bought 2026-11-01, expires 2027-11-01). The Owner chose on 2026-11-01 to wait for market validation first. Decide before the expiry date; if the renewal is missed the domain can lapse, and every link, email address and Clerk, Stripe and Resend setting tied to it breaks.
 
 **Gate G2.** 25 paid orders shipped. The fit-failure rate is under the target the Owner sets (10% is a reasonable start). Every order's stored margin is positive after partner cost, fees and shipping. The Architect reviews before Phase 3.
 

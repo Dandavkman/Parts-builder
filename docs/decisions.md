@@ -323,3 +323,9 @@ The favicon is a solid brick-red K (`#a8473c`) on a rounded square with a soft s
 
 ## 2026-11-01 — Waitlist: admin list, consent line, removal
 The waitlist already saved signups to the `waitlist` table in Neon. New: `/admin/waitlist` and `GET /api/admin/waitlist` (admin only; JSON with a count, or `?format=csv`, where cells starting with `=`, `+`, `-` or `@` are prefixed with `'` so a spreadsheet will not run them). The form now says what the email is used for, links to `/privacy`, and has a "Remove me" button that calls `DELETE /api/waitlist`. Removal needs no email confirmation, so anyone could remove someone else's address; we accept that (the cost is one lost signup, and it never confirms whether an address was on the list) and avoid sending mail to strangers. It uses the same rate limit as signing up. Email normalizing moved to `lib/waitlist/emails.ts`. No new environment variables or migrations. Not done: emailing the list (needs Resend).
+
+## 2026-11-01 — ktiso.app domain: auto-renew deferred
+The Owner bought ktiso.app on Cloudflare on 2026-11-01 and pointed it at the Vercel app (apex `ktiso.app` primary, `www` redirects to it, both DNS only). Auto-renew stays off until there is market validation. Tracked as O2.8 in `docs/plan.md`; the domain expires 2027-11-01.
+
+## 2026-11-01 — Site address and canonical links
+The root layout now builds its metadata per request (`generateMetadata`) with `metadataBase` from `siteUrl()` and a relative canonical link, so social previews and search engines use `SITE_URL` (`https://ktiso.app`) instead of the vercel.app address. The contact email in `lib/brand.ts` is `contact@ktiso.app`; it needs an inbox before it is real. `ktiso.app` is the main address and `www` redirects to it.
