@@ -329,3 +329,8 @@ The Owner bought ktiso.app on Cloudflare on 2026-11-01 and pointed it at the Ver
 
 ## 2026-11-01 — Site address and canonical links
 The root layout now builds its metadata per request (`generateMetadata`) with `metadataBase` from `siteUrl()` and a relative canonical link, so social previews and search engines use `SITE_URL` (`https://ktiso.app`) instead of the vercel.app address. The contact email in `lib/brand.ts` is `contact@ktiso.app`; it needs an inbox before it is real. `ktiso.app` is the main address and `www` redirects to it.
+
+## 2026-11-01 — Pricing is a margin on orders, not a subscription (D6)
+The plan assumed a monthly Pro plan. The Owner's model is: manufacturing cost + shipping + a margin %, with no subscription. `docs/plan.md` now says so (revenue streams, rule 1, payments row, tables, B2.1, O2.3, risks, scan-library wording) and records decision D6. The quote engine already stores every component, so orders need no change; the margin is 40% on manufacturing cost until the Owner sets it. STEP export is free for everyone. B2.1 becomes "abuse limits" and removes Free/Pro, Stripe Billing, `STRIPE_PRO_PRICE_ID`, `PRO_PRICE_CONFIRMED` and `PLANS_ENFORCED` in a separate code PR.
+
+Stripe: orders use one-time Checkout (`mode: payment`) with `price_data` line items computed from the stored quote (manufacturing plus margin as one price, and shipping), Stripe Tax when `STRIPE_TAX=1`, and the quote id in session metadata. Manufacturers are paid outside Stripe for now; Phase 4 designer payouts use Connect Express transfers.
