@@ -179,7 +179,7 @@ export const listings = pgTable("listings", {
   reviewNote: text("review_note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
-/** A user's plan. No row means the free plan. Stripe ids are filled in when Stripe Billing is connected. */
+/** Unused since decision D6 (no subscriptions). Kept so no data is deleted; nothing reads or writes it. */
 export const subscriptions = pgTable("subscriptions", {
   ownerId: text("owner_id").primaryKey(),
   plan: text("plan").notNull().default("free"),

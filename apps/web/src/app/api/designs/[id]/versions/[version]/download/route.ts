@@ -1,8 +1,6 @@
 import { buildFile, type GeometryFormat } from "../../../../../../../lib/agent/geometry-client";
 import { getOwnedVersion } from "../../../../../../../lib/agent/store";
 import { DatabaseNotConfigured, getDb } from "../../../../../../../lib/db/client";
-import { checkStepExport, plansEnforced } from "../../../../../../../lib/plans";
-import { getPlan } from "../../../../../../../lib/plans-store";
 import { requireOwner } from "../../../../../../../lib/require-owner";
 import { reportError } from "../../../../../../../lib/observability";
 
@@ -28,10 +26,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   let row;
   try {
     const db = await getDb();
-    if (format === "step" && plansEnforced()) {
-      const allowed = checkStepExport(await getPlan(db, who.ownerId));
-      if (!allowed.ok) return Response.json({ error: allowed.error, upgrade: true }, { status: 402 });
-    }
     row = await getOwnedVersion(db, id, who.ownerId, which);
   } catch (error) {
     if (!(error instanceof DatabaseNotConfigured)) await reportError("database unavailable", error);
