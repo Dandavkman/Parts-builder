@@ -8,6 +8,7 @@ const SECTIONS = [
   { href: "/admin/orders", title: "Orders", hint: "Move orders along, job sheets, packing slips." },
   { href: "/admin/listings", title: "Listings to review", hint: "Approve or reject store listings." },
   { href: "/admin/takedowns", title: "Takedown claims", hint: "Decide new claims and counter-notices." },
+  { href: "/admin/waitlist", title: "Waitlist", hint: "Who signed up, with a CSV download." },
 ];
 
 /** The admin console: where each admin screen lives. */
