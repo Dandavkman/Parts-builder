@@ -4,12 +4,41 @@
  * Design tokens. This is the one place colours are chosen: components use the semantic names below
  * (bg-page, text-muted, border-line, bg-primary ...) and never a raw palette colour, so a redesign
  * means editing this file. A test (design-tokens.test.ts) fails if a raw palette class sneaks back in.
- * Light values are on :root; dark values follow the system setting.
+ * Dark values are on :root and apply on every device (decision 2026-11-02); the light palette sits under :root[data-theme="light"].
  *
  * Look: warm tan paper, brick red accent, brown ink, low contrast, soft watercolor washes.
  */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
+
+  --page: #241b17;
+  --ink: #f2e7da;
+  --muted: #a8917f;
+  --subtle: #c4af9c;
+  --line: rgb(242 231 218 / 0.16);
+  --line-strong: rgb(242 231 218 / 0.3);
+  --raised: #33261f;
+  --sunken: #2c211b;
+  --primary: #e08a78;
+  --on-primary: #241b17;
+  --accent: #e08a78;
+  --card: rgb(60 44 36 / 0.55);
+  --highlight: #f2e7da;
+  --wash-a: #5a2e26;
+  --wash-b: #4a3a28;
+  --wash-c: #40301f;
+  --wash-d: #52352a;
+  --warning-soft: var(--color-amber-100);
+  --warning-ink: var(--color-amber-900);
+  --warning-text: var(--color-amber-700);
+  --warning-line: var(--color-amber-400);
+  --danger: var(--color-red-400);
+  --danger-line: var(--color-red-300);
+}
+
+/* The light palette. Not used today (the site is dark for everyone); set data-theme="light" on <html> to bring it back. */
+:root[data-theme="light"] {
+  color-scheme: light;
 
   --page: #f6efe4;
   --ink: #4d3b33;
@@ -28,35 +57,7 @@
   --wash-b: #ead9bc;
   --wash-c: #f0dfc6;
   --wash-d: #e7c9b0;
-  --warning-soft: var(--color-amber-100);
-  --warning-ink: var(--color-amber-900);
-  --warning-text: var(--color-amber-700);
-  --warning-line: var(--color-amber-400);
   --danger: var(--color-red-700);
-  --danger-line: var(--color-red-300);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --page: #241b17;
-    --ink: #f2e7da;
-    --muted: #a8917f;
-    --subtle: #c4af9c;
-    --line: rgb(242 231 218 / 0.16);
-    --line-strong: rgb(242 231 218 / 0.3);
-    --raised: #33261f;
-    --sunken: #2c211b;
-    --primary: #e08a78;
-    --on-primary: #241b17;
-    --accent: #e08a78;
-    --card: rgb(60 44 36 / 0.55);
-    --highlight: #f2e7da;
-    --wash-a: #5a2e26;
-    --wash-b: #4a3a28;
-    --wash-c: #40301f;
-    --wash-d: #52352a;
-    --danger: var(--color-red-400);
-  }
 }
 
 @theme inline {
@@ -115,12 +116,10 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.3;
-  mix-blend-mode: multiply;
+  opacity: 0.1;
+  mix-blend-mode: screen;
 }
-@media (prefers-color-scheme: dark) {
-  .paper-grain { mix-blend-mode: screen; opacity: 0.1; }
-}
+:root[data-theme="light"] .paper-grain { mix-blend-mode: multiply; opacity: 0.3; }
 
 /* Greek key border. The stroke colour is the accent red in light and the soft red in dark. */
 .meander {
