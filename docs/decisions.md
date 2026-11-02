@@ -339,3 +339,7 @@ Stripe: orders use one-time Checkout (`mode: payment`) with `price_data` line it
 
 ## 2026-11-02 — Metal printing materials (turbo manifold support, phase 1)
 The draft material table gains three metals: 316L stainless (DMLS), Inconel 625 (DMLS) and sintered 316L (binder jet). `process` now also accepts `DMLS` and `BINDER_JET`, and `cost` has a rank 4 for DMLS. Limits (wall, hole, build size, continuous-use temperature of 800, 980 and 750 °C) are typical datasheet values and are placeholders until partner data (O1.5); no prices or rate cards were added, so no quote can be made for them yet. With a `heat_c` need, advice now drops nylon and aluminum and offers only the metals. Exhaust and turbo parts stay in the needs-review category. This is phase 1 of 5 (see the thread proposal: sweeps and lofts in Part Spec 3.0, engine-bay reference packs, missing vendor dimensions, agent prompt).
+
+## Dark theme for every visitor (2026-11-02, Owner's choice)
+
+The site used to follow each device's light or dark setting, so the desktop (dark) and the phone (light) looked like two different designs. The Owner prefers the dark look, so dark values now sit on `:root` in `globals.css` and apply everywhere. The light palette is kept under `:root[data-theme="light"]` (set `data-theme="light"` on `<html>` to use it; a visitor toggle is a possible later step). The mobile caption under the Idea and Product pictures is ink on a page-colour glow below `md`, white on the sky from `md` up. The watercolor sky has a 9px unit floor so it stays bold on phones.
