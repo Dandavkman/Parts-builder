@@ -47,18 +47,18 @@ describe("assessMaterials", () => {
 describe("recommend", () => {
   const all = assessMaterials(vase(2), [100, 100, 200]);
   it("lists passing materials cheapest first", () => {
-    expect(recommend(all).recommended.map((m) => m.id)).toEqual(["petg", "pla", "tpu", "nylon_sls", "al6061_cnc"].sort((a, b) => order(a) - order(b)));
+    expect(recommend(all).recommended.map((m) => m.id)).toEqual(["petg", "pla", "tpu", "nylon_sls", "al6061_cnc", "ss316l_dmls", "inconel625_dmls", "ss316l_binder_jet"].sort((a, b) => order(a) - order(b)));
   });
   it("filters by heat, outdoor use, flexibility and load", () => {
-    expect(recommend(all, { heat_c: 90 }).recommended.map((m) => m.id)).toEqual(["nylon_sls", "al6061_cnc"]);
+    expect(recommend(all, { heat_c: 90 }).recommended.map((m) => m.id)).toEqual(["nylon_sls", "al6061_cnc", "ss316l_binder_jet", "ss316l_dmls", "inconel625_dmls"]);
     expect(recommend(all, { outdoor: true }).recommended.map((m) => m.id)).not.toContain("pla");
     expect(recommend(all, { flexible: true }).recommended.map((m) => m.id)).toEqual(["tpu"]);
-    expect(recommend(all, { load: true }).recommended.map((m) => m.id)).toEqual(["nylon_sls", "al6061_cnc"]);
+    expect(recommend(all, { load: true }).recommended.map((m) => m.id)).toEqual(["nylon_sls", "al6061_cnc", "ss316l_binder_jet", "ss316l_dmls", "inconel625_dmls"]);
   });
   it("keeps failing materials out of the recommendation", () => {
     const advice = recommend(assessMaterials(vase(1)));
-    expect(advice.recommended.map((m) => m.id)).toEqual(["nylon_sls"]);
-    expect(advice.rejected).toHaveLength(MATERIALS.length - 1);
+    expect(advice.recommended.map((m) => m.id)).toEqual(["nylon_sls", "ss316l_dmls", "inconel625_dmls"]);
+    expect(advice.rejected).toHaveLength(MATERIALS.length - 3);
   });
 });
 
@@ -106,5 +106,25 @@ describe("CNC aluminum", () => {
   it("only applies the milling rules to CNC", () => {
     const hollow = { features: [{ id: "b", type: "body", shell: { wall_thickness_mm: 3, open: "none" } }] };
     expect(assessMaterials(hollow, [50, 50, 50]).find((a) => a.material.id === "petg")!.problems).toEqual([]);
+  });
+});
+
+describe("metal printing", () => {
+  const manifold = { features: [{ id: "b", type: "body", shell: { wall_thickness_mm: 2.5, open: "none" } }] };
+  it("only metals survive exhaust heat, with Inconel the only one past 900 C", () => {
+    const all = assessMaterials(manifold, [200, 150, 150]);
+    expect(recommend(all, { heat_c: 700 }).recommended.map((m) => m.id).sort()).toEqual(["inconel625_dmls", "ss316l_binder_jet", "ss316l_dmls"]);
+    expect(recommend(all, { heat_c: 900 }).recommended.map((m) => m.id)).toEqual(["inconel625_dmls"]);
+  });
+  it("never offers nylon or aluminum for 700 C, and says why in advice", () => {
+    const text = describeAdvice(recommend(assessMaterials(manifold, [200, 150, 150]), { heat_c: 700 }));
+    expect(text).not.toMatch(/Materials that suit this part:.*Nylon/);
+  });
+  it("allows closed cavities in DMLS but applies its wall minimum", () => {
+    const thin = { features: [{ id: "b", type: "body", shell: { wall_thickness_mm: 0.8, open: "none" } }] };
+    const dmls = assessMaterials(thin, [100, 100, 100]).find((a) => a.material.id === "ss316l_dmls")!;
+    expect(dmls.problems[0]).toContain("minimum");
+    const ok = assessMaterials(manifold, [100, 100, 100]).find((a) => a.material.id === "ss316l_dmls")!;
+    expect(ok.problems).toEqual([]);
   });
 });
