@@ -12,6 +12,7 @@ from geometry.builder.features import (
 )
 from geometry.builder.placement import ORIGIN, Anchor
 from geometry.builder.spec_io import Spec
+from geometry.builder.tube import check_tube
 
 ON_PLATE = {
     "hole", "hole_pattern", "slot", "counterbore", "countersink", "standoff", "rib",
@@ -28,9 +29,14 @@ def check_spec(spec: Spec, anchors: dict[str, Anchor]) -> None:
             errors.append(f"feature id '{f['id']}' is used more than once")
         seen[f["id"]] = f
     bent_on = _check_bends(spec, seen, errors)
+    merged: set[str] = set()
     for f in spec["features"]:
         if f["type"] == "body":
             check_body(f, anchors, errors)
+        elif f["type"] == "tube":
+            check_tube(f, anchors, errors)
+        elif f["type"] == "merge":
+            _check_merge(f, seen, merged, errors)
         elif f["type"] == "plate":
             _check_plate(f, anchors, errors, placed=f["id"] not in bent_on)
         elif f["type"] in ON_PLATE:
@@ -165,3 +171,13 @@ def _check_on_plate(
 
 def resolve_anchor(name: str, anchors: dict[str, Anchor]) -> Anchor:
     return ORIGIN if name == "origin" else anchors[name]
+
+
+def _check_merge(f: Feature, seen: dict[str, Feature], merged: set[str], errors: list[str]) -> None:
+    for tube_id in f["tubes"]:
+        tube = seen.get(tube_id)
+        if tube is None or tube["type"] != "tube":
+            errors.append(f"merge '{f['id']}': '{tube_id}' is not a tube in this spec")
+        elif tube_id in merged:
+            errors.append(f"merge '{f['id']}': tube '{tube_id}' is already in another merge")
+        merged.add(tube_id)

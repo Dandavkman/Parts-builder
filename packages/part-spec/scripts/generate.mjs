@@ -10,6 +10,7 @@ const versions = [
   { schema: "part-spec.v1_1.schema.json", out: "part-spec-v1-1.ts" },
   { schema: "part-spec.v2.schema.json", out: "part-spec-v2.ts" },
   { schema: "part-spec.v2_1.schema.json", out: "part-spec-v2-1.ts" },
+  { schema: "part-spec.v3.schema.json", out: "part-spec-v3.ts" },
 ];
 
 for (const { schema, out } of versions) {

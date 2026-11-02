@@ -9,9 +9,11 @@ from geometry.builder import features as fx
 from geometry.builder.bend import join_plates
 from geometry.builder.body import build_body
 from geometry.builder.checks import outline_points
+from geometry.builder.errors import SpecError
 from geometry.builder.placement import Anchor, placement_location
 from geometry.builder.spec_io import Spec, to_v1, validate_schema
 from geometry.builder.text import apply_text
+from geometry.builder.tube import build_tube
 from geometry.builder.validate import check_spec, resolve_anchor
 
 EDGE_FINISHES = ("fillet", "chamfer")
@@ -147,9 +149,40 @@ def build_part(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> cq.Co
         shape = build_body(body).val()
         assert isinstance(shape, cq.Shape)
         placed.append(shape.moved(_location(body["placement"], anchors)))
+    placed.extend(_build_tubes(features, anchors))
     for pid in plates:
         if pid not in bent_on:
             shape = solids[pid].val()
             assert isinstance(shape, cq.Shape)
             placed.append(shape.moved(locations[pid]))
     return cq.Compound.makeCompound(placed)
+
+
+def _build_tubes(features: list[fx.Feature], anchors: dict[str, Anchor]) -> list[cq.Shape]:
+    """Placed solids for every tube (Part Spec 3.0), with merged tubes fused into one piece."""
+    tubes: dict[str, tuple[cq.Shape, cq.Shape | None]] = {}
+    for f in features:
+        if f["type"] != "tube":
+            continue
+        outer, bore = build_tube(f)
+        loc = _location(f["placement"], anchors)
+        tubes[f["id"]] = (outer.moved(loc), bore.moved(loc) if bore is not None else None)
+    merged_ids = {t for f in features if f["type"] == "merge" for t in f["tubes"]}
+    out = [
+        outer.cut(bore) if bore is not None else outer
+        for tid, (outer, bore) in tubes.items()
+        if tid not in merged_ids
+    ]
+    for f in features:
+        if f["type"] != "merge":
+            continue
+        members = [tubes[t] for t in f["tubes"]]
+        fused = members[0][0].fuse(*[m[0] for m in members[1:]])
+        bores = [m[1] for m in members if m[1] is not None]
+        if bores:
+            fused = fused.cut(*bores)
+        fused = fused.clean()
+        if len(fused.Solids()) != 1 or not fused.isValid():
+            raise SpecError([f"merge '{f['id']}': the tubes do not overlap into one solid"])
+        out.append(fused)
+    return out
