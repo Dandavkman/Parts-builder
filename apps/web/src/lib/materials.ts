@@ -8,7 +8,7 @@
 export interface Material {
   id: string;
   name: string;
-  process: "FDM" | "SLS" | "CNC";
+  process: "FDM" | "SLS" | "CNC" | "DMLS" | "BINDER_JET";
   min_wall_mm: number;
   min_hole_mm: number;
   /** Largest part that fits the machine, as X, Y, Z in mm. Orientation is free, so sizes are compared sorted. */
@@ -18,8 +18,8 @@ export interface Material {
   flexible: boolean;
   /** 1 (decorative) to 3 (carries load). */
   strength: 1 | 2 | 3;
-  /** 1 (cheapest) to 3. A ranking only; real prices come with the rate cards. */
-  cost: 1 | 2 | 3;
+  /** 1 (cheapest) to 4 (metal printing). A ranking only; real prices come with the rate cards. */
+  cost: 1 | 2 | 3 | 4;
 }
 
 export const MATERIALS: Material[] = [
@@ -29,6 +29,11 @@ export const MATERIALS: Material[] = [
   { id: "nylon_sls", name: "Nylon PA12 (SLS)", process: "SLS", min_wall_mm: 0.8, min_hole_mm: 1.5, build_mm: [340, 340, 600], max_temp_c: 100, outdoor: true, flexible: false, strength: 3, cost: 3 },
   // CNC milled aluminum (B3.8). Placeholder limits: 3-axis milling from one side with a 3 mm end mill.
   { id: "al6061_cnc", name: "Aluminum 6061 (CNC)", process: "CNC", min_wall_mm: 1.5, min_hole_mm: 2, build_mm: [300, 200, 100], max_temp_c: 150, outdoor: true, flexible: false, strength: 3, cost: 3 },
+  // Metal printing (turbo and exhaust parts, plan "Metal printing" row). Placeholder limits from typical service-bureau
+  // datasheets; max_temp_c is a continuous-use ceiling in air, not a melting point. Replace with partner data (O1.5).
+  { id: "ss316l_dmls", name: "Stainless 316L (DMLS)", process: "DMLS", min_wall_mm: 1, min_hole_mm: 1.5, build_mm: [250, 250, 325], max_temp_c: 800, outdoor: true, flexible: false, strength: 3, cost: 4 },
+  { id: "inconel625_dmls", name: "Inconel 625 (DMLS)", process: "DMLS", min_wall_mm: 1, min_hole_mm: 1.5, build_mm: [250, 250, 325], max_temp_c: 980, outdoor: true, flexible: false, strength: 3, cost: 4 },
+  { id: "ss316l_binder_jet", name: "Stainless 316L (binder jet, sintered)", process: "BINDER_JET", min_wall_mm: 2, min_hole_mm: 2, build_mm: [380, 280, 200], max_temp_c: 750, outdoor: true, flexible: false, strength: 3, cost: 3 },
 ];
 
 /** Smallest inside corner a 3 mm end mill can cut: its radius. PLACEHOLDER until a CNC partner gives real tooling limits. */
