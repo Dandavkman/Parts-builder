@@ -34,4 +34,27 @@ describe("itemsFromHistory", () => {
     ]);
     expect(items).toEqual([{ kind: "assistant", text: "Size?" }]);
   });
+
+  it("joins the text blocks that web-search citations split a reply into", () => {
+    const items = itemsFromHistory([
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "Listings disagree. " },
+          { type: "text", text: "One says stainless", citations: [{}] },
+          { type: "text", text: ", and " },
+          { type: "text", text: "another says ductile iron", citations: [{}] },
+          { type: "text", text: ". Either way, nylon would fail." },
+          { type: "tool_use", id: "q1", name: "ask_user", input: { question: "Use metal?" } },
+        ],
+      },
+    ]);
+    expect(items).toEqual([
+      {
+        kind: "assistant",
+        text: "Listings disagree. One says stainless, and another says ductile iron. Either way, nylon would fail.",
+      },
+      { kind: "assistant", text: "Use metal?" },
+    ]);
+  });
 });
