@@ -25,6 +25,7 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 | `/api/admin/takedowns` | GET | admin | New claims and disputed removals waiting for an admin. |
 | `/api/admin/takedowns/[id]` | POST | admin | Decides a claim. Body: `{ decision, note }`. For a new claim, decision is "remove" (take the listing down now) or "dismiss". After the seller disputes a removal, it is "restore" or "uphold". / |
 | `/api/admin/users/[id]/plan` | POST | admin | Sets a user's plan (until Stripe Billing is connected). Body: `{ plan: "free" \| "pro" }`. |
+| `/api/admin/waitlist` | GET | admin | The waitlist, newest first: JSON with a count, or `?format=csv` to download a spreadsheet. |
 | `/api/agent` | POST | signed in | Design agent. Takes `{ design_id?, message }`, continues that design's saved conversation (or starts a new design) and streams one JSON event per line. Every message and spec version is saved. Anchors and dimensions come from the design's references; until it has one, a fixture panel stands in for a scan. / |
 | `/api/cars/[id]/access` | GET | signed in | Which scanned areas of this car the signed-in user may use in the workspace. Never returns scan data. |
 | `/api/demo-plate` | GET | signed in | Proxies the geometry service's demo plate (GLB) to signed-in users. |
@@ -58,4 +59,5 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 | `/api/stripe/webhook` | POST | public | Stripe calls this when a payment completes. The signature is checked against STRIPE_WEBHOOK_SECRET before anything is read. |
 | `/api/takedowns` | POST | public | Public. Files an intellectual-property claim against a listing. Body: `{ listingId, name, email, description, goodFaith: true }`. The claimant gets a receipt by email when email is set up. / |
 | `/api/vehicles` | GET | public | Public (the catalog is not private). `GET /api/vehicles?q=miata 1994` returns matching cars. |
+| `/api/waitlist` | DELETE | public | Public. Removes an email from the waitlist. Body: `{ email }`. Answers the same whether or not it was there. |
 | `/api/waitlist` | POST | public | Public. Adds an email to the waitlist. Body: `{ email }`. Answers the same whether or not the address was already there. |
