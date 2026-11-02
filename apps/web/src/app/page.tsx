@@ -6,9 +6,9 @@ import { WaitlistForm } from "./waitlist-form";
 export default function Home() {
   return (
     <PublicShell wide>
-      <div className="rise grid justify-items-center gap-0 pt-8 text-center">
-        <h1 className="font-display text-[clamp(56px,10vw,104px)] font-normal leading-none tracking-tight">{BRAND.name}</h1>
-        <p className="mt-5 font-caps text-[clamp(15px,2.2vw,20px)] uppercase tracking-[0.3em] text-accent">
+      <div className="rise grid justify-items-center gap-0 pt-10 text-center sm:pt-8">
+        <h1 className="font-display text-[clamp(68px,10vw,104px)] font-normal leading-none tracking-tight">{BRAND.name}</h1>
+        <p className="mt-5 font-caps text-[clamp(16px,2.2vw,20px)] uppercase tracking-[0.3em] text-accent">
           From the Greek <span className="font-greek text-[1.5em] normal-case italic tracking-[0.04em]">{ETYMOLOGY.greek}</span>
         </p>
         <p className="mt-3 font-display text-[clamp(22px,3vw,30px)] text-subtle">{ETYMOLOGY.meaning}</p>

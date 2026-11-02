@@ -8,7 +8,7 @@ const PROMPT = "A flat bracket, 60 mm wide, with two slots for the bolts.";
 
 function Arrow({ className = "" }: { className?: string }) {
   return (
-    <svg aria-hidden viewBox="0 0 56 24" className={`h-6 w-12 text-accent sm:w-14 ${className}`} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden viewBox="0 0 56 24" className={`h-5 w-8 text-accent sm:h-6 sm:w-14 ${className}`} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 12h46M39 3l11 9-11 9" />
     </svg>
   );
@@ -81,10 +81,11 @@ function Part() {
 }
 
 export function IdeaToProduct() {
+  // Phone: the caption is ink on a paper glow (the picture sits on plain paper there, not on a wash); from md up it is white on the sky.
   // Phone: Idea and Product labels, their pictures, then the "natural language" line and the prompt window.
   // From md up: one row of five columns, with the "natural language" line level with the Idea and Product labels.
   return (
-    <div className="grid w-full max-w-4xl grid-cols-[1fr_auto_1fr] items-center justify-items-center gap-x-3 gap-y-4 md:grid-cols-[1fr_auto_minmax(190px,250px)_auto_1fr] md:gap-x-4">
+    <div className="grid w-full max-w-4xl grid-cols-[1fr_auto_1fr] items-center justify-items-center gap-x-2 gap-y-5 sm:gap-x-3 md:grid-cols-[1fr_auto_minmax(190px,250px)_auto_1fr] md:gap-x-4">
       <Label className="col-start-1 row-start-1">Idea</Label>
       <Label className="col-start-3 row-start-1 md:col-start-5">Product</Label>
       <div className="col-start-1 row-start-2 flex justify-center">
@@ -95,7 +96,7 @@ export function IdeaToProduct() {
         <Part />
       </div>
       <Arrow className="row-start-2 hidden md:col-start-4 md:block" />
-      <p className="col-span-3 col-start-1 row-start-3 m-0 self-end text-center font-display text-xl font-medium leading-tight text-[var(--highlight)] [text-shadow:0_1px_3px_color-mix(in_srgb,var(--ink)_60%,transparent)] sm:text-2xl md:col-span-1 md:col-start-3 md:row-start-1">
+      <p className="col-span-3 col-start-1 row-start-3 m-0 self-end text-center font-display text-xl font-medium leading-tight text-ink [text-shadow:0_0_10px_var(--page),0_0_4px_var(--page)] sm:text-2xl md:text-[var(--highlight)] md:[text-shadow:0_1px_3px_color-mix(in_srgb,var(--ink)_60%,transparent)] md:col-span-1 md:col-start-3 md:row-start-1">
         <s className="relative no-underline opacity-80 after:absolute after:inset-x-0 after:top-[64%] after:h-[1.5px] after:bg-current after:content-['']">complex design software</s> <strong className="font-semibold">natural language</strong>
       </p>
       <p className="col-span-3 col-start-1 row-start-4 m-0 rounded-[18px] border border-line bg-card p-4 text-center font-display text-xl leading-snug backdrop-blur-sm md:col-span-1 md:col-start-3 md:row-start-2">“{PROMPT}”</p>

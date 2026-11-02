@@ -89,9 +89,9 @@ body {
 }
 
 /* Watercolor sky behind public pages: four blurred washes, bled at the edges by an SVG displacement filter.
- * Everything is sized in --u (1vw, capped on very wide screens), so the sky keeps the same proportions at every screen width. */
+ * Everything is sized in --u (1vw, floored at 9px on phones and capped at 14px on very wide screens), so the sky keeps the same proportions at every screen width and stays as bold on a phone as on a desktop. */
 .wash-sky {
-  --u: min(1vw, 14px);
+  --u: clamp(9px, 1vw, 14px);
   position: absolute;
   inset: 0 0 auto 0;
   height: calc(var(--u) * 76);
