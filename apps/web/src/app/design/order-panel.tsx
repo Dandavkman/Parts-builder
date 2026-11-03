@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatCents } from "../../lib/quotes/engine";
+import { ListForSale } from "./list-for-sale";
 import { describeQuote, EMPTY_ADDRESS, orderRequest, type AddressForm, type QuoteView } from "./order-panel-logic";
 
 interface Unquoted {
@@ -151,6 +152,7 @@ export function OrderPanel({ designId, version }: { designId: string; version: n
           </div>
         )}
         {message && <p role="status">{message}</p>}
+        {quotes.length > 0 && <ListForSale designId={designId} quote={quotes.find((q) => q.id === chosen) ?? null} />}
       </div>
     </details>
   );
