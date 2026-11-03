@@ -10,6 +10,7 @@ from geometry.builder.features import (
     hole_points,
     slot_end_centers,
 )
+from geometry.builder.pipework import check_flange, check_reducer
 from geometry.builder.placement import ORIGIN, Anchor
 from geometry.builder.spec_io import Spec
 from geometry.builder.tube import check_tube
@@ -30,11 +31,16 @@ def check_spec(spec: Spec, anchors: dict[str, Anchor]) -> None:
         seen[f["id"]] = f
     bent_on = _check_bends(spec, seen, errors)
     merged: set[str] = set()
+    flanged: set[tuple[str, str]] = set()
     for f in spec["features"]:
         if f["type"] == "body":
             check_body(f, anchors, errors)
         elif f["type"] == "tube":
             check_tube(f, anchors, errors)
+        elif f["type"] == "reducer":
+            check_reducer(f, anchors, errors)
+        elif f["type"] == "flange":
+            check_flange(f, seen, flanged, errors)
         elif f["type"] == "merge":
             _check_merge(f, seen, merged, errors)
         elif f["type"] == "plate":
@@ -176,8 +182,8 @@ def resolve_anchor(name: str, anchors: dict[str, Anchor]) -> Anchor:
 def _check_merge(f: Feature, seen: dict[str, Feature], merged: set[str], errors: list[str]) -> None:
     for tube_id in f["tubes"]:
         tube = seen.get(tube_id)
-        if tube is None or tube["type"] != "tube":
-            errors.append(f"merge '{f['id']}': '{tube_id}' is not a tube in this spec")
+        if tube is None or tube["type"] not in ("tube", "reducer"):
+            errors.append(f"merge '{f['id']}': '{tube_id}' is not a tube or reducer in this spec")
         elif tube_id in merged:
             errors.append(f"merge '{f['id']}': tube '{tube_id}' is already in another merge")
         merged.add(tube_id)
