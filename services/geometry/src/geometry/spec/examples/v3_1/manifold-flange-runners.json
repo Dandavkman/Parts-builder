@@ -1,0 +1,117 @@
+{
+  "spec_version": "3.1",
+  "name": "Two runners with a head flange",
+  "features": [
+    {
+      "id": "runner_1",
+      "type": "tube",
+      "placement": {
+        "anchor": "origin"
+      },
+      "path_mm": [
+        [
+          -22,
+          0,
+          0
+        ],
+        [
+          -22,
+          0,
+          40
+        ],
+        [
+          -8,
+          0,
+          100
+        ]
+      ],
+      "outer_diameter_mm": 32,
+      "wall_thickness_mm": 2.5,
+      "bend_radius_mm": 40
+    },
+    {
+      "id": "runner_2",
+      "type": "tube",
+      "placement": {
+        "anchor": "origin"
+      },
+      "path_mm": [
+        [
+          22,
+          0,
+          0
+        ],
+        [
+          22,
+          0,
+          40
+        ],
+        [
+          8,
+          0,
+          100
+        ]
+      ],
+      "outer_diameter_mm": 32,
+      "wall_thickness_mm": 2.5,
+      "bend_radius_mm": 40
+    },
+    {
+      "id": "collector",
+      "type": "reducer",
+      "placement": {
+        "anchor": "origin"
+      },
+      "start_mm": [
+        0,
+        0,
+        90
+      ],
+      "end_mm": [
+        0,
+        0,
+        160
+      ],
+      "start_diameter_mm": 50,
+      "end_diameter_mm": 40,
+      "wall_thickness_mm": 2.5
+    },
+    {
+      "id": "head_flange_1",
+      "type": "flange",
+      "tube": "runner_1",
+      "end": "start",
+      "outline": {
+        "kind": "rectangle",
+        "width_mm": 60,
+        "length_mm": 70
+      },
+      "thickness_mm": 10,
+      "bolt_holes": {
+        "hole_diameter_mm": 8.5,
+        "pattern": {
+          "kind": "points",
+          "points_mm": [
+            [
+              -24,
+              0
+            ],
+            [
+              24,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "id": "manifold",
+      "type": "merge",
+      "tubes": [
+        "runner_1",
+        "runner_2",
+        "collector"
+      ]
+    }
+  ]
+}
