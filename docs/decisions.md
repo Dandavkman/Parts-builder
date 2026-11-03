@@ -346,3 +346,9 @@ New schema file `part-spec.v3.schema.json` (2.1 untouched, 2.1 specs build as 3.
 ## Dark theme for every visitor (2026-11-02, Owner's choice)
 
 The site used to follow each device's light or dark setting, so the desktop (dark) and the phone (light) looked like two different designs. The Owner prefers the dark look, so dark values now sit on `:root` in `globals.css` and apply everywhere. The light palette is kept under `:root[data-theme="light"]` (set `data-theme="light"` on `<html>` to use it; a visitor toggle is a possible later step). The mobile caption under the Idea and Product pictures is ink on a page-colour glow below `md`, white on the sky from `md` up. The watercolor sky has a 9px unit floor so it stays bold on phones.
+
+## 2026-11-03: Admin payouts screen (B5.2)
+
+- `/admin/payouts` lists each store with a ledger balance (`storeBalances`) and a form that calls the existing `POST /api/admin/payouts`. Payouts still move no money: the admin sends it from the bank, then records the reference, which makes it count once. The API still refuses more than the balance.
+- Dollars are converted to whole cents in `dollarsToCents`; balances that include placeholder fees are labelled.
+- No new routes, env vars or fee changes.

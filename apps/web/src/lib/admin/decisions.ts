@@ -25,3 +25,14 @@ export function decideListing(
 export function decideTakedown(id: string, decision: "remove" | "dismiss" | "restore" | "uphold", note: string | undefined, doFetch: typeof fetch = fetch): Promise<DecisionResult> {
   return post(`/api/admin/takedowns/${encodeURIComponent(id)}`, { decision, note }, doFetch);
 }
+
+/** Record a payout already sent to a seller (bank or transfer reference required, so it is recorded once). Moves no money. */
+export function recordPayoutAction(input: { storeId: string; amountCents: number; ref: string; note?: string }, doFetch: typeof fetch = fetch): Promise<DecisionResult> {
+  return post("/api/admin/payouts", input, doFetch);
+}
+
+/** Dollars typed by the admin to whole cents, or null when it is not a positive amount. */
+export function dollarsToCents(text: string): number | null {
+  const n = Number(text.trim().replace(/^\$/, ""));
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null;
+}

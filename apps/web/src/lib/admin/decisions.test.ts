@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideListing, decideTakedown } from "./decisions";
+import { decideListing, decideTakedown, dollarsToCents, recordPayoutAction } from "./decisions";
 
 const reply = (status: number, body: unknown, spy?: (u: string, i: RequestInit) => void) =>
   (async (u: string, i: RequestInit) => {
@@ -25,5 +25,21 @@ describe("admin decisions", () => {
     let body: Record<string, unknown> = {};
     await decideTakedown("c1", "uphold", "stays down", reply(200, {}, (_u, i) => (body = JSON.parse(String(i.body)))));
     expect(body).toEqual({ decision: "uphold", note: "stays down" });
+  });
+});
+
+describe("payouts", () => {
+  it("converts dollars to cents and rejects junk", () => {
+    expect(dollarsToCents("$12.34")).toBe(1234);
+    expect(dollarsToCents(" 5 ")).toBe(500);
+    expect(dollarsToCents("0")).toBeNull();
+    expect(dollarsToCents("abc")).toBeNull();
+  });
+  it("posts the payout and shows the server's reason", async () => {
+    let body: Record<string, unknown> = {};
+    const spy = reply(201, {}, (_u, i) => (body = JSON.parse(String(i.body))));
+    expect(await recordPayoutAction({ storeId: "s", amountCents: 500, ref: "ACH-1" }, spy)).toEqual({ ok: true });
+    expect(body).toMatchObject({ storeId: "s", amountCents: 500, ref: "ACH-1" });
+    expect(await recordPayoutAction({ storeId: "s", amountCents: 9, ref: "r" }, reply(409, { error: "More than the balance." }))).toEqual({ ok: false, error: "More than the balance." });
   });
 });
