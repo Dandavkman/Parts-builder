@@ -346,3 +346,9 @@ New schema file `part-spec.v3.schema.json` (2.1 untouched, 2.1 specs build as 3.
 ## Dark theme for every visitor (2026-11-02, Owner's choice)
 
 The site used to follow each device's light or dark setting, so the desktop (dark) and the phone (light) looked like two different designs. The Owner prefers the dark look, so dark values now sit on `:root` in `globals.css` and apply everywhere. The light palette is kept under `:root[data-theme="light"]` (set `data-theme="light"` on `<html>` to use it; a visitor toggle is a possible later step). The mobile caption under the Idea and Product pictures is ink on a page-colour glow below `md`, white on the sky from `md` up. The watercolor sky has a 9px unit floor so it stays bold on phones.
+
+## 2026-11-03: List a design for sale from the design page (B4.3b)
+
+- The "Quote and order" panel gets a "List for sale" form under the quotes. The chosen quote's total is the floor price; the seller types a title and a price and sees their royalty and our fee (placeholder split from `splitRetail`) before sending.
+- Uses the existing `POST /api/stores/[id]/listings` after `GET /api/stores` finds the seller's store. No new route, no pricing change; the server still enforces the floor and review.
+- Logic in `lib/stores/list-for-sale.ts`, state in `use-list-for-sale.ts`, markup on tokens only.
