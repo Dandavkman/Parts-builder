@@ -359,3 +359,8 @@ The site used to follow each device's light or dark setting, so the desktop (dar
 - Logic in `lib/stores/list-for-sale.ts`, state in `use-list-for-sale.ts`, markup on tokens only.
 ## 2026-11-03 — Part Spec 3.1: reducers and flanges (turbo manifold support, phase 2b)
 3.0 was already released, so these go in a new schema file (`part-spec.v3_1.schema.json`) instead of editing it (rule 6). A `reducer` is a straight cone rather than a lofted section on a bent path: a swept loft over arcs is not reliable in the CAD kernel, and a straight reducer between bent tubes covers real manifolds. A `flange` is attached to a pipe end, not placed on its own, so it always lines up with the bore; its bolt holes are cutters stored with the pipe, so they survive a `merge`. The flange X axis is fixed by a documented rule. The turbine volute is next (2c).
+
+## 2026-11-03: Admin agent-failures screen (B5.3)
+
+- `/admin/agent-failures` shows the last seven days: designs, share that built on the last try, and the most common failures with example requests. It shares `agentReport` with `GET /api/admin/agent-failures`, so the screen and the API cannot drift apart. Draft benchmark cases stay on the API.
+- Read-only; no new routes, env vars or schema changes.

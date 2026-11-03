@@ -5,7 +5,7 @@ import { runnerFor, type Db } from "../db/client";
 import { migrate } from "../db/migrations";
 import * as schema from "../db/schema";
 import { benchmarkCandidates, successRate, topFailures } from "./failure-report";
-import { loadLoggedDesigns } from "./failure-store";
+import { agentReport, loadLoggedDesigns } from "./failure-store";
 import { createDesign, recorderFor } from "./store";
 
 describe("loading logged designs", () => {
@@ -35,5 +35,12 @@ describe("loading logged designs", () => {
 
   it("ignores designs older than the window", async () => {
     expect(await loadLoggedDesigns(db, new Date(Date.now() + 3600_000))).toEqual([]);
+  });
+
+  it("builds the one report the API and the admin screen share", async () => {
+    const report = await agentReport(db, 7);
+    expect(report).toMatchObject({ designs: 2, successRate: 0.5 });
+    expect(report.failures).toHaveLength(1);
+    expect(report.benchmarkCandidates[0].prompt).toBe("a gauge pod");
   });
 });
