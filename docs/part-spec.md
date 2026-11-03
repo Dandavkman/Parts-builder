@@ -65,3 +65,14 @@ Any change bumps `spec_version` and adds a new schema file next to the old ones.
 ## Version 2.1: blind bores and separate round-overs
 
 `part-spec.v2_1.schema.json` is 2.0 plus two body options (task B1.22); every 2.0 spec stays buildable and is valid as 2.1 once its version is bumped (tested). A body may carry `bores`, a list of blind holes along Z: `diameter_mm`, `depth_mm`, `from` (`bottom` or `top`) and optional `position_mm` (default: center). A bore may be as deep as the body but must leave at least 1.2 mm of wall around it, and cannot be combined with `shell`. `edge_fillet_top_mm` and `edge_fillet_bottom_mm` round one edge each; `edge_fillet_mm` still rounds both and cannot be mixed with them. A threaded hole is modelled as a tap-drill hole (8.8 mm for M10x1.25); the model has no cut threads. Example: [body-fluted-knob](../services/geometry/src/geometry/spec/examples/v2_1/body-fluted-knob.json). The agent writes 2.1 when `DESIGN_AGENT_SPEC_VERSION=2.1`, after `fly deploy`.
+
+## Version 3.0: swept tubes and merges
+
+`part-spec.v3.schema.json` is 2.1 plus two features (turbo manifold support, phase 2a); every 2.1 spec stays buildable and is valid as 3.0 once its version is bumped (tested). Examples are in `examples/v3/`. The agent still writes 2.1 until the prompt is updated (phase 5) and the Fly service has been redeployed.
+
+| Type | What it makes | Key fields |
+| --- | --- | --- |
+| `tube` | A round pipe swept along a 3D path. `path_mm` is a list of `[x, y, z]` corner points in the part frame (2 to 64). Each corner is rounded with an arc of `bend_radius_mm` (centerline radius, default 1.5 times `outer_diameter_mm`). `wall_thickness_mm` makes it hollow with open ends; leave it out for a solid rod. | `path_mm`, `outer_diameter_mm`, `wall_thickness_mm`, `bend_radius_mm`, `placement` |
+| `merge` | Fuses two or more overlapping tubes into one solid, then cuts every tube's bore out of the result so the passages join (runners meeting in a collector). Merged tubes are not built separately; a tube can be in only one merge. | `tubes` (ids) |
+
+Checks, each with a plain error: path points must differ, the path must not double back, `bend_radius_mm` must be larger than the tube radius, each straight run must be long enough for the bends at its two ends, the wall must be at least 0.5 mm and under half the diameter, merged ids must be tubes, and merged tubes must overlap into one solid. A run end that sits inside another tube's bore opens into it. Not yet in 3.0: changing diameter along the path (loft), flanges and a turbine volute (phase 2b). Examples: [tube-elbow](../services/geometry/src/geometry/spec/examples/v3/tube-elbow.json), [merge-three-runners](../services/geometry/src/geometry/spec/examples/v3/merge-three-runners.json). Golden summaries are in `services/geometry/tests/golden/`.
