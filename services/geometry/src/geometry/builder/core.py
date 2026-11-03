@@ -16,6 +16,7 @@ from geometry.builder.spec_io import Spec, to_v1, validate_schema
 from geometry.builder.text import apply_text
 from geometry.builder.tube import build_tube
 from geometry.builder.validate import check_spec, resolve_anchor
+from geometry.builder.volute import build_volute
 
 EDGE_FINISHES = ("fillet", "chamfer")
 ADDITIONS = {"standoff": fx.apply_standoff_body, "rib": fx.apply_rib}
@@ -163,10 +164,14 @@ def _build_tubes(features: list[fx.Feature], anchors: dict[str, Anchor]) -> list
     """Placed solids for every tube and reducer, with flanges fused on and merged pieces fused."""
     pieces: dict[str, tuple[cq.Shape, list[cq.Shape]]] = {}
     for f in features:
-        if f["type"] not in ("tube", "reducer"):
+        if f["type"] not in ("tube", "reducer", "volute"):
             continue
-        outer, bore = build_tube(f) if f["type"] == "tube" else build_reducer(f)
-        cuts = [bore] if bore is not None else []
+        cuts: list[cq.Shape]
+        if f["type"] == "volute":
+            outer, cuts = build_volute(f)
+        else:
+            outer, bore = build_tube(f) if f["type"] == "tube" else build_reducer(f)
+            cuts = [bore] if bore is not None else []
         for fl in (g for g in features if g["type"] == "flange" and g["tube"] == f["id"]):
             plate, holes = build_flange(fl, f)
             outer = outer.fuse(plate)

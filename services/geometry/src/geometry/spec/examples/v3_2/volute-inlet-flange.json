@@ -1,0 +1,35 @@
+{
+  "spec_version": "3.2",
+  "name": "Volute with inlet and outlet flanges",
+  "features": [
+    {
+      "id": "housing",
+      "type": "volute",
+      "placement": { "anchor": "origin" },
+      "inducer_diameter_mm": 53.8,
+      "exducer_diameter_mm": 47,
+      "a_over_r_cm": 0.64,
+      "wall_thickness_mm": 3,
+      "inlet_length_mm": 30,
+      "outlet_length_mm": 70
+    },
+    {
+      "id": "inlet_flange",
+      "type": "flange",
+      "tube": "housing",
+      "end": "inlet",
+      "outline": { "kind": "rectangle", "width_mm": 60, "length_mm": 60 },
+      "thickness_mm": 10,
+      "bolt_holes": { "hole_diameter_mm": 8.5, "pattern": { "kind": "circular", "count": 4, "circle_diameter_mm": 52, "start_angle_deg": 45 } }
+    },
+    {
+      "id": "outlet_flange",
+      "type": "flange",
+      "tube": "housing",
+      "end": "outlet",
+      "outline": { "kind": "circle", "diameter_mm": 90 },
+      "thickness_mm": 8,
+      "bolt_holes": { "hole_diameter_mm": 8.5, "pattern": { "kind": "circular", "count": 4, "circle_diameter_mm": 72 } }
+    }
+  ]
+}
