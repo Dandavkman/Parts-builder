@@ -4,9 +4,7 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 
 | Route | Method | Who | What it does |
 | --- | --- | --- | --- |
-| `/api/account` | GET | signed in | The signed-in user's plan, this month's usage and the plan's limits. |
-| `/api/account/portal` | POST | signed in | Returns `{ url }` of the Stripe page where a Pro user changes or cancels their subscription. |
-| `/api/account/upgrade` | POST | signed in | Starts the Pro subscription: returns `{ url }` of a Stripe Checkout page. 503 until Stripe Billing is set up. |
+| `/api/account` | GET | signed in | This month's usage and the limits, which are the same for everyone (no plans). |
 | `/api/admin/agent-failures` | GET | admin | How well the design agent is doing over the last `?days=` days (default 7, up to 90): the share of designs whose last version built, the ten most common failures with example requests, and draft benchmark cases from them. |
 | `/api/admin/ai-cost` | GET | admin | AI spend over the last `?days=` days (default 1, up to 90): total, most expensive designs and users. Prices are estimates. |
 | `/api/admin/licenses` | POST | admin | Grants a user a scan license by hand. Body: `{ ownerId, vehicleId, area, note? }`. |
@@ -24,7 +22,6 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 | `/api/admin/safety/[designId]` | POST | admin | Approve or reject a design that needs review. Body: `{ decision: "approved" \| "rejected" }`. |
 | `/api/admin/takedowns` | GET | admin | New claims and disputed removals waiting for an admin. |
 | `/api/admin/takedowns/[id]` | POST | admin | Decides a claim. Body: `{ decision, note }`. For a new claim, decision is "remove" (take the listing down now) or "dismiss". After the seller disputes a removal, it is "restore" or "uphold". / |
-| `/api/admin/users/[id]/plan` | POST | admin | Sets a user's plan (until Stripe Billing is connected). Body: `{ plan: "free" \| "pro" }`. |
 | `/api/admin/waitlist` | GET | admin | The waitlist, newest first: JSON with a count, or `?format=csv` to download a spreadsheet. |
 | `/api/agent` | POST | signed in | Design agent. Takes `{ design_id?, message }`, continues that design's saved conversation (or starts a new design) and streams one JSON event per line. Every message and spec version is saved. Anchors and dimensions come from the design's references; until it has one, a fixture panel stands in for a scan. / |
 | `/api/cars/[id]/access` | GET | signed in | Which scanned areas of this car the signed-in user may use in the workspace. Never returns scan data. |

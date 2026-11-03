@@ -337,6 +337,9 @@ The plan assumed a monthly Pro plan. The Owner's model is: manufacturing cost + 
 
 Stripe: orders use one-time Checkout (`mode: payment`) with `price_data` line items computed from the stored quote (manufacturing plus margin as one price, and shipping), Stripe Tax when `STRIPE_TAX=1`, and the quote id in session metadata. Manufacturers are paid outside Stripe for now; Phase 4 designer payouts use Connect Express transfers.
 
+## 2026-11-01 — Plans and Stripe Billing removed (B2.1, decision D6)
+Removed the Free/Pro plans, `lib/billing`, `/api/account/upgrade`, `/api/account/portal`, the admin plan route, subscription events in the Stripe webhook, the STEP-export gate and the Pro path to scan access (a scan is used only through a license). `lib/plans.ts` became `lib/limits.ts`: one set of abuse limits for everyone (placeholders: 500 AI messages a month, 200 designs), enforced only with `LIMITS_ENFORCED=1`, answering 429 with no upgrade offer. Env vars `PLANS_ENFORCED`, `STRIPE_PRO_PRICE_ID` and `PRO_PRICE_CONFIRMED` are gone. The `subscriptions` table is left in place and unused so no data is deleted.
+
 ## 2026-11-02 — Metal printing materials (turbo manifold support, phase 1)
 The draft material table gains three metals: 316L stainless (DMLS), Inconel 625 (DMLS) and sintered 316L (binder jet). `process` now also accepts `DMLS` and `BINDER_JET`, and `cost` has a rank 4 for DMLS. Limits (wall, hole, build size, continuous-use temperature of 800, 980 and 750 °C) are typical datasheet values and are placeholders until partner data (O1.5); no prices or rate cards were added, so no quote can be made for them yet. With a `heat_c` need, advice now drops nylon and aluminum and offers only the metals. Exhaust and turbo parts stay in the needs-review category. This is phase 1 of 5 (see the thread proposal: sweeps and lofts in Part Spec 3.0, engine-bay reference packs, missing vendor dimensions, agent prompt).
 

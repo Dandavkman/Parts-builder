@@ -21,8 +21,8 @@ import { MESSAGES_PER_MINUTE, recentUserMessages } from "../../../lib/ai-cost";
 import { anthropicClassifier, safetyGuardOn } from "../../../lib/safety/classifier";
 import { applyVerdict } from "../../../lib/safety/store";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
-import { checkAiMessage, checkNewDesign, plansEnforced } from "../../../lib/plans";
-import { aiMessagesUsed, countAiMessage, designCount, getPlan } from "../../../lib/plans-store";
+import { checkAiMessage, checkNewDesign, limitsEnforced } from "../../../lib/limits";
+import { aiMessagesUsed, countAiMessage, designCount } from "../../../lib/limits-store";
 import { requireOwner } from "../../../lib/require-owner";
 import { reportError } from "../../../lib/observability";
 
@@ -74,14 +74,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "You are sending messages very quickly. Wait a minute and try again." }, { status: 429, headers: { "retry-after": "60" } });
   }
 
-  // Free and Pro limits (B2.1a). Off unless PLANS_ENFORCED=1.
-  if (plansEnforced()) {
-    const plan = await getPlan(db, ownerId);
-    const blocked = checkAiMessage(plan, await aiMessagesUsed(db, ownerId));
-    if (!blocked.ok) return Response.json({ error: blocked.error, upgrade: true }, { status: 402 });
+  // Abuse limits (B2.1), the same for everyone. Off unless LIMITS_ENFORCED=1.
+  if (limitsEnforced()) {
+    const blocked = checkAiMessage(await aiMessagesUsed(db, ownerId));
+    if (!blocked.ok) return Response.json({ error: blocked.error }, { status: 429 });
     if (!parsed.designId) {
-      const tooMany = checkNewDesign(plan, await designCount(db, ownerId));
-      if (!tooMany.ok) return Response.json({ error: tooMany.error, upgrade: true }, { status: 402 });
+      const tooMany = checkNewDesign(await designCount(db, ownerId));
+      if (!tooMany.ok) return Response.json({ error: tooMany.error }, { status: 429 });
     }
   }
 
