@@ -350,6 +350,9 @@ New schema file `part-spec.v3.schema.json` (2.1 untouched, 2.1 specs build as 3.
 
 The site used to follow each device's light or dark setting, so the desktop (dark) and the phone (light) looked like two different designs. The Owner prefers the dark look, so dark values now sit on `:root` in `globals.css` and apply everywhere. The light palette is kept under `:root[data-theme="light"]` (set `data-theme="light"` on `<html>` to use it; a visitor toggle is a possible later step). The mobile caption under the Idea and Product pictures is ink on a page-colour glow below `md`, white on the sky from `md` up. The watercolor sky has a 9px unit floor so it stays bold on phones.
 
+## 2026-11-03 — Owner alert for each paid order (B2.9b)
+Orders were only visible by opening `/admin/orders`. `alertOwnerNewOrder` now emails `ORDER_ALERT_EMAIL` once per order when payment is recorded (all three paths call `notifyOrder` with `order_confirmed`, which triggers it). It is claimed in `email_log` under the event `owner_new_order`, so a repeated webhook does not send twice, and a failed send releases the claim. It needs no customer email, says when the design is waiting for safety review, and does nothing when the variable is unset. Emails still only go out when Resend is configured.
+
 ## 2026-11-03: Admin payouts screen (B5.2)
 
 - `/admin/payouts` lists each store with a ledger balance (`storeBalances`) and a form that calls the existing `POST /api/admin/payouts`. Payouts still move no money: the admin sends it from the bank, then records the reference, which makes it count once. The API still refuses more than the balance.
