@@ -9,7 +9,7 @@ import { createOrder, type Order } from "../orders/store";
 import { buildQuotes } from "../quotes/engine";
 import { saveQuotes } from "../quotes/store";
 import { getMailer, logMailer, validEmail, type Mailer } from "./mailer";
-import { notifyOrder } from "./notify";
+import { alertOwnerNewOrder, notifyOrder } from "./notify";
 import { eventForMove, renderOrderEmail, type OrderEmailEvent } from "./templates";
 
 const data = { orderId: "ord-1", materialName: "PETG (FDM)", quantity: 2, totalCents: 4510, trackingNumber: "1Z999", placeholder: false };
@@ -117,5 +117,58 @@ describe("notifyOrder", () => {
     const { mailer, send } = fake();
     expect(await notifyOrder(db, o, "delivered", mailer)).toBe("sent");
     expect(send).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("alertOwnerNewOrder", () => {
+  let db: Db;
+  beforeAll(async () => {
+    db = drizzle(new PGlite(), { schema }) as unknown as Db;
+    await migrate(runnerFor(db));
+  });
+
+  async function paidOrder(): Promise<Order> {
+    const spec = { spec_version: "1.1", features: [{ type: "plate", id: "a", thickness_mm: 3 }] };
+    const designId = await createDesign(db, "o1", "Part");
+    await recorderFor(db, designId).version({ spec, ok: true, errors: [], createdBy: "agent", anchors: [] });
+    const { quotes } = buildQuotes({ volume_mm3: 20_000, size_mm: [50, 40, 10], spec, quantity: 1 });
+    const [quote] = await saveQuotes(db, designId, 1, quotes);
+    const r = await createOrder(db, {
+      ownerId: "o1", designId, quoteId: quote.id, confirmedNotSafetyCritical: true, acceptedFitTerms: true,
+      address: { name: "A", line1: "1", city: "C", region: "R", postal_code: "1", country: "US" },
+    });
+    if (!r.ok) throw new Error("setup");
+    return r.order;
+  }
+
+  const fake = () => {
+    const send = vi.fn(async () => undefined);
+    return { mailer: { name: "fake", send } as Mailer, send };
+  };
+
+  it("does nothing without ORDER_ALERT_EMAIL", async () => {
+    const { mailer, send } = fake();
+    expect(await alertOwnerNewOrder(db, await paidOrder(), mailer, {})).toBe("skipped");
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("emails the Owner once per order, even with no customer email", async () => {
+    const o = await paidOrder();
+    const { mailer, send } = fake();
+    const env = { ORDER_ALERT_EMAIL: "owner@example.com", SITE_URL: "https://ktiso.app" };
+    expect(await alertOwnerNewOrder(db, o, mailer, env)).toBe("sent");
+    expect(await alertOwnerNewOrder(db, o, mailer, env)).toBe("skipped");
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0]).toMatchObject([{ to: "owner@example.com", subject: expect.stringContaining("New paid order") }]);
+    expect((send.mock.calls[0] as unknown as [{ text: string }])[0].text).toContain("https://ktiso.app/admin/orders");
+  });
+
+  it("releases the claim when sending fails, and never throws", async () => {
+    const o = await paidOrder();
+    const bad: Mailer = { name: "bad", send: async () => { throw new Error("down"); } };
+    const env = { ORDER_ALERT_EMAIL: "owner@example.com" };
+    expect(await alertOwnerNewOrder(db, o, bad, env)).toBe("failed");
+    const { mailer } = fake();
+    expect(await alertOwnerNewOrder(db, o, mailer, env)).toBe("sent");
   });
 });

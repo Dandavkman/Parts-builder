@@ -63,6 +63,7 @@ Then set `SITE_URL=https://ktiso.app` (Production) and redeploy. It feeds the si
 | `PLANS_ENFORCED` | B2.1a (optional; `1` enforces the Free and Pro limits on AI messages, saved designs and STEP export. The limits in `lib/plans.ts` are placeholders until you decide them; leave empty and nobody is blocked) |
 | `RESEND_API_KEY` | B2.9 (optional; API key from resend.com, server-side only. With `EMAIL_FROM` it turns on order emails; without them emails are only logged) |
 | `EMAIL_FROM` | B2.9 (optional; the From line, for example `Parts Builder <orders@yourdomain.com>`, on a domain verified in Resend) |
+| `ORDER_ALERT_EMAIL` | B2.9b (optional; your address. When a paid order arrives, an alert email goes there once per order. Needs `RESEND_API_KEY` and `EMAIL_FROM`; empty means no alert) |
 | `SITE_URL` | B3.2 (optional; the public address, for the sitemap, page metadata and canonical links, for example `https://yourdomain.com`. Falls back to the Vercel production URL) |
 | `SENTRY_DSN` | B2.11c (optional; the project DSN from sentry.io, server-side only. Without it, errors are only logged to the console) |
 | `STRIPE_PRO_PRICE_ID` | B2.1b (optional; id of the recurring Price for Pro made in the Stripe dashboard. With `STRIPE_SECRET_KEY` it turns on `/api/account/upgrade` and `/api/account/portal`) |
