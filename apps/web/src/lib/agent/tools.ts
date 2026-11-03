@@ -66,6 +66,17 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
     },
   },
   {
+    name: "reference_lookup",
+    description:
+      "Look up stored facts about a car's parts or a bought-in component (for example 'miata bp exhaust port', 'miata engine bay', 'gt2871 turbo'). Each fact carries its source and confidence. It also lists what is NOT available. Use it before any fit or clearance claim; never claim a fit from estimated, unverified or missing facts, and ask the user for the missing ones instead.",
+    input_schema: {
+      type: "object",
+      properties: { topic: { type: "string" } },
+      required: ["topic"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "ask_user",
     description: "Ask the user one short clarifying question, such as the material or thickness. The turn ends until they answer.",
     input_schema: {
