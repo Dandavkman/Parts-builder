@@ -7,7 +7,7 @@ import { migrate } from "../db/migrations";
 import * as schema from "../db/schema";
 import { buildQuotes } from "../quotes/engine";
 import { saveQuotes } from "../quotes/store";
-import { balanceCents, ledgerFor, recordPayout, recordRefund, recordSale } from "./ledger";
+import { balanceCents, ledgerFor, recordPayout, recordRefund, recordSale, storeBalances } from "./ledger";
 import { createListing, createStore } from "./store";
 
 describe("seller ledger", () => {
@@ -65,5 +65,11 @@ describe("seller ledger", () => {
     expect(entries.map((e) => e.kind)).toContain("payout");
     expect(entries.reduce((n, e) => n + e.amountCents, 0)).toBe(1);
     expect(await recordSale(db, { listingId: "00000000-0000-0000-0000-000000000000", ref: "x" })).toMatchObject({ ok: false, status: 404 });
+  });
+
+  it("lists what each store is owed", async () => {
+    const rows = await storeBalances(db);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ storeId, storeName: "Shop", balanceCents: 1, placeholder: true });
   });
 });

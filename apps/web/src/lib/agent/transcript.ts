@@ -26,10 +26,20 @@ export function itemsFromHistory(
       continue;
     }
     if (!Array.isArray(content)) continue;
+    // Web-search citations split one reply into several consecutive text blocks, with the break
+    // falling mid-sentence. Join them back so a reloaded message matches what streamed live.
+    let pendingText = "";
+    const flushText = () => {
+      if (pendingText) items.push({ kind: "assistant", text: pendingText });
+      pendingText = "";
+    };
     for (const block of content as Block[]) {
-      if (role === "assistant" && block.type === "text" && block.text) {
-        items.push({ kind: "assistant", text: block.text });
-      } else if (
+      if (role === "assistant" && block.type === "text") {
+        pendingText += block.text ?? "";
+        continue;
+      }
+      flushText();
+      if (
         role === "assistant" &&
         block.type === "tool_use" &&
         block.name === "ask_user" &&
@@ -51,6 +61,7 @@ export function itemsFromHistory(
         items.push({ kind: "user", text: block.content });
       }
     }
+    flushText();
   }
   return items;
 }

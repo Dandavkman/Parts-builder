@@ -1,0 +1,15 @@
+{
+  "spec_version": "3.0",
+  "name": "Hollow elbow pipe",
+  "features": [
+    {
+      "id": "pipe",
+      "type": "tube",
+      "placement": { "anchor": "origin" },
+      "path_mm": [[0, 0, 0], [80, 0, 0], [80, 60, 0], [80, 60, 50]],
+      "outer_diameter_mm": 40,
+      "wall_thickness_mm": 2.5,
+      "bend_radius_mm": 25
+    }
+  ]
+}

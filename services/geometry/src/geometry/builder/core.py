@@ -9,10 +9,14 @@ from geometry.builder import features as fx
 from geometry.builder.bend import join_plates
 from geometry.builder.body import build_body
 from geometry.builder.checks import outline_points
+from geometry.builder.errors import SpecError
+from geometry.builder.pipework import build_flange, build_reducer
 from geometry.builder.placement import Anchor, placement_location
 from geometry.builder.spec_io import Spec, to_v1, validate_schema
 from geometry.builder.text import apply_text
+from geometry.builder.tube import build_tube
 from geometry.builder.validate import check_spec, resolve_anchor
+from geometry.builder.volute import build_volute
 
 EDGE_FINISHES = ("fillet", "chamfer")
 ADDITIONS = {"standoff": fx.apply_standoff_body, "rib": fx.apply_rib}
@@ -147,9 +151,49 @@ def build_part(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> cq.Co
         shape = build_body(body).val()
         assert isinstance(shape, cq.Shape)
         placed.append(shape.moved(_location(body["placement"], anchors)))
+    placed.extend(_build_tubes(features, anchors))
     for pid in plates:
         if pid not in bent_on:
             shape = solids[pid].val()
             assert isinstance(shape, cq.Shape)
             placed.append(shape.moved(locations[pid]))
     return cq.Compound.makeCompound(placed)
+
+
+def _build_tubes(features: list[fx.Feature], anchors: dict[str, Anchor]) -> list[cq.Shape]:
+    """Placed solids for every tube and reducer, with flanges fused on and merged pieces fused."""
+    pieces: dict[str, tuple[cq.Shape, list[cq.Shape]]] = {}
+    for f in features:
+        if f["type"] not in ("tube", "reducer", "volute"):
+            continue
+        cuts: list[cq.Shape]
+        if f["type"] == "volute":
+            outer, cuts = build_volute(f)
+        else:
+            outer, bore = build_tube(f) if f["type"] == "tube" else build_reducer(f)
+            cuts = [bore] if bore is not None else []
+        for fl in (g for g in features if g["type"] == "flange" and g["tube"] == f["id"]):
+            plate, holes = build_flange(fl, f)
+            outer = outer.fuse(plate)
+            cuts.extend(holes)
+        loc = _location(f["placement"], anchors)
+        pieces[f["id"]] = (outer.moved(loc), [c.moved(loc) for c in cuts])
+    merged_ids = {t for f in features if f["type"] == "merge" for t in f["tubes"]}
+    out = [
+        outer.cut(*cuts) if cuts else outer
+        for pid, (outer, cuts) in pieces.items()
+        if pid not in merged_ids
+    ]
+    for f in features:
+        if f["type"] != "merge":
+            continue
+        members = [pieces[t] for t in f["tubes"]]
+        fused = members[0][0].fuse(*[m[0] for m in members[1:]])
+        cuts = [c for m in members for c in m[1]]
+        if cuts:
+            fused = fused.cut(*cuts)
+        fused = fused.clean()
+        if len(fused.Solids()) != 1 or not fused.isValid():
+            raise SpecError([f"merge '{f['id']}': the pieces do not overlap into one solid"])
+        out.append(fused)
+    return out
