@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { scanLicenses } from "../db/schema";
-import { getPlan } from "../plans-store";
 import { getVehicle, SCAN_AREAS, type ScanArea } from "../vehicles/catalog";
 
 export type LicenseSource = "purchase" | "pro" | "admin";
@@ -38,7 +37,7 @@ export async function grantLicense(
   return { ok: true, license: existing, duplicate: true };
 }
 
-/** Whether the user may use this area: they hold a license for it, or they are on Pro, which includes every scanned area. */
+/** Whether the user may use this area: they hold a license for it. */
 export async function canUseScan(db: Db, ownerId: string, vehicleId: string, area: ScanArea): Promise<boolean> {
   const vehicle = getVehicle(vehicleId);
   if (!vehicle?.scanned.includes(area)) return false;
@@ -46,18 +45,16 @@ export async function canUseScan(db: Db, ownerId: string, vehicleId: string, are
     .select({ id: scanLicenses.id })
     .from(scanLicenses)
     .where(and(eq(scanLicenses.ownerId, ownerId), eq(scanLicenses.vehicleId, vehicleId), eq(scanLicenses.area, area)));
-  if (held) return true;
-  return (await getPlan(db, ownerId)) === "pro";
+  return Boolean(held);
 }
 
-/** For each scanned area of a car: whether this user may use it, and how (a license or the Pro plan). */
-export async function accessFor(db: Db, ownerId: string, vehicleId: string): Promise<{ area: ScanArea; allowed: boolean; via: "license" | "pro" | null }[] | null> {
+/** For each scanned area of a car: whether this user may use it, and how (a license). */
+export async function accessFor(db: Db, ownerId: string, vehicleId: string): Promise<{ area: ScanArea; allowed: boolean; via: "license" | null }[] | null> {
   const vehicle = getVehicle(vehicleId);
   if (!vehicle) return null;
   const held = new Set((await db.select({ area: scanLicenses.area }).from(scanLicenses).where(and(eq(scanLicenses.ownerId, ownerId), eq(scanLicenses.vehicleId, vehicleId)))).map((r) => r.area));
-  const pro = (await getPlan(db, ownerId)) === "pro";
   return vehicle.scanned.map((area) => {
-    const via = held.has(area) ? "license" : pro ? "pro" : null;
+    const via = held.has(area) ? "license" : null;
     return { area, allowed: via !== null, via };
   });
 }

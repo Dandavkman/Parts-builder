@@ -1,7 +1,7 @@
 import { desc, eq, gte } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { designs, designVersions } from "../db/schema";
-import type { LoggedDesign } from "./failure-report";
+import { benchmarkCandidates, successRate, topFailures, type LoggedDesign } from "./failure-report";
 import { loadHistory } from "./store";
 
 /** Designs created since `since`, newest first, with their saved conversation and every version. Owner ids are left out on purpose. */
@@ -19,4 +19,11 @@ export async function loadLoggedDesigns(db: Db, since: Date, limit = 200): Promi
       ).map((v) => ({ version: v.version, buildOk: v.buildOk, buildErrors: v.buildErrors })),
     })),
   );
+}
+
+/** The report both the admin API and the admin screen show. */
+export async function agentReport(db: Db, days: number) {
+  const logged = await loadLoggedDesigns(db, new Date(Date.now() - days * 24 * 3600 * 1000));
+  const failures = topFailures(logged, 10);
+  return { designs: logged.length, successRate: successRate(logged), failures, benchmarkCandidates: benchmarkCandidates(failures) };
 }

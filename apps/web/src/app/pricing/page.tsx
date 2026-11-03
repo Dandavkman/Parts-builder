@@ -6,8 +6,8 @@ export const metadata: Metadata = { title: "Pricing" };
 
 const POINTS = [
   { title: "Designing", body: "Free to try. Describe the part, adjust it in chat and with sliders, and download your own designs." },
-  { title: "Making a part", body: "You see a price from each manufacturer for your exact part, material and quantity before you pay. That price already includes our fee, shipping and card processing." },
-  { title: "Plans", body: "Plans with more AI messages, more saved designs and STEP file export are coming. Prices will be listed here before they start." },
+  { title: "Making a part", body: "You see a price from each manufacturer for your exact part, material and quantity before you pay. That price is the manufacturing cost plus shipping plus our margin, with card processing included. There is no subscription." },
+  { title: "No surprises", body: "Designing, previews and downloads of your own files are free. Taxes, where they apply, are added at checkout." },
 ];
 
 export default function PricingPage() {

@@ -337,6 +337,9 @@ The plan assumed a monthly Pro plan. The Owner's model is: manufacturing cost + 
 
 Stripe: orders use one-time Checkout (`mode: payment`) with `price_data` line items computed from the stored quote (manufacturing plus margin as one price, and shipping), Stripe Tax when `STRIPE_TAX=1`, and the quote id in session metadata. Manufacturers are paid outside Stripe for now; Phase 4 designer payouts use Connect Express transfers.
 
+## 2026-11-01 — Plans and Stripe Billing removed (B2.1, decision D6)
+Removed the Free/Pro plans, `lib/billing`, `/api/account/upgrade`, `/api/account/portal`, the admin plan route, subscription events in the Stripe webhook, the STEP-export gate and the Pro path to scan access (a scan is used only through a license). `lib/plans.ts` became `lib/limits.ts`: one set of abuse limits for everyone (placeholders: 500 AI messages a month, 200 designs), enforced only with `LIMITS_ENFORCED=1`, answering 429 with no upgrade offer. Env vars `PLANS_ENFORCED`, `STRIPE_PRO_PRICE_ID` and `PRO_PRICE_CONFIRMED` are gone. The `subscriptions` table is left in place and unused so no data is deleted.
+
 ## 2026-11-02 — Metal printing materials (turbo manifold support, phase 1)
 The draft material table gains three metals: 316L stainless (DMLS), Inconel 625 (DMLS) and sintered 316L (binder jet). `process` now also accepts `DMLS` and `BINDER_JET`, and `cost` has a rank 4 for DMLS. Limits (wall, hole, build size, continuous-use temperature of 800, 980 and 750 °C) are typical datasheet values and are placeholders until partner data (O1.5); no prices or rate cards were added, so no quote can be made for them yet. With a `heat_c` need, advice now drops nylon and aluminum and offers only the metals. Exhaust and turbo parts stay in the needs-review category. This is phase 1 of 5 (see the thread proposal: sweeps and lofts in Part Spec 3.0, engine-bay reference packs, missing vendor dimensions, agent prompt).
 
@@ -363,5 +366,9 @@ Orders were only visible by opening `/admin/orders`. `alertOwnerNewOrder` now em
 ## 2026-11-03 — Part Spec 3.1: reducers and flanges (turbo manifold support, phase 2b)
 3.0 was already released, so these go in a new schema file (`part-spec.v3_1.schema.json`) instead of editing it (rule 6). A `reducer` is a straight cone rather than a lofted section on a bent path: a swept loft over arcs is not reliable in the CAD kernel, and a straight reducer between bent tubes covers real manifolds. A `flange` is attached to a pipe end, not placed on its own, so it always lines up with the bore; its bolt holes are cutters stored with the pipe, so they survive a `merge`. The flange X axis is fixed by a documented rule. The turbine volute is next (2c).
 
+## 2026-11-03: Admin agent-failures screen (B5.3)
+
+- `/admin/agent-failures` shows the last seven days: designs, share that built on the last try, and the most common failures with example requests. It shares `agentReport` with `GET /api/admin/agent-failures`, so the screen and the API cannot drift apart. Draft benchmark cases stay on the API.
+- Read-only; no new routes, env vars or schema changes.
 ## 2026-11-03 — Part Spec 3.2: turbine volute (turbo manifold support, phase 2c)
 Another new schema file (`part-spec.v3_2.schema.json`), because 3.1 is released. The volute is built from the numbers vendors publish (wheel diameters and A/R in cm, which we convert to mm), not from a vendor drawing. The scroll is a loft of 36 round sections with area linear in angle, a standard simplification; its largest section is solved so area over centroid radius equals the requested A/R exactly (tested). The housing is a model for fit and flow path, not a certified casting: no wastegate, bearing flange or vanes, and it still needs the vendor drawing before it is made (that check comes with the missing-dimensions work in phase 4). The inlet is a fixed straight stub so runners can merge into it with the existing `merge`.
