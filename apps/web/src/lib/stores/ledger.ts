@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
-import { ledgerEntries, listings } from "../db/schema";
+import { ledgerEntries, listings, stores } from "../db/schema";
 import { STORE_FEES_ARE_PLACEHOLDER } from "./royalty";
 
 export type LedgerEntry = typeof ledgerEntries.$inferSelect;
@@ -95,4 +95,31 @@ export async function recordPayout(
 
 export async function ledgerFor(db: Db, storeId: string, limit = 100): Promise<LedgerEntry[]> {
   return db.select().from(ledgerEntries).where(eq(ledgerEntries.storeId, storeId)).orderBy(desc(ledgerEntries.createdAt)).limit(limit);
+}
+
+export interface StoreBalance {
+  storeId: string;
+  storeName: string;
+  slug: string;
+  balanceCents: number;
+  /** True when any credited amount came from placeholder fees. */
+  placeholder: boolean;
+}
+
+/** Every store with a ledger entry and what it is owed, largest first. For the admin payouts screen. */
+export async function storeBalances(db: Db): Promise<StoreBalance[]> {
+  const rows = await db
+    .select({
+      storeId: stores.id,
+      storeName: stores.name,
+      slug: stores.slug,
+      total: sql<string>`coalesce(sum(${ledgerEntries.amountCents}), 0)`,
+      placeholder: sql<boolean>`bool_or(${ledgerEntries.placeholder})`,
+    })
+    .from(ledgerEntries)
+    .innerJoin(stores, eq(stores.id, ledgerEntries.storeId))
+    .groupBy(stores.id, stores.name, stores.slug);
+  return rows
+    .map((r) => ({ storeId: r.storeId, storeName: r.storeName, slug: r.slug, balanceCents: Number(r.total), placeholder: r.placeholder === true }))
+    .sort((a, b) => b.balanceCents - a.balanceCents);
 }

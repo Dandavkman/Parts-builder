@@ -76,3 +76,27 @@ Any change bumps `spec_version` and adds a new schema file next to the old ones.
 | `merge` | Fuses two or more overlapping tubes into one solid, then cuts every tube's bore out of the result so the passages join (runners meeting in a collector). Merged tubes are not built separately; a tube can be in only one merge. | `tubes` (ids) |
 
 Checks, each with a plain error: path points must differ, the path must not double back, `bend_radius_mm` must be larger than the tube radius, each straight run must be long enough for the bends at its two ends, the wall must be at least 0.5 mm and under half the diameter, merged ids must be tubes, and merged tubes must overlap into one solid. A run end that sits inside another tube's bore opens into it. Not yet in 3.0: changing diameter along the path (loft), flanges and a turbine volute (phase 2b). Examples: [tube-elbow](../services/geometry/src/geometry/spec/examples/v3/tube-elbow.json), [merge-three-runners](../services/geometry/src/geometry/spec/examples/v3/merge-three-runners.json). Golden summaries are in `services/geometry/tests/golden/`.
+
+## Version 3.1: reducers and flanges
+
+`part-spec.v3_1.schema.json` is 3.0 plus two features (turbo manifold support, phase 2b); every 3.0 spec stays buildable and is valid as 3.1 once its version is bumped (tested). Examples are in `examples/v3_1/`. The agent still writes 2.1.
+
+| Type | What it makes | Key fields |
+| --- | --- | --- |
+| `reducer` | A straight pipe whose outer diameter changes linearly between two points (a cone). Hollow with open ends when `wall_thickness_mm` is set. Joins a `merge` like a tube. | `start_mm`, `end_mm`, `start_diameter_mm`, `end_diameter_mm`, `wall_thickness_mm`, `placement` |
+| `flange` | A bolted end plate on one end (`start` or `end`) of a hollow tube or reducer, named by `tube`. The face is flush with the open end and the plate runs back along the pipe by `thickness_mm`; the bore stays open. `outline` is a `circle` or `rectangle`. `bolt_holes` has `hole_diameter_mm` and a `pattern`: `circular` (`count`, `circle_diameter_mm`, `start_angle_deg`) or `points` (`points_mm`). | `tube`, `end`, `outline`, `thickness_mm`, `bolt_holes` |
+
+**Flange frame:** origin on the pipe axis at the open end; X and Y lie in the face seen from outside. X is the world Z axis crossed with the outward direction (world X when the pipe points along Z), so bolt positions do not depend on the machine. Each end takes one flange. Checks: the pipe must be hollow, the flange wider than the pipe, and every bolt hole clear of the pipe wall and inside the outline. A flange belongs to its pipe, so inside a `merge` its bolt holes are cut after fusing. A taper along a bent path is not supported yet; use a reducer between tubes. Examples: [flanged-reducer](../services/geometry/src/geometry/spec/examples/v3_1/flanged-reducer.json), [manifold-flange-runners](../services/geometry/src/geometry/spec/examples/v3_1/manifold-flange-runners.json).
+
+## Version 3.2: turbine volute
+
+`part-spec.v3_2.schema.json` is 3.1 plus the `volute` feature (turbo manifold support, phase 2c); every 3.1 spec stays buildable and is valid as 3.2 once its version is bumped (tested). A flange's `end` also accepts `inlet` and `outlet` (volute only). The agent still writes 2.1.
+
+A `volute` is a turbine-style scroll housing sized from the vendor's numbers: `inducer_diameter_mm` (turbine wheel), `exducer_diameter_mm`, `a_over_r_cm` (A/R as vendors quote it: area in cm² over centroid radius in cm), `wall_thickness_mm`, plus optional `tongue_clearance_mm` (default 2), `inlet_length_mm` (default 30) and `outlet_length_mm` (default 60).
+
+- **Frame:** origin on the wheel axis at the wheel plane, Z along the axis, the exhaust outlet towards -Z. The tongue is on the +X axis; the scroll winds counter-clockwise seen from +Z.
+- **Sizing:** the passage has a round section whose area grows linearly with the angle, so its radius grows as the square root of the angle. Its inner edge touches the wheel cavity (inducer radius plus clearance). The largest section is solved so that area over centroid radius equals the A/R asked for.
+- **Inlet:** a straight stub the size of the largest section, centered at x = cavity radius + largest section radius, flowing +Y and entering from -Y. Its outer diameter is `2 * (largest radius + wall)`. A hollow tube with that outer diameter, ending inside the stub, merges into it (tested).
+- **Outlet:** a cone from the scroll down to the exducer bore at z = -`outlet_length_mm`.
+- **Simplified:** no wastegate, bearing flange, nozzle vanes or twin-scroll divider. It is a fit and flow-path model for a one-piece manifold, to be reviewed with the turbo vendor's drawing before anything is made.
+- Flanges attach to the `inlet` and `outlet` ends like on a pipe. Examples: [gt2871-style-volute](../services/geometry/src/geometry/spec/examples/v3_2/gt2871-style-volute.json), [volute-inlet-flange](../services/geometry/src/geometry/spec/examples/v3_2/volute-inlet-flange.json).

@@ -350,3 +350,18 @@ The site used to follow each device's light or dark setting, so the desktop (dar
 ## 2026-11-03 — Owner alert for each paid order (B2.9b)
 Orders were only visible by opening `/admin/orders`. `alertOwnerNewOrder` now emails `ORDER_ALERT_EMAIL` once per order when payment is recorded (all three paths call `notifyOrder` with `order_confirmed`, which triggers it). It is claimed in `email_log` under the event `owner_new_order`, so a repeated webhook does not send twice, and a failed send releases the claim. It needs no customer email, says when the design is waiting for safety review, and does nothing when the variable is unset. Emails still only go out when Resend is configured.
 
+## 2026-11-03: Admin payouts screen (B5.2)
+
+- `/admin/payouts` lists each store with a ledger balance (`storeBalances`) and a form that calls the existing `POST /api/admin/payouts`. Payouts still move no money: the admin sends it from the bank, then records the reference, which makes it count once. The API still refuses more than the balance.
+- Dollars are converted to whole cents in `dollarsToCents`; balances that include placeholder fees are labelled.
+- No new routes, env vars or fee changes.
+## 2026-11-03: List a design for sale from the design page (B4.3b)
+
+- The "Quote and order" panel gets a "List for sale" form under the quotes. The chosen quote's total is the floor price; the seller types a title and a price and sees their royalty and our fee (placeholder split from `splitRetail`) before sending.
+- Uses the existing `POST /api/stores/[id]/listings` after `GET /api/stores` finds the seller's store. No new route, no pricing change; the server still enforces the floor and review.
+- Logic in `lib/stores/list-for-sale.ts`, state in `use-list-for-sale.ts`, markup on tokens only.
+## 2026-11-03 — Part Spec 3.1: reducers and flanges (turbo manifold support, phase 2b)
+3.0 was already released, so these go in a new schema file (`part-spec.v3_1.schema.json`) instead of editing it (rule 6). A `reducer` is a straight cone rather than a lofted section on a bent path: a swept loft over arcs is not reliable in the CAD kernel, and a straight reducer between bent tubes covers real manifolds. A `flange` is attached to a pipe end, not placed on its own, so it always lines up with the bore; its bolt holes are cutters stored with the pipe, so they survive a `merge`. The flange X axis is fixed by a documented rule. The turbine volute is next (2c).
+
+## 2026-11-03 — Part Spec 3.2: turbine volute (turbo manifold support, phase 2c)
+Another new schema file (`part-spec.v3_2.schema.json`), because 3.1 is released. The volute is built from the numbers vendors publish (wheel diameters and A/R in cm, which we convert to mm), not from a vendor drawing. The scroll is a loft of 36 round sections with area linear in angle, a standard simplification; its largest section is solved so area over centroid radius equals the requested A/R exactly (tested). The housing is a model for fit and flow path, not a certified casting: no wastegate, bearing flange or vanes, and it still needs the vendor drawing before it is made (that check comes with the missing-dimensions work in phase 4). The inlet is a fixed straight stub so runners can merge into it with the existing `merge`.
