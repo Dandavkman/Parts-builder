@@ -352,5 +352,10 @@ The site used to follow each device's light or dark setting, so the desktop (dar
 - `/admin/payouts` lists each store with a ledger balance (`storeBalances`) and a form that calls the existing `POST /api/admin/payouts`. Payouts still move no money: the admin sends it from the bank, then records the reference, which makes it count once. The API still refuses more than the balance.
 - Dollars are converted to whole cents in `dollarsToCents`; balances that include placeholder fees are labelled.
 - No new routes, env vars or fee changes.
+## 2026-11-03: List a design for sale from the design page (B4.3b)
+
+- The "Quote and order" panel gets a "List for sale" form under the quotes. The chosen quote's total is the floor price; the seller types a title and a price and sees their royalty and our fee (placeholder split from `splitRetail`) before sending.
+- Uses the existing `POST /api/stores/[id]/listings` after `GET /api/stores` finds the seller's store. No new route, no pricing change; the server still enforces the floor and review.
+- Logic in `lib/stores/list-for-sale.ts`, state in `use-list-for-sale.ts`, markup on tokens only.
 ## 2026-11-03 — Part Spec 3.1: reducers and flanges (turbo manifold support, phase 2b)
 3.0 was already released, so these go in a new schema file (`part-spec.v3_1.schema.json`) instead of editing it (rule 6). A `reducer` is a straight cone rather than a lofted section on a bent path: a swept loft over arcs is not reliable in the CAD kernel, and a straight reducer between bent tubes covers real manifolds. A `flange` is attached to a pipe end, not placed on its own, so it always lines up with the bore; its bolt holes are cutters stored with the pipe, so they survive a `merge`. The flange X axis is fixed by a documented rule. The turbine volute is next (2c).
