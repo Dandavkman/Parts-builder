@@ -347,6 +347,11 @@ New schema file `part-spec.v3.schema.json` (2.1 untouched, 2.1 specs build as 3.
 
 The site used to follow each device's light or dark setting, so the desktop (dark) and the phone (light) looked like two different designs. The Owner prefers the dark look, so dark values now sit on `:root` in `globals.css` and apply everywhere. The light palette is kept under `:root[data-theme="light"]` (set `data-theme="light"` on `<html>` to use it; a visitor toggle is a possible later step). The mobile caption under the Idea and Product pictures is ink on a page-colour glow below `md`, white on the sky from `md` up. The watercolor sky has a 9px unit floor so it stays bold on phones.
 
+## 2026-11-03: Admin payouts screen (B5.2)
+
+- `/admin/payouts` lists each store with a ledger balance (`storeBalances`) and a form that calls the existing `POST /api/admin/payouts`. Payouts still move no money: the admin sends it from the bank, then records the reference, which makes it count once. The API still refuses more than the balance.
+- Dollars are converted to whole cents in `dollarsToCents`; balances that include placeholder fees are labelled.
+- No new routes, env vars or fee changes.
 ## 2026-11-03: List a design for sale from the design page (B4.3b)
 
 - The "Quote and order" panel gets a "List for sale" form under the quotes. The chosen quote's total is the floor price; the seller types a title and a price and sees their royalty and our fee (placeholder split from `splitRetail`) before sending.

@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const SECTIONS = [
   { href: "/admin/orders", title: "Orders", hint: "Move orders along, job sheets, packing slips." },
   { href: "/admin/listings", title: "Listings to review", hint: "Approve or reject store listings." },
+  { href: "/admin/payouts", title: "Seller payouts", hint: "What each seller is owed; record payouts you sent." },
   { href: "/admin/takedowns", title: "Takedown claims", hint: "Decide new claims and counter-notices." },
   { href: "/admin/waitlist", title: "Waitlist", hint: "Who signed up, with a CSV download." },
 ];
