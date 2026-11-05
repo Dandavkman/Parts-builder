@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { buildFile } from "./geometry-client";
+import { buildFile, callCadTool } from "./geometry-client";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -28,5 +28,24 @@ describe("buildFile", () => {
   it("throws on other failures", async () => {
     vi.stubGlobal("fetch", async () => new Response("no", { status: 401 }));
     await expect(buildFile({}, [], "glb")).rejects.toThrow("401");
+  });
+});
+
+describe("callCadTool", () => {
+  it("posts the arguments to the tool's path and returns the result", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ ok: true, spec: { name: "p" }, summary: { solid_count: 0 } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await callCadTool("add_sketch", { spec: {}, id: "sk" });
+    expect(result.ok).toBe(true);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toContain("/tools/add_sketch");
+    expect(JSON.parse(init.body as string)).toEqual({ spec: {}, id: "sk" });
+  });
+
+  it("turns an unknown tool into a sentence and other failures into errors", async () => {
+    vi.stubGlobal("fetch", async () => new Response("no", { status: 404 }));
+    expect(await callCadTool("rm", {})).toEqual({ ok: false, errors: ["There is no CAD tool called 'rm'."] });
+    vi.stubGlobal("fetch", async () => new Response("no", { status: 500 }));
+    await expect(callCadTool("extrude", {})).rejects.toThrow("500");
   });
 });

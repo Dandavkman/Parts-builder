@@ -4,6 +4,7 @@ import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
 import { PART_SPEC_V2_1_EXAMPLES, PART_SPEC_V2_1_SCHEMA } from "./generated/part-spec-v2-1-reference";
 import { PART_SPEC_V2_EXAMPLES, PART_SPEC_V2_SCHEMA } from "./generated/part-spec-v2-reference";
+import { PART_SPEC_V4_2_EXAMPLES, PART_SPEC_V4_2_SCHEMA } from "./generated/part-spec-v4-2-reference";
 import { agentSpecVersion, buildSystemPrompt, EVERYDAY_SAFETY_RULES, VEHICLE_SAFETY_RULES } from "./prompt";
 import { parseRequest } from "./request";
 
@@ -125,6 +126,7 @@ describe("Part Spec 2.0 prompt (B1.17d)", () => {
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "3" })).toBe("1.1");
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "2.0" })).toBe("2.0");
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "2.1" })).toBe("2.1");
+    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "4.2" })).toBe("4.2");
   });
 
   it("keeps the 1.1 prompt free of the body feature by default", () => {
@@ -178,5 +180,31 @@ describe("Part Spec 2.1 prompt (B1.22)", () => {
     const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "2.1");
     expect(prompt).toContain("at least 24 points along the curve");
     expect(prompt).toContain("ask one short question about it with ask_user");
+  });
+});
+
+describe("Part Spec 4.2 prompt (CAD feature tree)", () => {
+  const v42Path = new URL("../../../../../services/geometry/src/geometry/spec/part-spec.v4_2.schema.json", import.meta.url);
+
+  it("quotes the 4.2 schema, every example and the CAD conventions", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "4.2");
+    expect(prompt).toContain(JSON.stringify(PART_SPEC_V4_2_SCHEMA));
+    for (const example of PART_SPEC_V4_2_EXAMPLES) expect(prompt).toContain(JSON.stringify(example));
+    expect(prompt).toContain("feature history");
+    expect(prompt).toContain("cad_tool");
+    expect(prompt).not.toContain('"spec_version": "2.1"');
+  });
+
+  it("matches the schema file, every example is 4.2 and the CAD examples are included", () => {
+    expect(PART_SPEC_V4_2_SCHEMA).toEqual(JSON.parse(readFileSync(v42Path, "utf8")));
+    expect(PART_SPEC_V4_2_EXAMPLES.every((e) => e.spec_version === "4.2")).toBe(true);
+    const text = JSON.stringify(PART_SPEC_V4_2_EXAMPLES);
+    for (const type of ["sweep", "loft", "fillet_edges", "hollow", "circular_pattern", "mirror"]) {
+      expect(text, type).toContain(`"type":"${type}"`);
+    }
+  });
+
+  it("leaves the 2.1 prompt without the CAD conventions", () => {
+    expect(buildSystemPrompt(FIXTURE_ANCHORS, [], "2.1")).not.toContain("feature history");
   });
 });

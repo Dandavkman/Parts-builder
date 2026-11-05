@@ -294,3 +294,103 @@ describe("runAgent", () => {
     expect(results.map((b) => b.is_error)).toEqual([true, true]);
   });
 });
+
+describe("runAgent with the CAD tool belt", () => {
+  const stepOk = (spec: Record<string, unknown>, solids = 0) => ({
+    ok: true,
+    spec,
+    summary: { features: [{}], free_solids: solids ? ["body"] : [], solid_count: solids },
+  });
+
+  function withCad(replies: ReturnType<typeof reply>[], cadTool: NonNullable<Parameters<typeof runAgent>[0]["cadTool"]>, build: BuildSpec = ok) {
+    const model = scripted(replies);
+    const events: AgentEvent[] = [];
+    const versions: Record<string, unknown>[] = [];
+    const result = runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [{ role: "user", content: "make a cup" }],
+      anchors: FIXTURE_ANCHORS,
+      build,
+      cadTool,
+      emit: (e) => events.push(e),
+      record: { message: async () => {}, version: async (v) => void versions.push(v.spec) },
+    });
+    return { result, events, requests: model.requests, versions };
+  }
+
+  it("offers cad_tool only when a cadTool is given", async () => {
+    const plain = run([reply([text("Hi")], "end_turn")], ok);
+    await plain.result;
+    expect((plain.requests[0].tools as Block[]).some((t) => t.name === "cad_tool")).toBe(false);
+    const cad = withCad([reply([text("Hi")], "end_turn")], async () => stepOk({}));
+    await cad.result;
+    expect((cad.requests[0].tools as Block[]).some((t) => t.name === "cad_tool")).toBe(true);
+  });
+
+  it("keeps the working spec between steps and builds once geometry exists", async () => {
+    const seen: Record<string, unknown>[] = [];
+    const cadTool = async (tool: string, args: Record<string, unknown>) => {
+      seen.push({ tool, ...args });
+      if (tool === "new_part") return stepOk({ name: "cup", features: [] });
+      return stepOk({ name: "cup", features: [{ id: tool }] }, tool === "extrude" ? 1 : 0);
+    };
+    const { result, events, versions } = withCad(
+      [
+        reply([call("a", "cad_tool", { tool: "new_part", arguments: { name: "cup" } })]),
+        reply([call("b", "cad_tool", { tool: "add_sketch", arguments: { id: "sk" } })]),
+        reply([call("c", "cad_tool", { tool: "extrude", arguments: { id: "body" } })]),
+        reply([text("Done")], "end_turn"),
+      ],
+      cadTool,
+    );
+    const r = await result;
+    expect(r.outcome).toBe("answered");
+    expect(r.attempts).toBe(0);
+    expect(seen[1]).toMatchObject({ tool: "add_sketch", spec: { name: "cup", features: [] } });
+    expect(seen[2]).toMatchObject({ tool: "extrude", spec: { features: [{ id: "add_sketch" }] } });
+    expect(versions).toHaveLength(1);
+    expect(r.bestSpec).toEqual({ name: "cup", features: [{ id: "extrude" }] });
+    expect(events.filter((e) => e.type === "spec")).toHaveLength(1);
+  });
+
+  it("tells the model when a step is rejected and leaves the working spec alone", async () => {
+    const specs: unknown[] = [];
+    const cadTool = async (tool: string, args: Record<string, unknown>) => {
+      specs.push(args.spec);
+      return tool === "extrude" ? { ok: false, errors: ["'nope' is not a sketch"] } : stepOk({ features: ["kept"] });
+    };
+    const { result, requests } = withCad(
+      [
+        reply([call("a", "cad_tool", { tool: "add_sketch", arguments: { id: "sk" } })]),
+        reply([call("b", "cad_tool", { tool: "extrude", arguments: { id: "e", sketch: "nope" } })]),
+        reply([call("c", "cad_tool", { tool: "inspect_part" })]),
+        reply([text("Stuck")], "end_turn"),
+      ],
+      cadTool,
+    );
+    await result;
+    const rejected = (requests[2].messages as Block[]).at(-1)?.content as Block[];
+    expect(rejected[0]).toMatchObject({ is_error: true });
+    expect(String(rejected[0].content)).toContain("'nope' is not a sketch");
+    expect(specs[2]).toEqual({ features: ["kept"] });
+  });
+
+  it("builds only after the last step when several come in one reply", async () => {
+    let builds = 0;
+    const { result } = withCad(
+      [
+        reply([call("a", "cad_tool", { tool: "extrude", arguments: {} }), call("b", "cad_tool", { tool: "hollow", arguments: {} })]),
+        reply([text("Done")], "end_turn"),
+      ],
+      async () => stepOk({ features: [] }, 1),
+      async () => {
+        builds += 1;
+        return { ok: true };
+      },
+    );
+    await result;
+    expect(builds).toBe(1);
+  });
+});
+
