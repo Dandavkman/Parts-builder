@@ -562,6 +562,8 @@ The two risks most likely to sink the business are parts that don't fit and a pa
 | Builder model drifts from the plan | Pull requests that skip tests or change architecture | Handoff rules, small tasks, Architect review at every gate |
 | A print partner fails or changes terms | Late shipments, price changes | A backup partner from O2.1; partner adapter interface |
 
+**CAD tool belt (added 2026-11-05, outside the numbered tasks).** The Owner asked for an AI that can draw any shape a standard CAD program can, and for CAD operations any agent or API can call. Built as Part Spec 4.0 to 4.3 (sketches, extrude, revolve, sweep, loft, booleans, edge fillet and chamfer, hollow, patterns, mirror, draft, and use of plates, bodies, tubes and merges), an HTTP and MCP tool belt on the geometry service, and a `cad_tool` for the design agent behind `DESIGN_AGENT_SPEC_VERSION=4.3`. Everything is merged except the Owner's rollout steps (`fly deploy`, then the Vercel variable). See [cad-tool-belt.md](cad-tool-belt.md) and [part-spec.md](part-spec.md). The Miata BP head and engine-bay reference data and the missing-dimension ordering gate (turbo manifold work) stay on hold at the Owner's request.
+
 **Decisions only the Owner can make.** Each one blocks the task listed next to it.
 
 - [ ] Working name and domain (O0.1) — blocks B2.10

@@ -118,7 +118,7 @@ CAD features run **in the order listed**. A `sketch` draws; `extrude` and `revol
 
 Checks, each with a plain sentence: sketch and target ids must come from earlier features, a solid can be used up only once, polygons need area, arcs need three points not in a line, ellipses need minor <= major, a taper cannot be combined with holes, and a cut that removes everything is reported. The CAD kernel's own failure text is replaced by "check the sketch outline and the numbers used" when it would not be readable.
 
-**Not yet** (next steps): edge fillet and chamfer by selection, shell and draft, patterns, sweep and loft along sketches, and calling the older features (bodies, tubes, volute) from a `boolean`. Until then, the older features stay separate solids in the result.
+**Later versions add** edge fillet and chamfer, sweep and loft (4.1), hollow, patterns and mirror (4.2), and draft plus use of older solids (4.3), described below.
 
 ## Version 4.1: sweep, loft and edge finishing
 
