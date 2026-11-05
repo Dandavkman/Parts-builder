@@ -119,3 +119,21 @@ CAD features run **in the order listed**. A `sketch` draws; `extrude` and `revol
 Checks, each with a plain sentence: sketch and target ids must come from earlier features, a solid can be used up only once, polygons need area, arcs need three points not in a line, ellipses need minor <= major, a taper cannot be combined with holes, and a cut that removes everything is reported. The CAD kernel's own failure text is replaced by "check the sketch outline and the numbers used" when it would not be readable.
 
 **Not yet** (next steps): edge fillet and chamfer by selection, shell and draft, patterns, sweep and loft along sketches, and calling the older features (bodies, tubes, volute) from a `boolean`. Until then, the older features stay separate solids in the result.
+
+## Version 4.1: sweep, loft and edge finishing
+
+`part-spec.v4_1.schema.json` is 4.0 plus five features. Everything from 4.0 still works and every 4.0 example is valid as 4.1.
+
+| Type | What it does | Key fields |
+| --- | --- | --- |
+| `curve` | An open path on a plane (same planes as `sketch`): `start_mm`, then `line`, three-point `arc` and `spline` segments. Used by `sweep`. | `plane`, `start_mm`, `segments` |
+| `sweep` | Drags the first outline of sketch `profile` along `curve` `path`. The profile plane must pass through the curve start (within 0.5 mm) and should face along it. `operation`/`target` as for extrude. | `profile`, `path` |
+| `loft` | Blends a solid through two or more `sketches` in order (one outline each, no holes). `ruled` gives straight faces. `operation`/`target` as for extrude. | `sketches`, `ruled` |
+| `fillet_edges` | Rounds chosen edges of a solid (`solid` is used up; result takes this id). | `solid`, `edges`, `radius_mm` |
+| `chamfer_edges` | Bevels chosen edges. Same selection. | `solid`, `edges`, `distance_mm` |
+
+**Edge choice** (`edges`): `"all"`, or a list whose results are combined: `{"parallel": "X"|"Y"|"Z"}` (straight edges along that axis), `{"on_face": "top"|"bottom"|"left"|"right"|"front"|"back"}` (edges of the outermost face on that side; top +Z, right +X, back +Y), `{"near_mm": [x,y,z], "within_mm": r}` (edges whose middle is within r of the point). A choice that matches nothing is an error, and a size too large for the edges gives a plain message.
+
+Examples: [cad-bent-pipe-sweep](../services/geometry/src/geometry/spec/examples/v4_1/cad-bent-pipe-sweep.json), [cad-bottle-loft](../services/geometry/src/geometry/spec/examples/v4_1/cad-bottle-loft.json), [cad-rounded-block](../services/geometry/src/geometry/spec/examples/v4_1/cad-rounded-block.json).
+
+**Not yet:** shell, draft, patterns, and calling older features (bodies, tubes, volute) from a `boolean`.
