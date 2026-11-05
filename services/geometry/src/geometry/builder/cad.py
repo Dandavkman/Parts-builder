@@ -19,9 +19,11 @@ from geometry.builder.features import Feature
 CAD_TYPES = (
     "sketch", "curve", "extrude", "revolve", "sweep", "loft",
     "boolean", "transform", "fillet_edges", "chamfer_edges",
+    "hollow", "linear_pattern", "circular_pattern", "mirror",
 )  # fmt: skip
 PROFILE_MAKERS = ("extrude", "revolve", "sweep", "loft")
 EDGE_FINISHERS = ("fillet_edges", "chamfer_edges")
+SOLID_EDITORS = ("hollow", "linear_pattern", "circular_pattern", "mirror")
 FACE_SELECTORS = {
     "top": ">Z", "bottom": "<Z", "right": ">X", "left": "<X", "back": ">Y", "front": "<Y",
 }  # fmt: skip
@@ -189,6 +191,45 @@ def make_edge_finish(kind: str, solid: cq.Shape, feature: Feature) -> cq.Shape:
         ) from exc
 
 
+def make_hollow(solid: cq.Shape, feature: Feature) -> cq.Shape:
+    t = float(feature["thickness_mm"])
+    wp = cq.Workplane(obj=solid)
+    sides = feature.get("open_sides")
+    if sides:
+        wp = wp.faces(" or ".join(FACE_SELECTORS[s] for s in sides))
+    try:
+        return cast(cq.Shape, wp.shell(-t).val())
+    except Exception as exc:
+        raise SpecError(
+            [
+                f"hollow '{feature['id']}' could not be built: the wall is probably too thick "
+                "for the part; try a thinner wall or fewer open sides"
+            ]
+        ) from exc
+
+
+def make_pattern(kind: str, solid: cq.Shape, feature: Feature) -> cq.Shape:
+    count = int(feature["count"])
+    copies = []
+    if kind == "linear_pattern":
+        step = cq.Vector(*(float(v) for v in feature["spacing_mm"]))
+        copies = [solid.translate(step * i) for i in range(count)]
+    else:
+        point = cq.Vector(*(float(v) for v in feature["axis_point_mm"]))
+        direction = cq.Vector(*(float(v) for v in feature["axis_dir"]))
+        total = float(feature.get("angle_deg", 360))
+        step_deg = total / count if total >= 360 else total / (count - 1)
+        copies = [solid.rotate(point, point + direction, step_deg * i) for i in range(count)]
+    return _fuse_all(copies)
+
+
+def make_mirror(solid: cq.Shape, feature: Feature) -> cq.Shape:
+    normal = PLANES[feature["plane"]][1]
+    off = float(feature.get("offset_mm", 0))
+    origin = (normal[0] * off, normal[1] * off, normal[2] * off)
+    return _fuse_all([solid, solid.mirror(cq.Vector(*normal), cq.Vector(*origin))])
+
+
 def _combine(operation: str, target: cq.Shape, tools: list[cq.Shape]) -> cq.Shape:
     if operation in ("union", "add"):
         return target.fuse(*tools).clean()
@@ -242,9 +283,14 @@ def check_cad(features: list[Feature], errors: list[str]) -> None:
         elif kind == "curve":
             _check_curve(name, f, errors)
             curves[f["id"]] = f
-        elif kind in EDGE_FINISHERS:
-            if need_solid(name, f["solid"]):
-                used.add(f["solid"])
+        elif kind in EDGE_FINISHERS or kind in SOLID_EDITORS:
+            ref = f["solid"] if kind in EDGE_FINISHERS or kind == "hollow" else f["source"]
+            if need_solid(name, ref):
+                used.add(ref)
+            if kind == "circular_pattern" and math.hypot(*(float(v) for v in f["axis_dir"])) < 1e-9:
+                errors.append(f"{name}: axis_dir cannot be [0, 0, 0]")
+            if kind == "linear_pattern" and math.hypot(*(float(v) for v in f["spacing_mm"])) < 1e-9:
+                errors.append(f"{name}: spacing_mm cannot be [0, 0, 0]")
             solids.add(f["id"])
         elif kind in PROFILE_MAKERS:
             if kind in ("extrude", "revolve"):
@@ -403,6 +449,12 @@ def build_cad(features: list[Feature]) -> list[cq.Shape]:
                     made = _combine(op, solids.pop(f["target"]), [made])
             elif kind in EDGE_FINISHERS:
                 made = make_edge_finish(kind, solids.pop(f["solid"]), f)
+            elif kind == "hollow":
+                made = make_hollow(solids.pop(f["solid"]), f)
+            elif kind in ("linear_pattern", "circular_pattern"):
+                made = make_pattern(kind, solids.pop(f["source"]), f)
+            elif kind == "mirror":
+                made = make_mirror(solids.pop(f["source"]), f)
             elif kind == "boolean":
                 tools = [solids.pop(t) for t in f["tools"]]
                 made = _combine(f["operation"], solids.pop(f["target"]), tools)
