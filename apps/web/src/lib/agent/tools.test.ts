@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countWebSearches, parseDimension, WEB_SEARCHES_PER_DESIGN } from "./tools";
+import { CAD_TOOL, CAD_TOOL_NAMES, countWebSearches, formatCadStep, parseDimension, WEB_SEARCHES_PER_DESIGN } from "./tools";
 
 describe("parseDimension", () => {
   const base = { id: "case_width", value_mm: 74.5, note: "spec sheet" };
@@ -45,5 +45,19 @@ describe("countWebSearches", () => {
     expect(countWebSearches(history)).toBe(2);
     expect(WEB_SEARCHES_PER_DESIGN - countWebSearches(history)).toBe(3);
     expect(countWebSearches([])).toBe(0);
+  });
+});
+
+describe("cad_tool", () => {
+  it("lists every tool the geometry service offers", () => {
+    expect(CAD_TOOL.input_schema.properties).toMatchObject({ tool: { enum: [...CAD_TOOL_NAMES] } });
+    expect(CAD_TOOL_NAMES).toContain("fillet_edges");
+  });
+
+  it("tells the model what happened, not the whole spec", () => {
+    expect(formatCadStep({ ok: false, errors: ["'nope' is not a sketch"] })).toContain("not applied");
+    const text = formatCadStep({ ok: true, summary: { features: [1, 2], free_solids: ["body"], volume_mm3: 1200, bbox_mm: { z: [0, 5] } } });
+    expect(text).toContain("Free solids: body");
+    expect(text).toContain("Volume 1200");
   });
 });

@@ -1,5 +1,6 @@
 import { geometryAuthHeaders, geometryServiceUrl } from "../geometry";
 import { stlBounds } from "./stl";
+import type { CadStepResult } from "./tools";
 import type { AgentAnchor, BuildSpec } from "./types";
 
 export type GeometryFormat = "step" | "stl" | "glb";
@@ -47,4 +48,18 @@ export const buildWithGeometryService: BuildSpec = async (spec, anchors) => {
   return bounds
     ? { ok: true, size_mm: [0, 1, 2].map((i) => bounds.max[i] - bounds.min[i]) as [number, number, number] }
     : { ok: true };
+}
+
+/** Runs one CAD tool-belt step on the geometry service. The spec travels with each call; nothing is stored there. */
+export type RunCadTool = (tool: string, args: Record<string, unknown>) => Promise<CadStepResult>;
+
+export async function callCadTool(tool: string, args: Record<string, unknown>): Promise<CadStepResult> {
+  const response = await fetch(`${geometryServiceUrl()}/tools/${encodeURIComponent(tool)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json", ...geometryAuthHeaders() },
+    body: JSON.stringify(args),
+  });
+  if (response.status === 404) return { ok: false, errors: [`There is no CAD tool called '${tool}'.`] };
+  if (!response.ok) throw new Error(`The geometry service returned ${response.status}.`);
+  return (await response.json()) as CadStepResult;
 }

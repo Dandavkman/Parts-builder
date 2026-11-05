@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { buildWithGeometryService } from "../../../lib/agent/geometry-client";
+import { buildWithGeometryService, callCadTool } from "../../../lib/agent/geometry-client";
 import { anthropicTurn, DEFAULT_MODEL, runAgent } from "../../../lib/agent/loop";
-import { buildSystemPrompt } from "../../../lib/agent/prompt";
+import { agentSpecVersion, buildSystemPrompt } from "../../../lib/agent/prompt";
 import { countWebSearches, WEB_SEARCHES_PER_DESIGN } from "../../../lib/agent/tools";
 import { parseRequest } from "../../../lib/agent/request";
 import {
@@ -117,6 +117,7 @@ export async function POST(request: Request) {
   const record = recorderFor(db, designId);
 
   const client = new Anthropic({ apiKey });
+  const specVersion = agentSpecVersion();
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -127,11 +128,12 @@ export async function POST(request: Request) {
         await runAgent({
           turn: anthropicTurn(client),
           model: process.env.DESIGN_AGENT_MODEL || DEFAULT_MODEL,
-          system: buildSystemPrompt(references.anchors, references.dimensions),
+          system: buildSystemPrompt(references.anchors, references.dimensions, specVersion),
           history: withPhotos(history, photos),
           anchors: references.anchors,
           dimensions: references.dimensions,
           build: buildWithGeometryService,
+          ...(specVersion === "4.2" ? { cadTool: callCadTool } : {}),
           emit,
           record,
           searchesLeft: webSearchEnabled() ? Math.max(0, WEB_SEARCHES_PER_DESIGN - countWebSearches(saved)) : 0,

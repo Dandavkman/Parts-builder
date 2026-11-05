@@ -140,3 +140,46 @@ export function countWebSearches(history: { content?: unknown }[]): number {
 export function webSearchTool(searchesLeft: number): Anthropic.Beta.BetaWebSearchTool20250305 {
   return { type: "web_search_20250305", name: "web_search", max_uses: searchesLeft };
 }
+
+export const CAD_TOOL_NAMES = [
+  "new_part", "add_sketch", "add_curve", "extrude", "revolve", "sweep", "loft", "boolean", "transform",
+  "fillet_edges", "chamfer_edges", "hollow", "linear_pattern", "circular_pattern", "mirror", "remove_feature", "inspect_part",
+] as const;
+
+/** CAD steps one user message may take; each is one call to the geometry service. */
+export const MAX_CAD_STEPS = 40;
+
+/** Offered only with Part Spec 4.2. The working spec is kept by us, so the model never passes it back. */
+export const CAD_TOOL: Anthropic.Beta.BetaTool = {
+  name: "cad_tool",
+  description:
+    "Build the part one CAD step at a time. 'tool' is one of: " +
+    CAD_TOOL_NAMES.join(", ") +
+    ". 'arguments' are that feature's fields from the Part Spec 4.2 reference, without 'type' (for example tool 'extrude', arguments {id, sketch, distance_mm}); remove_feature takes {id}; new_part takes {name} and starts a new part (the first call of a new part); inspect_part takes none. We keep the working spec for you. Each reply says whether the step worked, the plain-sentence problems if it did not (the step is then not applied), and the size of the part so far. Steps that fail do not count against your propose_spec attempts.",
+  input_schema: {
+    type: "object",
+    properties: {
+      tool: { type: "string", enum: [...CAD_TOOL_NAMES] },
+      arguments: { type: "object", description: "The fields for this step." },
+    },
+    required: ["tool"],
+    additionalProperties: false,
+  },
+};
+
+export interface CadStepResult {
+  ok: boolean;
+  spec?: Record<string, unknown>;
+  errors?: string[];
+  summary?: { solid_count?: number; free_solids?: string[]; volume_mm3?: number; bbox_mm?: unknown; features?: unknown[] };
+}
+
+/** What the model sees after a CAD step: the outcome, not the whole spec. */
+export function formatCadStep(result: CadStepResult): string {
+  if (!result.ok) return `That step was not applied:\n${(result.errors ?? ["It failed."]).map((e) => `- ${e}`).join("\n")}`;
+  const s = result.summary ?? {};
+  const parts = [`Applied. ${s.features?.length ?? 0} features.`];
+  if (s.free_solids) parts.push(`Free solids: ${s.free_solids.join(", ") || "none"}.`);
+  if (s.volume_mm3 !== undefined) parts.push(`Volume ${s.volume_mm3} mm3, bounding box ${JSON.stringify(s.bbox_mm)} mm.`);
+  return parts.join(" ");
+}

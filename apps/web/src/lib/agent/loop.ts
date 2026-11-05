@@ -2,7 +2,7 @@ import { lookupFastener } from "../fasteners";
 import type Anthropic from "@anthropic-ai/sdk";
 import { checkBuild } from "./checks";
 import { assessMaterials, describeAdvice, recommend } from "../materials";
-import { distanceMm, formatBuildOutcome, parseDimension, TOOLS, webSearchTool } from "./tools";
+import { CAD_TOOL, distanceMm, formatBuildOutcome, formatCadStep, MAX_CAD_STEPS, parseDimension, TOOLS, webSearchTool, type CadStepResult } from "./tools";
 import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
 
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
@@ -67,6 +67,10 @@ export interface AgentOptions {
   saveDimension?: (dimension: AgentDimension) => Promise<void>;
   /** Web searches this design may still use; 0 or undefined turns the web search tool off. */
   searchesLeft?: number;
+  /** Runs one CAD tool-belt step. When set (Part Spec 4.2), the agent gets the cad_tool. */
+  cadTool?: (tool: string, args: Record<string, unknown>) => Promise<CadStepResult>;
+  /** The last spec that built, so cad_tool can carry on editing a design from an earlier message. */
+  startSpec?: Record<string, unknown> | null;
 }
 
 const emptyUsage = (): TokenUsage => ({
@@ -87,6 +91,9 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   let bestSpec: Record<string, unknown> | null = null;
   let bestOk = false;
   let lastBuild: BuildOutcome | null = null;
+  // The spec the CAD tool belt is building up. We keep it, so the model never has to repeat it.
+  let working: Record<string, unknown> | null = options.startSpec ?? null;
+  let cadSteps = 0;
 
   // Web search is a Console setting; if the API says it is not available, carry on without it.
   let searchOn = (options.searchesLeft ?? 0) > 0;
@@ -96,7 +103,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
     max_tokens: 16000,
     // The system prompt is large and identical across turns, so cache it.
     system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-    tools: searchOn ? [...TOOLS, webSearchTool(options.searchesLeft!)] : TOOLS,
+    tools: [...TOOLS, ...(options.cadTool ? [CAD_TOOL] : []), ...(searchOn ? [webSearchTool(options.searchesLeft!)] : [])],
     messages,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
@@ -197,6 +204,54 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
         content = lookupFastener(input.size, input.kind);
         isError = /^(size must|kind must|Unknown size|No data)/.test(content);
         emit({ type: "tool", name: call.name, summary: `${String(input.size)} ${String(input.kind)}` });
+      } else if (call.name === "cad_tool" && options.cadTool) {
+        const tool = String(input.tool ?? "");
+        const args = (typeof input.arguments === "object" && input.arguments !== null && !Array.isArray(input.arguments)
+          ? input.arguments
+          : {}) as Record<string, unknown>;
+        if (cadSteps >= MAX_CAD_STEPS) {
+          content = "No CAD steps left for this message. Summarize your best result and what is left.";
+          isError = true;
+        } else {
+          cadSteps += 1;
+          if (tool === "new_part") working = null;
+          const result = await options.cadTool(tool, tool === "new_part" ? args : { ...args, spec: working ?? {} });
+          content = formatCadStep(result);
+          isError = !result.ok;
+          emit({ type: "tool", name: `cad_tool:${tool}`, summary: result.ok ? "applied" : "not applied" });
+          if (result.ok && result.spec) {
+            working = result.spec;
+            // Once there is geometry, build it like a proposed spec so the viewer, saved versions and checks all see it.
+            // Several steps in one reply are built once, after the last of them.
+            if ((result.summary?.solid_count ?? 0) > 0 && call === calls.filter((c) => c.name === "cad_tool").at(-1)) {
+              const outcome = await build(result.spec, anchors);
+              await options.record?.version({
+                spec: result.spec,
+                anchors,
+                ok: outcome.ok,
+                errors: outcome.ok ? [] : outcome.errors,
+                createdBy: "agent",
+              });
+              if (outcome.ok || !bestOk) {
+                bestSpec = result.spec;
+                bestOk = outcome.ok;
+              }
+              const checks = outcome.ok ? checkBuild(result.spec, outcome.size_mm, dimensions) : [];
+              if (checks.length) content += `\n${checks.join("\n")}`;
+              emit({
+                type: "spec",
+                attempt: attempts,
+                ok: outcome.ok,
+                errors: outcome.ok ? [] : outcome.errors,
+                spec: result.spec,
+                ...(checks.length ? { checks } : {}),
+              });
+              if (outcome.ok) {
+                emit({ type: "materials", advice: describeAdvice(recommend(assessMaterials(result.spec, outcome.size_mm))) });
+              }
+            }
+          }
+        }
       } else if (call.name === "propose_spec") {
         const spec = input.spec;
         if (typeof spec !== "object" || spec === null || Array.isArray(spec)) {
