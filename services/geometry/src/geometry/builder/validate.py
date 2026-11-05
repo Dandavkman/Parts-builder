@@ -2,6 +2,7 @@
 
 from geometry.builder.bend import edge_dims_mm
 from geometry.builder.body import check_body
+from geometry.builder.cad import check_cad
 from geometry.builder.checks import circle_fits, outline_points
 from geometry.builder.errors import SpecError
 from geometry.builder.features import (
@@ -56,6 +57,7 @@ def check_spec(spec: Spec, anchors: dict[str, Anchor]) -> None:
                 )
             else:
                 _check_on_plate(f, plate, anchors, errors, bent_on)
+    check_cad(spec["features"], errors)
     if errors:
         raise SpecError(errors)
 

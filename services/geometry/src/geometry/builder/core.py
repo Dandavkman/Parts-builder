@@ -8,6 +8,7 @@ import cadquery as cq
 from geometry.builder import features as fx
 from geometry.builder.bend import join_plates
 from geometry.builder.body import build_body
+from geometry.builder.cad import build_cad
 from geometry.builder.checks import outline_points
 from geometry.builder.errors import SpecError
 from geometry.builder.pipework import build_flange, build_reducer
@@ -152,6 +153,7 @@ def build_part(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> cq.Co
         assert isinstance(shape, cq.Shape)
         placed.append(shape.moved(_location(body["placement"], anchors)))
     placed.extend(_build_tubes(features, anchors))
+    placed.extend(build_cad(features))
     for pid in plates:
         if pid not in bent_on:
             shape = solids[pid].val()

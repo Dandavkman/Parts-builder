@@ -1,0 +1,28 @@
+{
+  "spec_version": "4.0",
+  "name": "Star plate with a bore, mirrored pair",
+  "features": [
+    {
+      "id": "outline",
+      "type": "sketch",
+      "plane": { "name": "XY" },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "polygon",
+            "points_mm": [[30, 0], [12, 8], [9, 28], [-4, 13], [-24, 18], [-14, 0], [-24, -18], [-4, -13], [9, -28], [12, -8]]
+          },
+          "holes": [{ "kind": "ellipse", "center_mm": [0, 0], "major_mm": 14, "minor_mm": 8 }]
+        }
+      ]
+    },
+    { "id": "star", "type": "extrude", "sketch": "outline", "distance_mm": 6, "direction": "symmetric" },
+    {
+      "id": "star_back",
+      "type": "transform",
+      "source": "star",
+      "mirror": { "plane": "YZ", "offset_mm": 45 },
+      "copy": true
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "spec_version": "4.0",
+  "name": "Spline vase, revolved",
+  "features": [
+    {
+      "id": "profile",
+      "type": "sketch",
+      "plane": { "name": "XZ" },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "path",
+            "start_mm": [0, 0],
+            "segments": [
+              { "kind": "line", "to_mm": [30, 0] },
+              { "kind": "spline", "through_mm": [[42, 40], [28, 90], [34, 140]] },
+              { "kind": "line", "to_mm": [31, 140] },
+              { "kind": "spline", "through_mm": [[25, 90], [39, 40], [27, 3]] },
+              { "kind": "line", "to_mm": [0, 3] }
+            ]
+          }
+        }
+      ]
+    },
+    { "id": "vase", "type": "revolve", "sketch": "profile" }
+  ]
+}
