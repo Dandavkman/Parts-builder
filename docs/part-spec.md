@@ -100,3 +100,22 @@ A `volute` is a turbine-style scroll housing sized from the vendor's numbers: `i
 - **Outlet:** a cone from the scroll down to the exducer bore at z = -`outlet_length_mm`.
 - **Simplified:** no wastegate, bearing flange, nozzle vanes or twin-scroll divider. It is a fit and flow-path model for a one-piece manifold, to be reviewed with the turbo vendor's drawing before anything is made.
 - Flanges attach to the `inlet` and `outlet` ends like on a pipe. Examples: [gt2871-style-volute](../services/geometry/src/geometry/spec/examples/v3_2/gt2871-style-volute.json), [volute-inlet-flange](../services/geometry/src/geometry/spec/examples/v3_2/volute-inlet-flange.json).
+
+## Version 4.0: the CAD feature tree
+
+`part-spec.v4.schema.json` is 3.2 plus five features that work like a CAD program's history (the start of "any shape a CAD program can make"). Every earlier spec stays buildable and is valid as 4.0 once its version is bumped (tested). The agent still writes 2.1. Examples are in `examples/v4/`.
+
+CAD features run **in the order listed**. A `sketch` draws; `extrude` and `revolve` make solids; `boolean` and `transform` combine and move them. A solid that no later feature uses up is part of the result.
+
+| Type | What it does | Key fields |
+| --- | --- | --- |
+| `sketch` | 2D shapes on a plane. `plane.name` is `XY` (x right, y up, normal +Z), `XZ` (x = world X, y = world Z, normal **-Y**) or `YZ` (x = world Y, y = world Z, normal +X), moved `offset_mm` along its normal and/or to `origin_mm`. Each shape has an `outer` outline and optional `holes`. | `plane`, `shapes` |
+| outline kinds | `circle`, `rectangle`, `ellipse` (centered on `center_mm`, default [0, 0]); `polygon` (`points_mm`); `path` from `start_mm` through `line`, three-point `arc` (`mid_mm`, `to_mm`) and `spline` (`through_mm`) segments, closed back to the start with a straight line. | |
+| `extrude` | Pushes a sketch into a solid by `distance_mm`. `direction` `normal`, `reverse` or `symmetric`; `taper_deg` (not with holes). `operation` `new` (default), `add`, `cut` or `intersect` combines it with the solid named by `target`. | `sketch`, `distance_mm`, `operation`, `target` |
+| `revolve` | Spins a sketch about an `axis` (a line in sketch coordinates, default the sketch's y axis) by `angle_deg` (default 360). Same `operation` and `target`. | `sketch`, `axis`, `angle_deg` |
+| `boolean` | `union`, `cut` or `intersect` of `target` with `tools`. All inputs are used up; the result takes the feature's id. | `operation`, `target`, `tools` |
+| `transform` | `mirror` (across `XY`, `XZ` or `YZ`, moved `offset_mm`), then `rotate` (axis point, direction, angle), then `translate_mm`. `copy` keeps the source as well, to repeat a shape. | `source`, `mirror`, `rotate`, `translate_mm`, `copy` |
+
+Checks, each with a plain sentence: sketch and target ids must come from earlier features, a solid can be used up only once, polygons need area, arcs need three points not in a line, ellipses need minor <= major, a taper cannot be combined with holes, and a cut that removes everything is reported. The CAD kernel's own failure text is replaced by "check the sketch outline and the numbers used" when it would not be readable.
+
+**Not yet** (next steps): edge fillet and chamfer by selection, shell and draft, patterns, sweep and loft along sketches, and calling the older features (bodies, tubes, volute) from a `boolean`. Until then, the older features stay separate solids in the result.
