@@ -85,3 +85,8 @@ def build(
             "Content-Disposition": f'attachment; filename="{_filename(request.spec, format)}"'
         },
     )
+
+
+from geometry.toolbelt_api import router as toolbelt_router  # noqa: E402  (needs require_token)
+
+app.include_router(toolbelt_router)
