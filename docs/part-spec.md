@@ -118,7 +118,7 @@ CAD features run **in the order listed**. A `sketch` draws; `extrude` and `revol
 
 Checks, each with a plain sentence: sketch and target ids must come from earlier features, a solid can be used up only once, polygons need area, arcs need three points not in a line, ellipses need minor <= major, a taper cannot be combined with holes, and a cut that removes everything is reported. The CAD kernel's own failure text is replaced by "check the sketch outline and the numbers used" when it would not be readable.
 
-**Not yet** (next steps): edge fillet and chamfer by selection, shell and draft, patterns, sweep and loft along sketches, and calling the older features (bodies, tubes, volute) from a `boolean`. Until then, the older features stay separate solids in the result.
+**Later versions add** edge fillet and chamfer, sweep and loft (4.1), hollow, patterns and mirror (4.2), and draft plus use of older solids (4.3), described below.
 
 ## Version 4.1: sweep, loft and edge finishing
 
@@ -149,4 +149,12 @@ Examples: [cad-bent-pipe-sweep](../services/geometry/src/geometry/spec/examples/
 
 To repeat holes or slots, pattern the cutter solid and then `boolean` cut it from the part (see [cad-bolt-circle-flange](../services/geometry/src/geometry/spec/examples/v4_2/cad-bolt-circle-flange.json)). Other examples: [cad-hollow-tray](../services/geometry/src/geometry/spec/examples/v4_2/cad-hollow-tray.json), [cad-mirrored-bracket](../services/geometry/src/geometry/spec/examples/v4_2/cad-mirrored-bracket.json).
 
-**Not yet:** calling older features (bodies, tubes, volute) from a `boolean`. Draft angle on existing faces is covered by `taper_deg` on extrude for now.
+## Version 4.3: draft, and CAD features that use older solids
+
+`part-spec.v4_3.schema.json` is 4.2 plus `draft`. Specs from 3.2 to 4.2 are valid as 4.3.
+
+| Type | What it does | Key fields |
+| --- | --- | --- |
+| `draft` | Leans faces of `solid` by `angle_deg` (0.1 to 30) so a moulded or cast part can be pulled out. Faces stay put on a neutral plane at the bottom of the part along `pull_direction` (`X`, `Y` or `Z`, default `Z`), or at the top with `neutral: "top"`, and lean inward as they get further from it. `faces` is `"sides"` (every face except flat ones facing along the pull direction, so cylinders and cones count) or a list of sides (`top`, `bottom`, `left`, `right`, `front`, `back`). | `solid`, `angle_deg`, `faces`, `pull_direction`, `neutral` |
+
+**Older solids in the CAD tree.** Every CAD feature that takes a solid (`boolean`, `transform`, `fillet_edges`, `chamfer_edges`, `hollow`, `draft`, patterns, `mirror`, and `target` on extrude, revolve, sweep and loft) can name a `plate`, `body`, `tube`, `reducer`, `volute` or `merge` by id. These are built first, wherever they are listed, with their own holes, flanges and bolt holes. A plate bent onto another plate (`bend` `to_plate`) and a tube listed in a `merge` are part of something else and cannot be named; name the `bend`'s `from_plate` or the `merge` instead. A solid a CAD feature uses up is no longer part of the result; ones nothing uses stay, as before. Example: [cad-box-with-boss-and-hole](../services/geometry/src/geometry/spec/examples/v4_3/cad-box-with-boss-and-hole.json) adds a boss to and drills through an older box. Drafted example: [cad-drafted-housing](../services/geometry/src/geometry/spec/examples/v4_3/cad-drafted-housing.json).

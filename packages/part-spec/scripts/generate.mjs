@@ -16,6 +16,7 @@ const versions = [
   { schema: "part-spec.v4.schema.json", out: "part-spec-v4.ts" },
   { schema: "part-spec.v4_1.schema.json", out: "part-spec-v4_1.ts" },
   { schema: "part-spec.v4_2.schema.json", out: "part-spec-v4_2.ts" },
+  { schema: "part-spec.v4_3.schema.json", out: "part-spec-v4_3.ts" },
 ];
 
 for (const { schema, out } of versions) {
@@ -86,21 +87,21 @@ export const PART_SPEC_V2_1_EXAMPLES: Record<string, unknown>[] = ${JSON.stringi
 `,
 );
 
-// And for Part Spec 4.2 (the CAD feature tree), quoted when DESIGN_AGENT_SPEC_VERSION=4.2. The 4.2 schema
-// contains every older feature. The examples are the 2.1 set (valid as 4.2 once the version is bumped) plus
-// the CAD examples of 4.0, 4.1 and 4.2; the tube, flange and volute examples stay out to keep the prompt short.
-const schema42 = JSON.parse(await readFile(`${specDir}part-spec.v4_2.schema.json`, "utf8"));
-const examples42 = examples21.map((e) => ({ ...e, spec_version: "4.2" }));
-for (const dir of ["v4", "v4_1", "v4_2"]) {
+// And for Part Spec 4.3 (the CAD feature tree), quoted when DESIGN_AGENT_SPEC_VERSION=4.3. The 4.3 schema
+// contains every older feature. The examples are the 2.1 set (valid as 4.3 once the version is bumped) plus
+// the CAD examples of 4.0, 4.1 and 4.3; the tube, flange and volute examples stay out to keep the prompt short.
+const schema43 = JSON.parse(await readFile(`${specDir}part-spec.v4_3.schema.json`, "utf8"));
+const examples43 = examples21.map((e) => ({ ...e, spec_version: "4.3" }));
+for (const dir of ["v4", "v4_1", "v4_2", "v4_3"]) {
   for (const file of (await readdir(`${specDir}examples/${dir}`)).filter((f) => f.endsWith(".json")).sort()) {
-    examples42.push({ ...JSON.parse(await readFile(`${specDir}examples/${dir}/${file}`, "utf8")), spec_version: "4.2" });
+    examples43.push({ ...JSON.parse(await readFile(`${specDir}examples/${dir}/${file}`, "utf8")), spec_version: "4.3" });
   }
 }
 await writeFile(
-  `${agentDir}part-spec-v4-2-reference.ts`,
-  `/* Generated from services/geometry/src/geometry/spec (part-spec.v4_2.schema.json and examples). Do not edit. Run \`pnpm generate\`. */
-export const PART_SPEC_V4_2_SCHEMA: Record<string, unknown> = ${JSON.stringify(schema42, null, 2)};
+  `${agentDir}part-spec-v4-3-reference.ts`,
+  `/* Generated from services/geometry/src/geometry/spec (part-spec.v4_3.schema.json and examples). Do not edit. Run \`pnpm generate\`. */
+export const PART_SPEC_V4_3_SCHEMA: Record<string, unknown> = ${JSON.stringify(schema43, null, 2)};
 
-export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = ${JSON.stringify(examples42, null, 2)};
+export const PART_SPEC_V4_3_EXAMPLES: Record<string, unknown>[] = ${JSON.stringify(examples43, null, 2)};
 `,
 );

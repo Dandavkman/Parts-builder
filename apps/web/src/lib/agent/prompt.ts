@@ -1,7 +1,7 @@
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
 import { PART_SPEC_V2_EXAMPLES, PART_SPEC_V2_SCHEMA } from "./generated/part-spec-v2-reference";
 import { PART_SPEC_V2_1_EXAMPLES, PART_SPEC_V2_1_SCHEMA } from "./generated/part-spec-v2-1-reference";
-import { PART_SPEC_V4_2_EXAMPLES, PART_SPEC_V4_2_SCHEMA } from "./generated/part-spec-v4-2-reference";
+import { PART_SPEC_V4_3_EXAMPLES, PART_SPEC_V4_3_SCHEMA } from "./generated/part-spec-v4-3-reference";
 import type { AgentAnchor, AgentDimension } from "./types";
 
 /** How a spec is put together. The exact fields come from the schema and examples quoted below. */
@@ -33,24 +33,24 @@ For a threaded hole, drill the tap-drill size and tell the user to tap it or pre
 Use "edge_fillet_top_mm" and "edge_fillet_bottom_mm" to round one edge, or "edge_fillet_mm" for both; do not mix them.
 `.trim();
 
-/** Added to the conventions for Part Spec 4.2: the CAD feature tree and the cad_tool (tool belt). */
+/** Added to the conventions for Part Spec 4.3: the CAD feature tree and the cad_tool (tool belt). */
 export const SPEC_CONVENTIONS_V4 = `
-Part Spec 4.2 is a CAD program's feature history. Use "spec_version": "4.2". For any shape that is not a simple plate or body, draw it the way a CAD user would, with these features, which run in the order listed:
-"sketch" (2D outlines on plane XY, XZ or YZ: circle, rectangle, ellipse, polygon, or a "path" of line, 3-point arc and spline segments, each outer outline with optional holes) then "extrude", "revolve", "sweep" (profile sketch along a "curve"), or "loft" (through two or more sketches at different offsets) make solids. "boolean" (union, cut, intersect), "transform" (mirror, rotate, translate, copy), "mirror", "linear_pattern", "circular_pattern", "hollow" (thin walls, optional open sides), "fillet_edges" and "chamfer_edges" (choose edges with "all", {"parallel": "Z"}, {"on_face": "top"} or {"near_mm": [x,y,z], "within_mm": r}) shape them further.
+Part Spec 4.3 is a CAD program's feature history. Use "spec_version": "4.3". For any shape that is not a simple plate or body, draw it the way a CAD user would, with these features, which run in the order listed:
+"sketch" (2D outlines on plane XY, XZ or YZ: circle, rectangle, ellipse, polygon, or a "path" of line, 3-point arc and spline segments, each outer outline with optional holes) then "extrude", "revolve", "sweep" (profile sketch along a "curve"), or "loft" (through two or more sketches at different offsets) make solids. "boolean" (union, cut, intersect), "transform" (mirror, rotate, translate, copy), "mirror", "linear_pattern", "circular_pattern", "hollow" (thin walls, optional open sides), "draft" (lean faces for a mould), "fillet_edges" and "chamfer_edges" (choose edges with "all", {"parallel": "Z"}, {"on_face": "top"} or {"near_mm": [x,y,z], "within_mm": r}) shape them further.
 Every feature that makes a solid names it with its id. A solid that a later feature uses up (as a boolean target or tool, a pattern source, a hollow or fillet solid, a mirror source, or an extrude with operation add or cut) is gone; any solid left unused is part of the finished part. To repeat holes: draw and extrude one cutter, pattern it, then boolean cut it from the part.
-Plane notes: XY has x right, y up, normal +Z. XZ has x = world X, y = world Z, normal -Y. YZ has x = world Y, y = world Z, normal +X. Move a sketch with plane.offset_mm along its normal. A sweep's profile plane must pass through the curve's start.
+Plane notes: XY has x right, y up, normal +Z. XZ has x = world X, y = world Z, normal -Y. YZ has x = world Y, y = world Z, normal +X. Move a sketch with plane.offset_mm along its normal. A sweep's profile plane must pass through the curve's start. Plates, bodies, tubes and merges in the same spec can be named as solids by these features, but a plate that is bent onto another and a tube listed in a merge cannot.
 Use the CAD features for the shape itself and keep plates and bodies for the simple cases they already cover. The cad_tool lets you build the same spec one step at a time and get the result of each step; it is the quickest way to find a mistake. Prefer it for anything with more than two or three features.
 `.trim();
 
 export function specReference(version: SpecVersion = "1.1"): string {
-  if (version === "4.2") {
+  if (version === "4.3") {
     return [
-      SPEC_CONVENTIONS.replace('"spec_version": "1.1"', '"spec_version": "4.2"'),
-      SPEC_CONVENTIONS_V2.replace('Use "spec_version": "2.0".', 'Use "spec_version": "4.2".'),
-      SPEC_CONVENTIONS_V2_1.replace('Use "spec_version": "2.1".', 'Use "spec_version": "4.2".'),
+      SPEC_CONVENTIONS.replace('"spec_version": "1.1"', '"spec_version": "4.3"'),
+      SPEC_CONVENTIONS_V2.replace('Use "spec_version": "2.0".', 'Use "spec_version": "4.3".'),
+      SPEC_CONVENTIONS_V2_1.replace('Use "spec_version": "2.1".', 'Use "spec_version": "4.3".'),
       SPEC_CONVENTIONS_V4,
-      `JSON Schema for Part Spec 4.2 (authoritative):\n${JSON.stringify(PART_SPEC_V4_2_SCHEMA)}`,
-      `Valid example specs, one or more per feature:\n${PART_SPEC_V4_2_EXAMPLES.map((e) => JSON.stringify(e)).join("\n")}`,
+      `JSON Schema for Part Spec 4.3 (authoritative):\n${JSON.stringify(PART_SPEC_V4_3_SCHEMA)}`,
+      `Valid example specs, one or more per feature:\n${PART_SPEC_V4_3_EXAMPLES.map((e) => JSON.stringify(e)).join("\n")}`,
     ].join("\n\n");
   }
   if (version === "2.1") {
@@ -77,15 +77,15 @@ export function specReference(version: SpecVersion = "1.1"): string {
   ].join("\n\n");
 }
 
-export type SpecVersion = "1.1" | "2.0" | "2.1" | "4.2";
+export type SpecVersion = "1.1" | "2.0" | "2.1" | "4.3";
 
 /**
- * Which Part Spec the agent writes. It stays 1.1 until DESIGN_AGENT_SPEC_VERSION is set to 2.0, 2.1 or 4.2, which
- * must only happen after the Fly geometry service has been redeployed with that Part Spec. 4.2 also turns on cad_tool.
+ * Which Part Spec the agent writes. It stays 1.1 until DESIGN_AGENT_SPEC_VERSION is set to 2.0, 2.1, 4.2 or 4.3 (4.2 is an alias for 4.3), which
+ * must only happen after the Fly geometry service has been redeployed with that Part Spec. 4.3 also turns on cad_tool.
  */
 export function agentSpecVersion(env: Record<string, string | undefined> = process.env): SpecVersion {
   const v = env.DESIGN_AGENT_SPEC_VERSION;
-  return v === "2.0" || v === "2.1" || v === "4.2" ? v : "1.1";
+  return v === "2.0" || v === "2.1" ? v : v === "4.2" || v === "4.3" ? "4.3" : "1.1";
 }
 
 /** Rules for parts that go on a vehicle. Unchanged by the general-market revision. */

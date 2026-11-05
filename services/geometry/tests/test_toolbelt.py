@@ -78,7 +78,7 @@ def test_remove_feature_and_inspect() -> None:
 
 def test_older_4_x_specs_are_upgraded_and_others_refused() -> None:
     old = {"spec_version": "4.0", "name": "x", "features": []}
-    assert _step(old, "add_sketch", **SKETCH)["spec"]["spec_version"] == "4.2"
+    assert _step(old, "add_sketch", **SKETCH)["spec"]["spec_version"] == "4.3"
     refused = _step({"spec_version": "1.0", "name": "x", "features": []}, "inspect_part")
     assert refused["ok"] is False and "new_part" in refused["errors"][0]
 
@@ -92,7 +92,7 @@ def test_http_api_needs_a_token_and_lists_tools(monkeypatch: pytest.MonkeyPatch)
     names = [t["name"] for t in client.get("/tools", headers=auth).json()["tools"]]
     assert "extrude" in names and "new_part" in names
     reply = client.post("/tools/new_part", json={"name": "p"}, headers=auth).json()
-    assert reply["ok"] and reply["spec"]["spec_version"] == "4.2"
+    assert reply["ok"] and reply["spec"]["spec_version"] == "4.3"
     assert client.post("/tools/rm_rf", json={}, headers=auth).status_code == 404
 
 

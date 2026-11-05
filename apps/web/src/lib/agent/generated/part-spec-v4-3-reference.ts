@@ -1,9 +1,9 @@
-/* Generated from services/geometry/src/geometry/spec (part-spec.v4_2.schema.json and examples). Do not edit. Run `pnpm generate`. */
-export const PART_SPEC_V4_2_SCHEMA: Record<string, unknown> = {
+/* Generated from services/geometry/src/geometry/spec (part-spec.v4_3.schema.json and examples). Do not edit. Run `pnpm generate`. */
+export const PART_SPEC_V4_3_SCHEMA: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://parts-builder.local/schemas/part-spec.v4_2.json",
-  "title": "PartSpecV4_2",
-  "description": "Part Spec v4.2 (v4.1 plus hollow, linear and circular patterns, and mirror). 'hollow' turns a solid into a thin-walled shell, optionally leaving chosen sides open; 'linear_pattern' and 'circular_pattern' repeat a solid and join the copies; 'mirror' adds a mirrored copy across a plane. Everything from v4.1 still works. All lengths are in millimeters and all angles in degrees.",
+  "$id": "https://parts-builder.local/schemas/part-spec.v4_3.json",
+  "title": "PartSpecV4_3",
+  "description": "Part Spec v4.3 (v4.2 plus draft angle, and CAD features that can use plates, bodies, tubes, reducers, volutes and merges). 'draft' leans faces of a solid away from a neutral plane, as a moulded or cast part needs. Booleans, fillets, patterns, hollow, mirror and the other CAD features can name any plate, body, tube, reducer, volute or merge by id as a solid; one they use up is no longer part of the result. Everything from v4.2 still works. All lengths are in millimeters and all angles in degrees.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,7 +13,7 @@ export const PART_SPEC_V4_2_SCHEMA: Record<string, unknown> = {
   ],
   "properties": {
     "spec_version": {
-      "const": "4.2"
+      "const": "4.3"
     },
     "name": {
       "type": "string",
@@ -186,6 +186,9 @@ export const PART_SPEC_V4_2_SCHEMA: Record<string, unknown> = {
         },
         {
           "$ref": "#/$defs/mirror"
+        },
+        {
+          "$ref": "#/$defs/draft"
         }
       ]
     },
@@ -2434,13 +2437,78 @@ export const PART_SPEC_V4_2_SCHEMA: Record<string, unknown> = {
           "maximum": 10000
         }
       }
+    },
+    "draft": {
+      "description": "Leans faces of 'solid' by 'angle_deg' (0.1 to 30), as a mould needs so the part can be pulled out. The neutral plane is at the bottom of the part along 'pull_direction' ('X', 'Y' or 'Z', default 'Z'), or at the top with neutral 'top'; faces stay put there and lean inward as they get further away (a positive angle makes the part narrower away from the neutral plane). 'faces' is 'sides' (every face except flat ones facing along the pull direction) or a list of sides (top, bottom, left, right, front, back) naming the outermost face on that side. The solid is used up; the result takes this feature's id.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "solid",
+        "angle_deg",
+        "faces"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "draft"
+        },
+        "solid": {
+          "$ref": "#/$defs/id"
+        },
+        "angle_deg": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 30
+        },
+        "pull_direction": {
+          "enum": [
+            "X",
+            "Y",
+            "Z"
+          ],
+          "default": "Z"
+        },
+        "neutral": {
+          "enum": [
+            "bottom",
+            "top"
+          ],
+          "default": "bottom"
+        },
+        "faces": {
+          "oneOf": [
+            {
+              "const": "sides"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 6,
+              "items": {
+                "enum": [
+                  "top",
+                  "bottom",
+                  "left",
+                  "right",
+                  "front",
+                  "back"
+                ]
+              }
+            }
+          ]
+        }
+      }
     }
   }
 };
 
-export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
+export const PART_SPEC_V4_3_EXAMPLES: Record<string, unknown>[] = [
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "L-bracket",
     "features": [
       {
@@ -2482,7 +2550,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with chamfered top edge",
     "features": [
       {
@@ -2508,7 +2576,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with a counterbore",
     "features": [
       {
@@ -2539,7 +2607,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with a countersink",
     "features": [
       {
@@ -2570,7 +2638,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with a clearance cutout",
     "features": [
       {
@@ -2607,7 +2675,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with raised text",
     "features": [
       {
@@ -2639,7 +2707,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with filleted corners",
     "features": [
       {
@@ -2665,7 +2733,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with a gusset",
     "features": [
       {
@@ -2700,7 +2768,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with a bolt circle",
     "features": [
       {
@@ -2730,7 +2798,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with a hole",
     "features": [
       {
@@ -2759,7 +2827,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with polygon outline",
     "features": [
       {
@@ -2804,7 +2872,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with rounded corners",
     "features": [
       {
@@ -2824,7 +2892,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with a rib",
     "features": [
       {
@@ -2858,7 +2926,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with an adjustment slot",
     "features": [
       {
@@ -2889,7 +2957,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Plate with a standoff",
     "features": [
       {
@@ -2920,7 +2988,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Round plate with center hole",
     "features": [
       {
@@ -2948,7 +3016,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Open box",
     "features": [
       {
@@ -2975,7 +3043,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Solid knob",
     "features": [
       {
@@ -2997,7 +3065,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Grooved round vase",
     "features": [
       {
@@ -3049,7 +3117,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Tapered knob",
     "features": [
       {
@@ -3084,7 +3152,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Round vase",
     "features": [
       {
@@ -3126,7 +3194,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Ridged square vase",
     "features": [
       {
@@ -3159,7 +3227,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Square vase",
     "features": [
       {
@@ -3187,7 +3255,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Fluted shift knob",
     "features": [
       {
@@ -3222,7 +3290,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Curved bracket with a drilled cross hole",
     "features": [
       {
@@ -3317,7 +3385,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Spline vase, revolved",
     "features": [
       {
@@ -3403,7 +3471,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Star plate with a bore, mirrored pair",
     "features": [
       {
@@ -3493,7 +3561,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Bent pipe from two sweeps",
     "features": [
       {
@@ -3590,7 +3658,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Bottle lofted through three sections",
     "features": [
       {
@@ -3654,7 +3722,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Block with rounded corners and a bevelled top",
     "features": [
       {
@@ -3704,7 +3772,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Flange with a circular pattern of bolt holes",
     "features": [
       {
@@ -3783,7 +3851,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Open tray from a hollowed block",
     "features": [
       {
@@ -3821,7 +3889,7 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
     ]
   },
   {
-    "spec_version": "4.2",
+    "spec_version": "4.3",
     "name": "Bracket drawn on one side and mirrored",
     "features": [
       {
@@ -3877,6 +3945,135 @@ export const PART_SPEC_V4_2_EXAMPLES: Record<string, unknown>[] = [
         "type": "mirror",
         "source": "side",
         "plane": "YZ"
+      }
+    ]
+  },
+  {
+    "spec_version": "4.3",
+    "name": "Older open box with a boss added and a hole drilled by CAD features",
+    "features": [
+      {
+        "id": "box",
+        "type": "body",
+        "placement": {
+          "anchor": "origin"
+        },
+        "shape": {
+          "kind": "extrude",
+          "outline": {
+            "kind": "rectangle",
+            "width_mm": 60,
+            "length_mm": 40
+          },
+          "height_mm": 30
+        }
+      },
+      {
+        "id": "boss_sk",
+        "type": "sketch",
+        "plane": {
+          "name": "XY",
+          "offset_mm": 30
+        },
+        "shapes": [
+          {
+            "outer": {
+              "kind": "circle",
+              "diameter_mm": 16
+            }
+          }
+        ]
+      },
+      {
+        "id": "boss",
+        "type": "extrude",
+        "sketch": "boss_sk",
+        "distance_mm": 10
+      },
+      {
+        "id": "hole_sk",
+        "type": "sketch",
+        "plane": {
+          "name": "XY",
+          "offset_mm": -1
+        },
+        "shapes": [
+          {
+            "outer": {
+              "kind": "circle",
+              "diameter_mm": 6
+            }
+          }
+        ]
+      },
+      {
+        "id": "drill",
+        "type": "extrude",
+        "sketch": "hole_sk",
+        "distance_mm": 50
+      },
+      {
+        "id": "joined",
+        "type": "boolean",
+        "operation": "union",
+        "target": "box",
+        "tools": [
+          "boss"
+        ]
+      },
+      {
+        "id": "part",
+        "type": "boolean",
+        "operation": "cut",
+        "target": "joined",
+        "tools": [
+          "drill"
+        ]
+      }
+    ]
+  },
+  {
+    "spec_version": "4.3",
+    "name": "Housing with 3 degree draft on its sides",
+    "features": [
+      {
+        "id": "base",
+        "type": "sketch",
+        "plane": {
+          "name": "XY",
+          "offset_mm": 0
+        },
+        "shapes": [
+          {
+            "outer": {
+              "kind": "rectangle",
+              "width_mm": 60,
+              "height_mm": 40
+            }
+          }
+        ]
+      },
+      {
+        "id": "block",
+        "type": "extrude",
+        "sketch": "base",
+        "distance_mm": 30
+      },
+      {
+        "id": "tapered",
+        "type": "draft",
+        "solid": "block",
+        "angle_deg": 3,
+        "faces": "sides"
+      },
+      {
+        "id": "housing",
+        "type": "hollow",
+        "solid": "tapered",
+        "thickness_mm": 2,
+        "open_sides": [
+          "top"
+        ]
       }
     ]
   }

@@ -12,6 +12,8 @@ from collections.abc import Sequence
 from typing import Any, cast
 
 import cadquery as cq
+from OCP.BRepOffsetAPI import BRepOffsetAPI_DraftAngle
+from OCP.gp import gp_Dir, gp_Pln, gp_Pnt
 
 from geometry.builder.errors import SpecError
 from geometry.builder.features import Feature
@@ -19,11 +21,12 @@ from geometry.builder.features import Feature
 CAD_TYPES = (
     "sketch", "curve", "extrude", "revolve", "sweep", "loft",
     "boolean", "transform", "fillet_edges", "chamfer_edges",
-    "hollow", "linear_pattern", "circular_pattern", "mirror",
+    "hollow", "linear_pattern", "circular_pattern", "mirror", "draft",
 )  # fmt: skip
 PROFILE_MAKERS = ("extrude", "revolve", "sweep", "loft")
 EDGE_FINISHERS = ("fillet_edges", "chamfer_edges")
-SOLID_EDITORS = ("hollow", "linear_pattern", "circular_pattern", "mirror")
+SOLID_EDITORS = ("hollow", "linear_pattern", "circular_pattern", "mirror", "draft")
+PULL_AXES = {"X": (1.0, 0.0, 0.0), "Y": (0.0, 1.0, 0.0), "Z": (0.0, 0.0, 1.0)}
 FACE_SELECTORS = {
     "top": ">Z", "bottom": "<Z", "right": ">X", "left": "<X", "back": ">Y", "front": "<Y",
 }  # fmt: skip
@@ -230,6 +233,48 @@ def make_mirror(solid: cq.Shape, feature: Feature) -> cq.Shape:
     return _fuse_all([solid, solid.mirror(cq.Vector(*normal), cq.Vector(*origin))])
 
 
+def make_draft(solid: cq.Shape, feature: Feature) -> cq.Shape:
+    """Lean faces by `angle_deg` away from a neutral plane at the bottom (or top) of the part."""
+    pull = PULL_AXES[feature.get("pull_direction", "Z")]
+    axis = cq.Vector(*pull)
+    bb = solid.BoundingBox()
+    lo = {"X": bb.xmin, "Y": bb.ymin, "Z": bb.zmin}[feature.get("pull_direction", "Z")]
+    hi = {"X": bb.xmax, "Y": bb.ymax, "Z": bb.zmax}[feature.get("pull_direction", "Z")]
+    from_top = feature.get("neutral", "bottom") == "top"
+    neutral = cq.Vector(*(c * (hi if from_top else lo) for c in pull))
+    sign = -1.0 if from_top else 1.0
+    if feature["faces"] == "sides":
+        faces = [
+            f
+            for f in solid.Faces()
+            if not (f.geomType() == "PLANE" and abs(abs(f.normalAt().dot(axis)) - 1) < 1e-6)
+        ]
+    else:
+        faces = []
+        for side in feature["faces"]:
+            on_side = cq.Workplane(obj=solid).faces(FACE_SELECTORS[side]).vals()
+            faces.extend(f for f in on_side if isinstance(f, cq.Face))
+    if not faces:
+        raise SpecError([f"draft '{feature['id']}': no faces to lean"])
+    maker = BRepOffsetAPI_DraftAngle(solid.wrapped)
+    plane = gp_Pln(gp_Pnt(neutral.x, neutral.y, neutral.z), gp_Dir(*pull))
+    radians = math.radians(float(feature["angle_deg"]) * sign)
+    try:
+        for face in faces:
+            maker.Add(face.wrapped, gp_Dir(*pull), radians, plane)
+        maker.Build()
+        if not maker.IsDone():
+            raise ValueError("the kernel could not lean these faces")
+        return cq.Shape.cast(maker.Shape())
+    except Exception as exc:
+        raise SpecError(
+            [
+                f"draft '{feature['id']}' could not be built: the angle is probably too large, "
+                "or a chosen face runs along the pull direction; try a smaller angle or other faces"
+            ]
+        ) from exc
+
+
 def _combine(operation: str, target: cq.Shape, tools: list[cq.Shape]) -> cq.Shape:
     if operation in ("union", "add"):
         return target.fuse(*tools).clean()
@@ -256,11 +301,28 @@ def _move(shape: cq.Shape, feature: Feature) -> cq.Shape:
     return shape
 
 
+def legacy_solid_ids(features: Sequence[Feature]) -> list[str]:
+    """Ids of older-style solids CAD features may use (bodies, plates, tubes, volutes, merges).
+
+    A plate bent onto another, and a tube merged into a `merge`, are part of something else.
+    """
+    bent_on = {f["to_plate"] for f in features if f["type"] == "bend"}
+    merged = {t for f in features if f["type"] == "merge" for t in f["tubes"]}
+    ids = []
+    for f in features:
+        t = f["type"]
+        if t in ("body", "merge") or (t == "plate" and f["id"] not in bent_on):
+            ids.append(f["id"])
+        elif t in ("tube", "reducer", "volute") and f["id"] not in merged:
+            ids.append(f["id"])
+    return ids
+
+
 def check_cad(features: list[Feature], errors: list[str]) -> None:
     """Problems the schema cannot see: references, order and shape sanity, as plain sentences."""
     sketches: dict[str, Feature] = {}
     curves: dict[str, Feature] = {}
-    solids: set[str] = set()
+    solids: set[str] = set(legacy_solid_ids(features))
     used: set[str] = set()
 
     def need_solid(owner: str, ref: str) -> bool:
@@ -284,9 +346,17 @@ def check_cad(features: list[Feature], errors: list[str]) -> None:
             _check_curve(name, f, errors)
             curves[f["id"]] = f
         elif kind in EDGE_FINISHERS or kind in SOLID_EDITORS:
-            ref = f["solid"] if kind in EDGE_FINISHERS or kind == "hollow" else f["source"]
+            ref = (
+                f["solid"] if kind in EDGE_FINISHERS or kind in ("hollow", "draft") else f["source"]
+            )
             if need_solid(name, ref):
                 used.add(ref)
+            if (
+                kind == "draft"
+                and f["faces"] != "sides"
+                and len(set(f["faces"])) != len(f["faces"])
+            ):
+                errors.append(f"{name}: a side is listed more than once")
             if kind == "circular_pattern" and math.hypot(*(float(v) for v in f["axis_dir"])) < 1e-9:
                 errors.append(f"{name}: axis_dir cannot be [0, 0, 0]")
             if kind == "linear_pattern" and math.hypot(*(float(v) for v in f["spacing_mm"])) < 1e-9:
@@ -419,11 +489,17 @@ def _area(pts: list[tuple[float, float]]) -> float:
     )
 
 
-def build_cad(features: list[Feature]) -> list[cq.Shape]:
-    """Run the CAD features in order and return the solids nothing used up."""
+def build_cad(
+    features: list[Feature], older_solids: dict[str, cq.Shape] | None = None
+) -> list[cq.Shape]:
+    """Run the CAD features in order and return the solids nothing used up.
+
+    `older_solids` are the already built plates, bodies, tubes and merges by id; CAD features may
+    use them, and those left over are returned first.
+    """
     sketches: dict[str, Feature] = {}
     curves: dict[str, Feature] = {}
-    solids: dict[str, cq.Shape] = {}
+    solids: dict[str, cq.Shape] = dict(older_solids or {})
     for f in features:
         kind = f["type"]
         if kind not in CAD_TYPES:
@@ -451,6 +527,8 @@ def build_cad(features: list[Feature]) -> list[cq.Shape]:
                 made = make_edge_finish(kind, solids.pop(f["solid"]), f)
             elif kind == "hollow":
                 made = make_hollow(solids.pop(f["solid"]), f)
+            elif kind == "draft":
+                made = make_draft(solids.pop(f["solid"]), f)
             elif kind in ("linear_pattern", "circular_pattern"):
                 made = make_pattern(kind, solids.pop(f["source"]), f)
             elif kind == "mirror":

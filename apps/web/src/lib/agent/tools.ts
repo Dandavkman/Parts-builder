@@ -143,19 +143,19 @@ export function webSearchTool(searchesLeft: number): Anthropic.Beta.BetaWebSearc
 
 export const CAD_TOOL_NAMES = [
   "new_part", "add_sketch", "add_curve", "extrude", "revolve", "sweep", "loft", "boolean", "transform",
-  "fillet_edges", "chamfer_edges", "hollow", "linear_pattern", "circular_pattern", "mirror", "remove_feature", "inspect_part",
+  "fillet_edges", "chamfer_edges", "hollow", "draft", "linear_pattern", "circular_pattern", "mirror", "remove_feature", "inspect_part",
 ] as const;
 
 /** CAD steps one user message may take; each is one call to the geometry service. */
 export const MAX_CAD_STEPS = 40;
 
-/** Offered only with Part Spec 4.2. The working spec is kept by us, so the model never passes it back. */
+/** Offered only with Part Spec 4.3. The working spec is kept by us, so the model never passes it back. */
 export const CAD_TOOL: Anthropic.Beta.BetaTool = {
   name: "cad_tool",
   description:
     "Build the part one CAD step at a time. 'tool' is one of: " +
     CAD_TOOL_NAMES.join(", ") +
-    ". 'arguments' are that feature's fields from the Part Spec 4.2 reference, without 'type' (for example tool 'extrude', arguments {id, sketch, distance_mm}); remove_feature takes {id}; new_part takes {name} and starts a new part (the first call of a new part); inspect_part takes none. We keep the working spec for you. Each reply says whether the step worked, the plain-sentence problems if it did not (the step is then not applied), and the size of the part so far. Steps that fail do not count against your propose_spec attempts.",
+    ". 'arguments' are that feature's fields from the Part Spec 4.3 reference, without 'type' (for example tool 'extrude', arguments {id, sketch, distance_mm}); remove_feature takes {id}; new_part takes {name} and starts a new part (the first call of a new part); inspect_part takes none. We keep the working spec for you. Each reply says whether the step worked, the plain-sentence problems if it did not (the step is then not applied), and the size of the part so far. Steps that fail do not count against your propose_spec attempts.",
   input_schema: {
     type: "object",
     properties: {
