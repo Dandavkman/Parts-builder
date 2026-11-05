@@ -41,6 +41,7 @@ Every model message goes in `chat_messages` with token counts, and every `propos
 - `propose_spec`: sends a full Part Spec to the geometry service. Success, or a plain sentence per problem.
 - `ask_user`: one clarifying question; ends the turn.
 - `fastener_lookup`: exact tap, clearance, heat-set insert or counterbore hole sizes for M2–M12 (`lib/fasteners.ts`). The agent draws plain holes; threads are never modeled.
+- `reference_lookup`: stored facts about a car's parts or a bought-in component (`lib/vehicles/reference-packs.ts`). Every fact has a source and a confidence (`published`, `estimated`, `unverified`), and each pack lists what is NOT available. A fit or clearance claim may only use published facts or ones the user stated; the tool returns that rule with every answer. Packs today: the Mazda BP exhaust port face, Miata engine-bay clearances (no numbers yet, only a list of what to measure) and the Maxpeedingrods GT2871. To add a pack, add an entry with real sources only; anything not in a source goes in `needed`.
 
 ## Keeping the prompt honest
 
