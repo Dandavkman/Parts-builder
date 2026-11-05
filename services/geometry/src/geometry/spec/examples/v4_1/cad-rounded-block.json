@@ -1,0 +1,50 @@
+{
+  "spec_version": "4.1",
+  "name": "Block with rounded corners and a bevelled top",
+  "features": [
+    {
+      "id": "base",
+      "type": "sketch",
+      "plane": {
+        "name": "XY"
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "rectangle",
+            "width_mm": 50,
+            "height_mm": 30
+          }
+        }
+      ]
+    },
+    {
+      "id": "block",
+      "type": "extrude",
+      "sketch": "base",
+      "distance_mm": 20
+    },
+    {
+      "id": "rounded",
+      "type": "fillet_edges",
+      "solid": "block",
+      "edges": [
+        {
+          "parallel": "Z"
+        }
+      ],
+      "radius_mm": 5
+    },
+    {
+      "id": "finished",
+      "type": "chamfer_edges",
+      "solid": "rounded",
+      "edges": [
+        {
+          "on_face": "top"
+        }
+      ],
+      "distance_mm": 1.5
+    }
+  ]
+}

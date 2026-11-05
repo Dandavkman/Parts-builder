@@ -1,4 +1,5 @@
-"""General CAD feature tree (Part Spec 4.0): sketches, extrude, revolve, boolean and transform.
+"""General CAD feature tree (Part Spec 4.x): sketches, extrude, revolve, sweep, loft, boolean,
+transform, and fillet or chamfer of chosen edges.
 
 Features run in the order listed, like a CAD program's history. Sketches are 2D shapes on a plane;
 extrude and revolve make solids from them; booleans and transforms combine and move solids. A solid
@@ -8,14 +9,22 @@ by this module; nothing is evaluated as code.
 
 import math
 from collections.abc import Sequence
+from typing import Any, cast
 
 import cadquery as cq
 
 from geometry.builder.errors import SpecError
 from geometry.builder.features import Feature
 
-CAD_TYPES = ("sketch", "extrude", "revolve", "boolean", "transform")
-SOLID_MAKERS = ("extrude", "revolve", "boolean", "transform")
+CAD_TYPES = (
+    "sketch", "curve", "extrude", "revolve", "sweep", "loft",
+    "boolean", "transform", "fillet_edges", "chamfer_edges",
+)  # fmt: skip
+PROFILE_MAKERS = ("extrude", "revolve", "sweep", "loft")
+EDGE_FINISHERS = ("fillet_edges", "chamfer_edges")
+FACE_SELECTORS = {
+    "top": ">Z", "bottom": "<Z", "right": ">X", "left": "<X", "back": ">Y", "front": "<Y",
+}  # fmt: skip
 PLANES = {
     "XY": ((1.0, 0.0, 0.0), (0.0, 0.0, 1.0)),
     "XZ": ((1.0, 0.0, 0.0), (0.0, -1.0, 0.0)),
@@ -111,6 +120,75 @@ def make_revolve(sketch: Feature, feature: Feature) -> cq.Shape:
     return _fuse_all(solids)
 
 
+def _first_wire(sketch: Feature) -> cq.Wire:
+    wp = _shape_workplanes(sketch)[0]
+    return wp.ctx.pendingWires[0]
+
+
+def _curve_wire(curve: Feature) -> cq.Wire:
+    plane = sketch_plane(curve["plane"])
+    wp = cq.Workplane(plane).moveTo(*_pt(curve["start_mm"]))
+    for seg in curve["segments"]:
+        if seg["kind"] == "line":
+            wp = wp.lineTo(*_pt(seg["to_mm"]))
+        elif seg["kind"] == "arc":
+            wp = wp.threePointArc(_pt(seg["mid_mm"]), _pt(seg["to_mm"]))
+        else:
+            wp = wp.spline([_pt(p) for p in seg["through_mm"]], includeCurrent=True)
+    return cq.Wire.assembleEdges(wp.ctx.pendingEdges)
+
+
+def make_sweep(sketch: Feature, curve: Feature) -> cq.Shape:
+    outer = _first_wire(sketch)
+    return cq.Solid.sweep(outer, [], _curve_wire(curve), transitionMode="round")
+
+
+def make_loft(sketches: list[Feature], ruled: bool) -> cq.Shape:
+    return cq.Solid.makeLoft([_first_wire(s) for s in sketches], ruled)
+
+
+def _select_edges(solid: cq.Shape, selector: Any) -> list[cq.Edge]:
+    if selector == "all":
+        return list(solid.Edges())
+    picked: dict[int, cq.Edge] = {}
+    for choice in selector:
+        if "parallel" in choice:
+            axis = cq.Vector(*{"X": (1, 0, 0), "Y": (0, 1, 0), "Z": (0, 0, 1)}[choice["parallel"]])
+            found = [
+                e
+                for e in solid.Edges()
+                if e.geomType() == "LINE"
+                and abs(abs((e.endPoint() - e.startPoint()).normalized().dot(axis)) - 1) < 1e-6
+            ]
+        elif "on_face" in choice:
+            on_face = cq.Workplane(obj=solid).faces(FACE_SELECTORS[choice["on_face"]]).edges()
+            found = [e for e in on_face.vals() if isinstance(e, cq.Edge)]
+        else:
+            point = cq.Vector(*(float(v) for v in choice["near_mm"]))
+            reach = float(choice["within_mm"])
+            found = [e for e in solid.Edges() if (e.Center() - point).Length <= reach]
+        for e in found:
+            picked[e.hashCode()] = e
+    return list(picked.values())
+
+
+def make_edge_finish(kind: str, solid: cq.Shape, feature: Feature) -> cq.Shape:
+    edges = _select_edges(solid, feature["edges"])
+    if not edges:
+        raise SpecError([f"{kind} '{feature['id']}': the edge choice matched no edges"])
+    try:
+        if kind == "fillet_edges":
+            return cast(cq.Shape, solid.fillet(float(feature["radius_mm"]), edges))  # type: ignore[attr-defined]
+        return cast(cq.Shape, solid.chamfer(float(feature["distance_mm"]), None, edges))  # type: ignore[attr-defined]
+    except Exception as exc:
+        raise SpecError(
+            [
+                f"{kind} '{feature['id']}' could not be built: the size is probably too large "
+                f"for the {len(edges)} edge(s) chosen; try a smaller number"
+            ]
+        ) from exc
+
+
 def _combine(operation: str, target: cq.Shape, tools: list[cq.Shape]) -> cq.Shape:
     if operation in ("union", "add"):
         return target.fuse(*tools).clean()
@@ -140,6 +218,7 @@ def _move(shape: cq.Shape, feature: Feature) -> cq.Shape:
 def check_cad(features: list[Feature], errors: list[str]) -> None:
     """Problems the schema cannot see: references, order and shape sanity, as plain sentences."""
     sketches: dict[str, Feature] = {}
+    curves: dict[str, Feature] = {}
     solids: set[str] = set()
     used: set[str] = set()
 
@@ -160,9 +239,27 @@ def check_cad(features: list[Feature], errors: list[str]) -> None:
                 for loop in [shape["outer"], *shape.get("holes", [])]:
                     _check_loop(f"{name}, shape {i}", loop, errors)
             sketches[f["id"]] = f
-        elif kind in ("extrude", "revolve"):
-            if f["sketch"] not in sketches:
-                errors.append(f"{name}: '{f['sketch']}' is not a sketch made earlier in the spec")
+        elif kind == "curve":
+            _check_curve(name, f, errors)
+            curves[f["id"]] = f
+        elif kind in EDGE_FINISHERS:
+            if need_solid(name, f["solid"]):
+                used.add(f["solid"])
+            solids.add(f["id"])
+        elif kind in PROFILE_MAKERS:
+            if kind in ("extrude", "revolve"):
+                refs = [f["sketch"]]
+            elif kind == "sweep":
+                refs = [f["profile"]]
+            else:
+                refs = list(f["sketches"])
+            for ref in refs:
+                if ref not in sketches:
+                    errors.append(f"{name}: '{ref}' is not a sketch made earlier in the spec")
+            if kind == "sweep":
+                _check_sweep(name, f, sketches, curves, errors)
+            if kind == "loft":
+                _check_loft(name, f, sketches, errors)
             if f.get("operation", "new") != "new":
                 if "target" not in f:
                     errors.append(f"{name}: operation '{f['operation']}' needs a 'target' solid")
@@ -170,7 +267,7 @@ def check_cad(features: list[Feature], errors: list[str]) -> None:
                     used.add(f["target"])
             elif "target" in f:
                 errors.append(f"{name}: 'target' is only used with add, cut or intersect")
-            sk = sketches.get(f["sketch"])
+            sk = sketches.get(f.get("sketch", ""))
             if kind == "extrude" and f.get("taper_deg") and sk is not None:
                 if any(shape.get("holes") for shape in sk["shapes"]):
                     errors.append(
@@ -196,6 +293,49 @@ def check_cad(features: list[Feature], errors: list[str]) -> None:
             if "rotate" in f and math.hypot(*(float(v) for v in f["rotate"]["axis_dir"])) < 1e-9:
                 errors.append(f"{name}: rotate axis_dir cannot be [0, 0, 0]")
             solids.add(f["id"])
+
+
+def _check_curve(name: str, curve: Feature, errors: list[str]) -> None:
+    _check_loop(
+        name, {"kind": "path", "start_mm": curve["start_mm"], "segments": curve["segments"]}, errors
+    )
+
+
+def _check_sweep(
+    name: str,
+    f: Feature,
+    sketches: dict[str, Feature],
+    curves: dict[str, Feature],
+    errors: list[str],
+) -> None:
+    curve = curves.get(f["path"])
+    if curve is None:
+        errors.append(f"{name}: '{f['path']}' is not a curve made earlier in the spec")
+        return
+    profile = sketches.get(f["profile"])
+    if profile is None:
+        return
+    start = sketch_plane(curve["plane"]).toWorldCoords(_pt(curve["start_mm"]))
+    plane = sketch_plane(profile["plane"])
+    gap = abs((start - plane.origin).dot(plane.zDir))
+    if gap > 0.5:
+        errors.append(
+            f"{name}: the profile sketch must pass through the start of the curve "
+            f"(it is {gap:.1f} mm off); move the profile plane or the curve start"
+        )
+    if len(profile["shapes"]) > 1 or profile["shapes"][0].get("holes"):
+        errors.append(f"{name}: the profile sketch must hold one outline without holes")
+
+
+def _check_loft(name: str, f: Feature, sketches: dict[str, Feature], errors: list[str]) -> None:
+    for ref in f["sketches"]:
+        sk = sketches.get(ref)
+        if sk is not None and (len(sk["shapes"]) > 1 or sk["shapes"][0].get("holes")):
+            errors.append(
+                f"{name}: sketch '{ref}' must hold one outline without holes to be lofted"
+            )
+    if len(set(f["sketches"])) != len(f["sketches"]):
+        errors.append(f"{name}: the same sketch is listed more than once")
 
 
 def _check_loop(where: str, loop: Feature, errors: list[str]) -> None:
@@ -236,6 +376,7 @@ def _area(pts: list[tuple[float, float]]) -> float:
 def build_cad(features: list[Feature]) -> list[cq.Shape]:
     """Run the CAD features in order and return the solids nothing used up."""
     sketches: dict[str, Feature] = {}
+    curves: dict[str, Feature] = {}
     solids: dict[str, cq.Shape] = {}
     for f in features:
         kind = f["type"]
@@ -245,12 +386,23 @@ def build_cad(features: list[Feature]) -> list[cq.Shape]:
             if kind == "sketch":
                 sketches[f["id"]] = f
                 continue
-            if kind in ("extrude", "revolve"):
-                sketch = sketches[f["sketch"]]
-                made = make_extrude(sketch, f) if kind == "extrude" else make_revolve(sketch, f)
+            if kind == "curve":
+                curves[f["id"]] = f
+                continue
+            if kind in PROFILE_MAKERS:
+                if kind == "extrude":
+                    made = make_extrude(sketches[f["sketch"]], f)
+                elif kind == "revolve":
+                    made = make_revolve(sketches[f["sketch"]], f)
+                elif kind == "sweep":
+                    made = make_sweep(sketches[f["profile"]], curves[f["path"]])
+                else:
+                    made = make_loft([sketches[s] for s in f["sketches"]], bool(f.get("ruled")))
                 op = f.get("operation", "new")
                 if op != "new":
                     made = _combine(op, solids.pop(f["target"]), [made])
+            elif kind in EDGE_FINISHERS:
+                made = make_edge_finish(kind, solids.pop(f["solid"]), f)
             elif kind == "boolean":
                 tools = [solids.pop(t) for t in f["tools"]]
                 made = _combine(f["operation"], solids.pop(f["target"]), tools)

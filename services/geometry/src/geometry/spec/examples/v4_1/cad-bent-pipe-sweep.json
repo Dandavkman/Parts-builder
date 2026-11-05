@@ -1,0 +1,97 @@
+{
+  "spec_version": "4.1",
+  "name": "Bent pipe from two sweeps",
+  "features": [
+    {
+      "id": "route",
+      "type": "curve",
+      "plane": {
+        "name": "XZ"
+      },
+      "start_mm": [
+        0,
+        0
+      ],
+      "segments": [
+        {
+          "kind": "line",
+          "to_mm": [
+            0,
+            40
+          ]
+        },
+        {
+          "kind": "arc",
+          "mid_mm": [
+            10.6,
+            60.6
+          ],
+          "to_mm": [
+            30,
+            70
+          ]
+        },
+        {
+          "kind": "line",
+          "to_mm": [
+            70,
+            70
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outer_profile",
+      "type": "sketch",
+      "plane": {
+        "name": "XY",
+        "offset_mm": 0
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "circle",
+            "diameter_mm": 14
+          }
+        }
+      ]
+    },
+    {
+      "id": "bore_profile",
+      "type": "sketch",
+      "plane": {
+        "name": "XY",
+        "offset_mm": 0
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "circle",
+            "diameter_mm": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "outer",
+      "type": "sweep",
+      "profile": "outer_profile",
+      "path": "route"
+    },
+    {
+      "id": "bore",
+      "type": "sweep",
+      "profile": "bore_profile",
+      "path": "route"
+    },
+    {
+      "id": "pipe",
+      "type": "boolean",
+      "operation": "cut",
+      "target": "outer",
+      "tools": [
+        "bore"
+      ]
+    }
+  ]
+}

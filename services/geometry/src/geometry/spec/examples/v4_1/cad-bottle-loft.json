@@ -1,0 +1,64 @@
+{
+  "spec_version": "4.1",
+  "name": "Bottle lofted through three sections",
+  "features": [
+    {
+      "id": "s_base",
+      "type": "sketch",
+      "plane": {
+        "name": "XY",
+        "offset_mm": 0
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "circle",
+            "diameter_mm": 44
+          }
+        }
+      ]
+    },
+    {
+      "id": "s_mid",
+      "type": "sketch",
+      "plane": {
+        "name": "XY",
+        "offset_mm": 30
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "rectangle",
+            "width_mm": 34,
+            "height_mm": 34
+          }
+        }
+      ]
+    },
+    {
+      "id": "s_neck",
+      "type": "sketch",
+      "plane": {
+        "name": "XY",
+        "offset_mm": 70
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "circle",
+            "diameter_mm": 18
+          }
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "type": "loft",
+      "sketches": [
+        "s_base",
+        "s_mid",
+        "s_neck"
+      ]
+    }
+  ]
+}
