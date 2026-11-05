@@ -378,3 +378,6 @@ The Owner chose to make the AI able to draw any CAD shape and asked for a tool b
 
 ## 2026-11-05 — Part Spec 4.1: sweep, loft, edge finishing (step 2 of the tool belt)
 New schema file (`part-spec.v4_1.schema.json`) because 4.0 is released; 4.0 specs still build. Paths are their own feature type (`curve`) so a sweep names its profile and its route separately, like CAD history. Edges are chosen by simple rules (axis, side of the part, nearby point), never by kernel edge numbers, which change between builds and cannot be written by an agent reliably. Loft and sweep take one outline without holes for now; hollow shapes are made with a second sweep or loft and a `boolean` cut (see the bent pipe example). Sweep uses round corners where a path has sharp joints.
+
+## 2026-11-05 — Part Spec 4.2: hollow, patterns, mirror (step 3 of the tool belt)
+New schema file (`part-spec.v4_2.schema.json`). Patterns join their copies into one solid so the result is a single named solid that a `boolean` can use as a tool; that is how repeated holes and slots are made. `hollow` always grows the wall inward so the outside size stays what the user asked for. Separate draft-angle on existing faces is left out: the kernel call is fragile on curved faces, and `taper_deg` on extrude covers the common moulded-part case. Revisit if a real design needs it.

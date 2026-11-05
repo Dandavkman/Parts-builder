@@ -1,0 +1,60 @@
+{
+  "spec_version": "4.2",
+  "name": "Bracket drawn on one side and mirrored",
+  "features": [
+    {
+      "id": "half",
+      "type": "sketch",
+      "plane": {
+        "name": "XZ",
+        "offset_mm": 0
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "polygon",
+            "points_mm": [
+              [
+                0,
+                0
+              ],
+              [
+                40,
+                0
+              ],
+              [
+                40,
+                10
+              ],
+              [
+                10,
+                10
+              ],
+              [
+                10,
+                50
+              ],
+              [
+                0,
+                50
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "side",
+      "type": "extrude",
+      "sketch": "half",
+      "distance_mm": 25,
+      "direction": "symmetric"
+    },
+    {
+      "id": "bracket",
+      "type": "mirror",
+      "source": "side",
+      "plane": "YZ"
+    }
+  ]
+}

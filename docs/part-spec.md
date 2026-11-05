@@ -136,4 +136,17 @@ Checks, each with a plain sentence: sketch and target ids must come from earlier
 
 Examples: [cad-bent-pipe-sweep](../services/geometry/src/geometry/spec/examples/v4_1/cad-bent-pipe-sweep.json), [cad-bottle-loft](../services/geometry/src/geometry/spec/examples/v4_1/cad-bottle-loft.json), [cad-rounded-block](../services/geometry/src/geometry/spec/examples/v4_1/cad-rounded-block.json).
 
-**Not yet:** shell, draft, patterns, and calling older features (bodies, tubes, volute) from a `boolean`.
+## Version 4.2: hollow, patterns and mirror
+
+`part-spec.v4_2.schema.json` is 4.1 plus four features. 4.0 and 4.1 specs are valid as 4.2.
+
+| Type | What it does | Key fields |
+| --- | --- | --- |
+| `hollow` | Thin-walled shell of `solid`, wall growing inward. `open_sides` (`top`, `bottom`, `left`, `right`, `front`, `back`) removes those sides, making a cup or tray; none gives a closed hollow. | `solid`, `thickness_mm`, `open_sides` |
+| `linear_pattern` | `count` copies of `source`, each `spacing_mm` [x,y,z] further, joined into one solid. | `source`, `count`, `spacing_mm` |
+| `circular_pattern` | `count` copies around an axis (`axis_point_mm`, `axis_dir`) over `angle_deg` (default 360, even spacing; less than 360 puts first and last that far apart). | `source`, `count`, `axis_point_mm`, `axis_dir`, `angle_deg` |
+| `mirror` | Adds a mirrored copy of `source` across `plane` (+ `offset_mm`), joined to the original. For two separate solids use `transform` with `mirror` and `copy`. | `source`, `plane`, `offset_mm` |
+
+To repeat holes or slots, pattern the cutter solid and then `boolean` cut it from the part (see [cad-bolt-circle-flange](../services/geometry/src/geometry/spec/examples/v4_2/cad-bolt-circle-flange.json)). Other examples: [cad-hollow-tray](../services/geometry/src/geometry/spec/examples/v4_2/cad-hollow-tray.json), [cad-mirrored-bracket](../services/geometry/src/geometry/spec/examples/v4_2/cad-mirrored-bracket.json).
+
+**Not yet:** calling older features (bodies, tubes, volute) from a `boolean`. Draft angle on existing faces is covered by `taper_deg` on extrude for now.

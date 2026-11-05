@@ -1,0 +1,79 @@
+{
+  "spec_version": "4.2",
+  "name": "Flange with a circular pattern of bolt holes",
+  "features": [
+    {
+      "id": "disk",
+      "type": "sketch",
+      "plane": {
+        "name": "XY",
+        "offset_mm": 0
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "circle",
+            "diameter_mm": 90
+          }
+        }
+      ]
+    },
+    {
+      "id": "plate",
+      "type": "extrude",
+      "sketch": "disk",
+      "distance_mm": 8
+    },
+    {
+      "id": "bolt",
+      "type": "sketch",
+      "plane": {
+        "name": "XY",
+        "offset_mm": -1
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "circle",
+            "diameter_mm": 6.6,
+            "center_mm": [
+              30,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "hole",
+      "type": "extrude",
+      "sketch": "bolt",
+      "distance_mm": 10
+    },
+    {
+      "id": "holes",
+      "type": "circular_pattern",
+      "source": "hole",
+      "count": 6,
+      "axis_point_mm": [
+        0,
+        0,
+        0
+      ],
+      "axis_dir": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "flange",
+      "type": "boolean",
+      "operation": "cut",
+      "target": "plate",
+      "tools": [
+        "holes"
+      ]
+    }
+  ]
+}

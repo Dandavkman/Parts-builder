@@ -1,0 +1,38 @@
+{
+  "spec_version": "4.2",
+  "name": "Open tray from a hollowed block",
+  "features": [
+    {
+      "id": "base",
+      "type": "sketch",
+      "plane": {
+        "name": "XY",
+        "offset_mm": 0
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "rectangle",
+            "width_mm": 80,
+            "height_mm": 50
+          }
+        }
+      ]
+    },
+    {
+      "id": "block",
+      "type": "extrude",
+      "sketch": "base",
+      "distance_mm": 20
+    },
+    {
+      "id": "tray",
+      "type": "hollow",
+      "solid": "block",
+      "thickness_mm": 2.5,
+      "open_sides": [
+        "top"
+      ]
+    }
+  ]
+}
