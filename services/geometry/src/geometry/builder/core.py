@@ -147,23 +147,25 @@ def build_part(spec: Spec, anchors: Mapping[str, Anchor] | None = None) -> cq.Co
             plates[b["to_plate"]],
             b,
         )
-    placed: list[cq.Shape] = []
+    # Every older-style solid, by feature id, so CAD features (booleans, fillets, ...) can use them.
+    legacy: dict[str, cq.Shape] = {}
     for body in (f for f in features if f["type"] == "body"):
         shape = build_body(body).val()
         assert isinstance(shape, cq.Shape)
-        placed.append(shape.moved(_location(body["placement"], anchors)))
-    placed.extend(_build_tubes(features, anchors))
-    placed.extend(build_cad(features))
+        legacy[body["id"]] = shape.moved(_location(body["placement"], anchors))
+    legacy.update(_build_tubes(features, anchors))
     for pid in plates:
         if pid not in bent_on:
             shape = solids[pid].val()
             assert isinstance(shape, cq.Shape)
-            placed.append(shape.moved(locations[pid]))
+            legacy[pid] = shape.moved(locations[pid])
+    # Solids no CAD feature uses up are the part. Older solids keep their old order in the result.
+    placed = build_cad(features, legacy)
     return cq.Compound.makeCompound(placed)
 
 
-def _build_tubes(features: list[fx.Feature], anchors: dict[str, Anchor]) -> list[cq.Shape]:
-    """Placed solids for every tube and reducer, with flanges fused on and merged pieces fused."""
+def _build_tubes(features: list[fx.Feature], anchors: dict[str, Anchor]) -> dict[str, cq.Shape]:
+    """Placed solids by id for every tube, reducer and volute (flanges fused on) and every merge."""
     pieces: dict[str, tuple[cq.Shape, list[cq.Shape]]] = {}
     for f in features:
         if f["type"] not in ("tube", "reducer", "volute"):
@@ -181,11 +183,11 @@ def _build_tubes(features: list[fx.Feature], anchors: dict[str, Anchor]) -> list
         loc = _location(f["placement"], anchors)
         pieces[f["id"]] = (outer.moved(loc), [c.moved(loc) for c in cuts])
     merged_ids = {t for f in features if f["type"] == "merge" for t in f["tubes"]}
-    out = [
-        outer.cut(*cuts) if cuts else outer
+    out = {
+        pid: outer.cut(*cuts) if cuts else outer
         for pid, (outer, cuts) in pieces.items()
         if pid not in merged_ids
-    ]
+    }
     for f in features:
         if f["type"] != "merge":
             continue
@@ -197,5 +199,5 @@ def _build_tubes(features: list[fx.Feature], anchors: dict[str, Anchor]) -> list
         fused = fused.clean()
         if len(fused.Solids()) != 1 or not fused.isValid():
             raise SpecError([f"merge '{f['id']}': the pieces do not overlap into one solid"])
-        out.append(fused)
+        out[f["id"]] = fused
     return out

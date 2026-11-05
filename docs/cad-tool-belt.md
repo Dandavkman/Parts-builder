@@ -8,7 +8,7 @@ Both faces need the same bearer token as `/build` (`GEOMETRY_SERVICE_TOKEN`; `GE
 
 ## Tools
 
-`new_part`, then any of: `add_sketch`, `add_curve`, `extrude`, `revolve`, `sweep`, `loft`, `boolean`, `transform`, `fillet_edges`, `chamfer_edges`, `hollow`, `linear_pattern`, `circular_pattern`, `mirror`, and `remove_feature`, `inspect_part`. The arguments of each add tool are the feature's fields in the schema ([part-spec.md](part-spec.md) lists them), plus `spec`. Descriptions and JSON Schemas are generated from `part-spec.v4_2.schema.json`, so they cannot drift from the engine. Specs of version 3.2 to 4.2 are accepted and upgraded to 4.2.
+`new_part`, then any of: `add_sketch`, `add_curve`, `extrude`, `revolve`, `sweep`, `loft`, `boolean`, `transform`, `fillet_edges`, `chamfer_edges`, `hollow`, `draft`, `linear_pattern`, `circular_pattern`, `mirror`, and `remove_feature`, `inspect_part`. The arguments of each add tool are the feature's fields in the schema ([part-spec.md](part-spec.md) lists them), plus `spec`. Descriptions and JSON Schemas are generated from `part-spec.v4_3.schema.json`, so they cannot drift from the engine. Specs of version 3.2 to 4.3 are accepted and upgraded to 4.3. Plates, bodies, tubes and merges already in a spec show up as free solids and can be named by the CAD tools.
 
 Every successful result is `{ ok: true, spec, summary }`. The summary has the feature list, `free_solids` (solids nothing has used up yet, which become the part), `solid_count`, and when there is geometry, `volume_mm3` and `bbox_mm`. A failure is `{ ok: false, errors: [...], spec }`.
 

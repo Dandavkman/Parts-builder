@@ -14,16 +14,17 @@ from pathlib import Path
 from typing import Any
 
 from geometry.builder import SpecError, build_part
-from geometry.builder.cad import CAD_TYPES
+from geometry.builder.cad import CAD_TYPES, legacy_solid_ids
 from geometry.builder.spec_io import SCHEMA_FILES, SPEC_DIR
 
 Spec = dict[str, Any]
-LATEST = "4.2"
+LATEST = "4.3"
 UPGRADABLE = (
     "3.2",
     "4.0",
     "4.1",
     "4.2",
+    "4.3",
 )  # every spec of these versions is also valid as the latest
 
 # Feature types exposed as tools, with the tool name an agent sees.
@@ -42,6 +43,7 @@ ADD_TOOLS: dict[str, str] = {
     "linear_pattern": "linear_pattern",
     "circular_pattern": "circular_pattern",
     "mirror": "mirror",
+    "draft": "draft",
 }
 DEF_FOR_TYPE = {"extrude": "extrude_feature", "revolve": "revolve_feature"}
 SPEC_ARG = {
@@ -158,7 +160,7 @@ def _upgrade(spec: Spec) -> Spec:
 
 def _open_solids(features: list[Spec]) -> list[str]:
     """Ids of CAD solids no later feature has used up (these become the part)."""
-    made: list[str] = []
+    made: list[str] = legacy_solid_ids(features)
     for f in features:
         t = f["type"]
         if t not in CAD_TYPES or t in ("sketch", "curve"):
@@ -171,7 +173,7 @@ def _open_solids(features: list[Spec]) -> list[str]:
             used = [f["target"], *f["tools"]]
         elif t == "transform":
             used = [] if f.get("copy") else [f["source"]]
-        elif t in ("fillet_edges", "chamfer_edges", "hollow"):
+        elif t in ("fillet_edges", "chamfer_edges", "hollow", "draft"):
             used = [f["solid"]]
         else:
             used = [f["source"]]
