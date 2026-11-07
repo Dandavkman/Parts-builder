@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CAD_TOOL, CAD_TOOL_NAMES, countWebSearches, formatCadStep, parseDimension, WEB_SEARCHES_PER_DESIGN } from "./tools";
+import { CAD_TOOL, CAD_TOOL_NAMES, countWebSearches, describeBuild, formatBuildOutcome, formatCadStep, parseDimension, WEB_SEARCHES_PER_DESIGN } from "./tools";
 
 describe("parseDimension", () => {
   const base = { id: "case_width", value_mm: 74.5, note: "spec sheet" };
@@ -59,5 +59,21 @@ describe("cad_tool", () => {
     const text = formatCadStep({ ok: true, summary: { features: [1, 2], free_solids: ["body"], volume_mm3: 1200, bbox_mm: { z: [0, 5] } } });
     expect(text).toContain("Free solids: body");
     expect(text).toContain("Volume 1200");
+  });
+});
+
+describe("describeBuild", () => {
+  it("reports size, volume and one piece", () => {
+    const lines = describeBuild({ ok: true, size_mm: [300, 20, 10], volume_mm3: 1234.4, solids: 1 });
+    expect(lines).toEqual(["Size: 300.0 x 20.0 x 10.0 mm (X, Y, Z).", "Volume: 1234 mm3.", "Pieces: 1 (one connected solid)."]);
+  });
+
+  it("warns when the part is several pieces", () => {
+    const text = formatBuildOutcome({ ok: true, solids: 3 });
+    expect(text).toContain("3 separate pieces");
+  });
+
+  it("says nothing extra for older geometry services", () => {
+    expect(formatBuildOutcome({ ok: true })).toBe("The spec built successfully.");
   });
 });

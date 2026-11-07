@@ -71,6 +71,14 @@ def test_mesh_downloads_are_watertight_and_the_right_size(fmt: str) -> None:
     assert mesh.extents == pytest.approx((60, 40, 4), abs=0.01)
 
 
+def test_build_reports_piece_count_and_volume() -> None:
+    response = client.post("/build?format=step", json={"spec": _spec()})
+    assert response.headers["x-solid-count"] == "1"
+    assert float(response.headers["x-volume-mm3"]) == pytest.approx(
+        60 * 40 * 4 - 3.14159 * 3.25**2 * 4, rel=0.01
+    )
+
+
 def test_download_has_a_safe_filename() -> None:
     response = client.post("/build?format=stl", json={"spec": _spec()})
     assert response.headers["content-disposition"] == 'attachment; filename="test-bracket-1.stl"'

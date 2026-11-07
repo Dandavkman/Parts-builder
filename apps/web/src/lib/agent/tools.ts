@@ -84,9 +84,28 @@ export function distanceMm(anchors: AgentAnchor[], from: unknown, to: unknown): 
   return Math.hypot(...a.point_mm.map((v, i) => v - b.point_mm[i]));
 }
 
+/** What the agent needs to judge a build that worked: its size, volume and whether it is one connected piece. */
+export function describeBuild(outcome: BuildOutcome): string[] {
+  if (!outcome.ok) return [];
+  const lines: string[] = [];
+  if (outcome.size_mm) {
+    const [x, y, z] = outcome.size_mm.map((v) => v.toFixed(1));
+    lines.push(`Size: ${x} x ${y} x ${z} mm (X, Y, Z).`);
+  }
+  if (outcome.volume_mm3 !== undefined) lines.push(`Volume: ${Math.round(outcome.volume_mm3)} mm3.`);
+  if (outcome.solids !== undefined) {
+    lines.push(
+      outcome.solids === 1
+        ? "Pieces: 1 (one connected solid)."
+        : `Connection check: the part is ${outcome.solids} separate pieces, so something is not touching the rest (for example a pipe that stops short of its flange or housing). Make the pieces overlap, or tell the user it is deliberately in parts.`,
+    );
+  }
+  return lines;
+}
+
 export function formatBuildOutcome(outcome: BuildOutcome, checks: string[] = []): string {
   return outcome.ok
-    ? ["The spec built successfully.", ...checks].join("\n")
+    ? ["The spec built successfully.", ...describeBuild(outcome), ...checks].join("\n")
     : `The spec did not build:\n${outcome.errors.map((e) => `- ${e}`).join("\n")}`;
 }
 
