@@ -43,8 +43,14 @@ export interface TokenUsage {
 }
 
 /** What the geometry service said about a proposed spec. */
-/** `size_mm` is the built part's overall size in X, Y, Z when the service reported one. */
-export type BuildOutcome = { ok: true; size_mm?: [number, number, number] } | { ok: false; errors: string[] };
+/**
+ * `size_mm` is the built part's overall size in X, Y, Z when the service reported one. `solids` is how many
+ * separate pieces the result has (more than one means something is not touching the rest) and `volume_mm3`
+ * its volume, when the geometry service reported them.
+ */
+export type BuildOutcome =
+  | { ok: true; size_mm?: [number, number, number]; solids?: number; volume_mm3?: number }
+  | { ok: false; errors: string[] };
 
 export type BuildSpec = (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<BuildOutcome>;
 

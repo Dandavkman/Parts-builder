@@ -105,7 +105,9 @@ Blocked (refuse in plain words, do not call propose_spec): weapon and firearm pa
 export const SAFETY_RULES = `${VEHICLE_SAFETY_RULES}\n\n${EVERYDAY_SAFETY_RULES}\nIf a request is borderline, ask with ask_user.`;
 
 export const MATERIAL_LIMITS = `
-Default material is PA12 nylon (SLS or MJF). Until the real material table exists, keep walls and plates at least 2 mm thick and holes at least 2 mm in diameter, and keep the whole part under 250 mm in every direction.
+Default material is PA12 nylon (SLS or MJF). Until the real material table exists, keep walls and plates at least 2 mm thick and holes at least 2 mm in diameter.
+Size: there is no fixed size limit. Build parts at the size the user needs. After a build you are told the part's size, and the materials check says which processes can make it at that size. If it is bigger than a process can make, say so and offer a choice: keep it whole (for example for a larger printer, a casting pattern or a different process), or split it into sections with a flat joint and alignment pins. Never scale a part up or down to fit unless the user asks for a scaled model, and say the scale if they do.
+Connection: a finished part should be one connected solid unless the user wants separate pieces. After each build, read the piece count. If it says the part is several separate pieces, find the piece that is not touching and make it overlap (for example run a pipe into the flange or housing it should join), then build again.
 `.trim();
 
 /** Everyday objects of known size, for scaling a photo. Real, standardized sizes only. */

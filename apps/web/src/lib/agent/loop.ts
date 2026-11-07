@@ -2,7 +2,7 @@ import { lookupFastener } from "../fasteners";
 import type Anthropic from "@anthropic-ai/sdk";
 import { checkBuild } from "./checks";
 import { assessMaterials, describeAdvice, recommend } from "../materials";
-import { CAD_TOOL, distanceMm, formatBuildOutcome, formatCadStep, MAX_CAD_STEPS, parseDimension, TOOLS, webSearchTool, type CadStepResult } from "./tools";
+import { CAD_TOOL, distanceMm, describeBuild, formatBuildOutcome, formatCadStep, MAX_CAD_STEPS, parseDimension, TOOLS, webSearchTool, type CadStepResult } from "./tools";
 import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
 
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
@@ -237,7 +237,8 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
                 bestOk = outcome.ok;
               }
               const checks = outcome.ok ? checkBuild(result.spec, outcome.size_mm, dimensions) : [];
-              if (checks.length) content += `\n${checks.join("\n")}`;
+              const notes = [...describeBuild(outcome), ...checks];
+              if (notes.length) content += `\n${notes.join("\n")}`;
               emit({
                 type: "spec",
                 attempt: attempts,

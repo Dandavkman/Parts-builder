@@ -82,7 +82,10 @@ def build(
         content=export_part(part, format),
         media_type=MEDIA_TYPES[format],
         headers={
-            "Content-Disposition": f'attachment; filename="{_filename(request.spec, format)}"'
+            "Content-Disposition": f'attachment; filename="{_filename(request.spec, format)}"',
+            # What the design agent needs to judge a build: how many separate pieces, and how big.
+            "X-Solid-Count": str(len(part.Solids())),
+            "X-Volume-Mm3": f"{part.Volume():.1f}",
         },
     )
 
