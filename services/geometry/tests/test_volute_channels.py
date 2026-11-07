@@ -21,7 +21,7 @@ EXAMPLE = (
 
 
 def _spec(**volute: Any) -> dict[str, Any]:
-    spec = json.loads(EXAMPLE.read_text())
+    spec: dict[str, Any] = json.loads(EXAMPLE.read_text())
     spec["features"][0].update(volute)
     return spec
 
