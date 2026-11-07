@@ -245,6 +245,25 @@ export const waitlist = pgTable("waitlist", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });
 
+/**
+ * What testers say about the product, tied to the design they were on. An admin approves or rejects each
+ * one; approving hands it to the coding agent as a GitHub issue (issue_url), or records why that did not happen.
+ * Status: new, approved or rejected. The design link is cleared, not the comment, if the design is deleted.
+ */
+export const feedback = pgTable("feedback", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: text("owner_id").notNull(),
+  designId: uuid("design_id").references(() => designs.id, { onDelete: "set null" }),
+  body: text("body").notNull(),
+  status: text("status").notNull().default("new"),
+  adminNote: text("admin_note"),
+  decidedBy: text("decided_by"),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  issueUrl: text("issue_url"),
+  dispatchError: text("dispatch_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
+
 /** Fixed-window counters for rate limits: one row per key and window, so concurrent requests all count. */
 export const rateLimits = pgTable(
   "rate_limits",

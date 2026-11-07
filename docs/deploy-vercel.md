@@ -64,6 +64,8 @@ Then set `SITE_URL=https://ktiso.app` (Production) and redeploy. It feeds the si
 | `RESEND_API_KEY` | B2.9 (optional; API key from resend.com, server-side only. With `EMAIL_FROM` it turns on order emails; without them emails are only logged) |
 | `EMAIL_FROM` | B2.9 (optional; the From line, for example `Parts Builder <orders@yourdomain.com>`, on a domain verified in Resend) |
 | `ORDER_ALERT_EMAIL` | B2.9b (optional; your address. When a paid order arrives, an alert email goes there once per order. Needs `RESEND_API_KEY` and `EMAIL_FROM`; empty means no alert) |
+| `GITHUB_FEEDBACK_TOKEN`, `GITHUB_FEEDBACK_REPO` | Tester feedback (optional; a GitHub token that can create issues, and the repo as `owner/name`. When you approve feedback at `/admin/feedback`, an issue labelled `tester-feedback` is opened there. Without both, approving only records the decision. Server-side only; use a fine-grained token with Issues: write on that one repo) |
+| `FEEDBACK_AGENT_MENTION` | Tester feedback (optional; for example `@claude`. Put on the first line of each issue to wake a coding agent that is installed on the repo. Empty means the issue is created without calling anyone) |
 | `SITE_URL` | B3.2 (optional; the public address, for the sitemap, page metadata and canonical links, for example `https://yourdomain.com`. Falls back to the Vercel production URL) |
 | `SENTRY_DSN` | B2.11c (optional; the project DSN from sentry.io, server-side only. Without it, errors are only logged to the console) |
 | `STRIPE_CONNECT` | B4.1 (optional; `1` turns on seller payout setup, with `STRIPE_SECRET_KEY`. Use a test key first) |
