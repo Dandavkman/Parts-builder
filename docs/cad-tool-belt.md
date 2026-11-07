@@ -8,7 +8,7 @@ Both faces need the same bearer token as `/build` (`GEOMETRY_SERVICE_TOKEN`; `GE
 
 ## Tools
 
-`new_part`, then any of: `add_sketch`, `add_curve`, `extrude`, `revolve`, `sweep`, `loft`, `boolean`, `transform`, `fillet_edges`, `chamfer_edges`, `hollow`, `draft`, `linear_pattern`, `circular_pattern`, `mirror`, and `remove_feature`, `inspect_part`. The arguments of each add tool are the feature's fields in the schema ([part-spec.md](part-spec.md) lists them), plus `spec`. Descriptions and JSON Schemas are generated from `part-spec.v4_3.schema.json`, so they cannot drift from the engine. Specs of version 3.2 to 4.3 are accepted and upgraded to 4.3. Plates, bodies, tubes and merges already in a spec show up as free solids and can be named by the CAD tools.
+`new_part`, then any of: `add_sketch`, `add_curve`, `extrude`, `revolve`, `sweep`, `loft`, `boolean`, `transform`, `fillet_edges`, `chamfer_edges`, `hollow`, `draft`, `linear_pattern`, `circular_pattern`, `mirror`, and `remove_feature`, `inspect_part`. The arguments of each add tool are the feature's fields in the schema ([part-spec.md](part-spec.md) lists them), plus `spec`. Descriptions and JSON Schemas are generated from `part-spec.v4_4.schema.json`, so they cannot drift from the engine. Specs of version 3.2 to 4.4 are accepted and upgraded to 4.4. Plates, bodies, tubes and merges already in a spec show up as free solids and can be named by the CAD tools.
 
 Every successful result is `{ ok: true, spec, summary }`. The summary has the feature list, `free_solids` (solids nothing has used up yet, which become the part), `solid_count`, and when there is geometry, `volume_mm3` and `bbox_mm`. A failure is `{ ok: false, errors: [...], spec }`.
 
@@ -36,7 +36,7 @@ curl -s -H "Authorization: Bearer $TOKEN" -X POST $URL/tools/new_part -d '{"name
 
 The final `spec` goes to `/build` for STEP, STL or GLB, or into a design.
 
-## What it covers (Part Spec 4.0 to 4.3)
+## What it covers (Part Spec 4.0 to 4.4)
 
 | Version | Adds |
 | --- | --- |
@@ -44,6 +44,7 @@ The final `spec` goes to `/build` for STEP, STL or GLB, or into a design.
 | 4.1 | `curve`, sweep, loft, fillet and chamfer of chosen edges |
 | 4.2 | `hollow`, linear and circular patterns, `mirror` |
 | 4.3 | `draft` (lean faces for moulding), and every CAD feature can use plates, bodies, tubes, reducers, volutes and merges by id |
+| 4.4 | `volute` gets `channels` (1, 2 or 4, each with its own inlet) and `inlet_diameter_mm`, for divided-scroll turbo housings |
 
 Each version is its own schema file, so every older spec still builds. Details and examples are in [part-spec.md](part-spec.md); design choices are in [decisions.md](decisions.md) (entries dated 2026-11-05).
 
@@ -52,6 +53,6 @@ Each version is its own schema file, so every older spec still builds. Details a
 ## Turning it on (Owner steps)
 
 1. Run the standard `fly deploy` for the geometry service. Until then Fly has none of Part Spec 4.x or the `/tools` and `/mcp` endpoints.
-2. In Vercel, set `DESIGN_AGENT_SPEC_VERSION=4.3` (`4.2` is accepted and means the same). The design agent then writes Part Spec 4.3 and gets the step-by-step `cad_tool`. Leave it empty to stay on the current version; the web app itself needs no other change and no new variables.
+2. In Vercel, set `DESIGN_AGENT_SPEC_VERSION=4.4` (`4.2` and `4.3` are accepted and mean the same). The design agent then writes Part Spec 4.4 and gets the step-by-step `cad_tool`. Leave it empty to stay on the current version; the web app itself needs no other change and no new variables.
 3. Try prompts that need real CAD: a bottle lofted from a round base to a square middle to a round neck, a bent pipe made from two sweeps, a bolt-circle flange, a housing with draft on its sides.
 4. To use the tools from another agent, point an MCP client at `<geometry service URL>/mcp` with the bearer token, or call `/tools` over HTTP as above.

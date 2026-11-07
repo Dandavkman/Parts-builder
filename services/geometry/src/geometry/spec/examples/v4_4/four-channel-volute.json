@@ -1,0 +1,19 @@
+{
+  "spec_version": "4.4",
+  "name": "Four-channel turbine housing",
+  "features": [
+    {
+      "id": "housing",
+      "type": "volute",
+      "placement": { "anchor": "origin" },
+      "channels": 4,
+      "inducer_diameter_mm": 53.8,
+      "exducer_diameter_mm": 47,
+      "a_over_r_cm": 0.64,
+      "wall_thickness_mm": 3,
+      "inlet_diameter_mm": 30,
+      "inlet_length_mm": 30,
+      "outlet_length_mm": 70
+    }
+  ]
+}

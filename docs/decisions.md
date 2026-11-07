@@ -397,3 +397,7 @@ Testers write comments on the design page; each is stored against the design (`f
 ## 2026-11-07: Build feedback replaces the hard size limit
 
 A live test showed the agent shrinking a manifold to satisfy a 250 mm prompt rule and not noticing disconnected tubes. The 250 mm rule is removed from the prompt (it was never enforced in code). Builds now report size, volume and piece count to the agent, with a warning when a part is more than one solid. Choice: warn rather than fail, because assemblies in several pieces can be deliberate.
+
+## 2026-11-07: Divided-scroll housings are sectors, one channel per inlet (Part Spec 4.4)
+
+The Owner chose four channels over twin-scroll. A `volute` with `channels` N cuts the circle into N equal sectors, each its own scroll with its own tongue and tangential inlet stub, and each carrying 1/N of the flow (A/R divided by N). Reason: this is the only layout where every runner enters the housing independently, as the Owner asked, without stacking channels axially. Cost: the walls between channels are only as thick as the tongue gap, and no flow is simulated, so it is a fit-check and casting-pattern model. A flange on a divided housing names `inlet_1` to `inlet_N`. Older volutes build exactly as before (tested). `DESIGN_AGENT_SPEC_VERSION` now means 4.4 for 4.2, 4.3 and 4.4.

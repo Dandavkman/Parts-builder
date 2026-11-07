@@ -12,7 +12,7 @@ import cadquery as cq
 
 from geometry.builder.features import Feature
 from geometry.builder.tube import EPS, MIN_WALL_MM, Vec, _norm, _points, _sub, _unit
-from geometry.builder.volute import VoluteSize, inlet_end, outlet_end
+from geometry.builder.volute import VoluteSize, inlet_ends, outlet_end
 
 PIECES = ("tube", "reducer", "volute")
 
@@ -29,7 +29,7 @@ def piece_ends(piece: Feature) -> dict[str, tuple[Vec, Vec]]:
         d = _unit(_sub(b, a))
         return {"start": (a, (-d[0], -d[1], -d[2])), "end": (b, d)}
     if piece["type"] == "volute":
-        return {"inlet": inlet_end(piece), "outlet": outlet_end(piece)}
+        return {**inlet_ends(piece), "outlet": outlet_end(piece)}
     pts = _points(piece)
     first = _unit(_sub(pts[1], pts[0]))
     last = _unit(_sub(pts[-1], pts[-2]))
@@ -40,7 +40,11 @@ def end_diameter_mm(piece: Feature, end: str) -> float:
     """Outer diameter of the piece at one end."""
     if piece["type"] == "volute":
         size = VoluteSize(piece)
-        return size.inlet_outer_diameter if end == "inlet" else 2 * (size.exducer_r + size.wall)
+        return (
+            size.inlet_outer_diameter
+            if end.startswith("inlet")
+            else 2 * (size.exducer_r + size.wall)
+        )
     if piece["type"] == "reducer":
         return float(piece[f"{end}_diameter_mm"])
     return float(piece["outer_diameter_mm"])
@@ -145,7 +149,11 @@ def check_flange(
     if piece is None or piece["type"] not in PIECES:
         errors.append(f"{name}: '{flange['tube']}' is not a tube or reducer in this spec")
         return
-    valid_ends = ("inlet", "outlet") if piece["type"] == "volute" else ("start", "end")
+    valid_ends = (
+        (*VoluteSize(piece).inlet_names, "outlet")
+        if piece["type"] == "volute"
+        else ("start", "end")
+    )
     if flange["end"] not in valid_ends:
         errors.append(
             f"{name}: '{piece['id']}' has ends {' and '.join(valid_ends)}, not '{flange['end']}'"

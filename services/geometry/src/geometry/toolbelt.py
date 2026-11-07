@@ -18,13 +18,14 @@ from geometry.builder.cad import CAD_TYPES, legacy_solid_ids
 from geometry.builder.spec_io import SCHEMA_FILES, SPEC_DIR
 
 Spec = dict[str, Any]
-LATEST = "4.3"
+LATEST = "4.4"
 UPGRADABLE = (
     "3.2",
     "4.0",
     "4.1",
     "4.2",
     "4.3",
+    "4.4",
 )  # every spec of these versions is also valid as the latest
 
 # Feature types exposed as tools, with the tool name an agent sees.

@@ -25,6 +25,7 @@ SCHEMA_FILES = {
     "4.1": "part-spec.v4_1.schema.json",
     "4.2": "part-spec.v4_2.schema.json",
     "4.3": "part-spec.v4_3.schema.json",
+    "4.4": "part-spec.v4_4.schema.json",
 }
 
 Spec = dict[str, Any]
