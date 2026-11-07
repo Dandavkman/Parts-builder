@@ -292,7 +292,7 @@ def test_draft_tool_and_older_solids_show_as_free_in_the_tool_belt() -> None:
         "draft", {"spec": spec, "id": "d", "solid": "blk", "angle_deg": 3, "faces": "sides"}
     )
     assert done["ok"] and done["summary"]["free_solids"] == ["d"]
-    assert done["spec"]["spec_version"] == "4.3"
+    assert done["spec"]["spec_version"] == "4.4"
     old = {"spec_version": "4.2", "name": "x", "features": [_body()]}
     assert call_tool("inspect_part", {"spec": old})["summary"]["free_solids"] == ["box"]
 

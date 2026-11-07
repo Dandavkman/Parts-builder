@@ -118,7 +118,7 @@ CAD features run **in the order listed**. A `sketch` draws; `extrude` and `revol
 
 Checks, each with a plain sentence: sketch and target ids must come from earlier features, a solid can be used up only once, polygons need area, arcs need three points not in a line, ellipses need minor <= major, a taper cannot be combined with holes, and a cut that removes everything is reported. The CAD kernel's own failure text is replaced by "check the sketch outline and the numbers used" when it would not be readable.
 
-**Later versions add** edge fillet and chamfer, sweep and loft (4.1), hollow, patterns and mirror (4.2), and draft plus use of older solids (4.3), described below.
+**Later versions add** edge fillet and chamfer, sweep and loft (4.1), hollow, patterns and mirror (4.2), draft plus use of older solids (4.3), and divided-scroll housings (4.4), described below.
 
 ## Version 4.1: sweep, loft and edge finishing
 
@@ -158,3 +158,13 @@ To repeat holes or slots, pattern the cutter solid and then `boolean` cut it fro
 | `draft` | Leans faces of `solid` by `angle_deg` (0.1 to 30) so a moulded or cast part can be pulled out. Faces stay put on a neutral plane at the bottom of the part along `pull_direction` (`X`, `Y` or `Z`, default `Z`), or at the top with `neutral: "top"`, and lean inward as they get further from it. `faces` is `"sides"` (every face except flat ones facing along the pull direction, so cylinders and cones count) or a list of sides (`top`, `bottom`, `left`, `right`, `front`, `back`). | `solid`, `angle_deg`, `faces`, `pull_direction`, `neutral` |
 
 **Older solids in the CAD tree.** Every CAD feature that takes a solid (`boolean`, `transform`, `fillet_edges`, `chamfer_edges`, `hollow`, `draft`, patterns, `mirror`, and `target` on extrude, revolve, sweep and loft) can name a `plate`, `body`, `tube`, `reducer`, `volute` or `merge` by id. These are built first, wherever they are listed, with their own holes, flanges and bolt holes. A plate bent onto another plate (`bend` `to_plate`) and a tube listed in a `merge` are part of something else and cannot be named; name the `bend`'s `from_plate` or the `merge` instead. A solid a CAD feature uses up is no longer part of the result; ones nothing uses stay, as before. Example: [cad-box-with-boss-and-hole](../services/geometry/src/geometry/spec/examples/v4_3/cad-box-with-boss-and-hole.json) adds a boss to and drills through an older box. Drafted example: [cad-drafted-housing](../services/geometry/src/geometry/spec/examples/v4_3/cad-drafted-housing.json).
+
+## Version 4.4: divided-scroll turbo housings
+
+`part-spec.v4_4.schema.json` is 4.3 plus two optional `volute` fields. Specs from 3.2 to 4.3 are valid as 4.4 once the version is bumped (tested), and a volute without the new fields builds exactly as before.
+
+- `channels` (1, 2 or 4, default 1) cuts the circle into that many equal sectors. Channel *i* is its own scroll with its own tongue: it starts at angle (*i*-1)·360/N and winds counter-clockwise to *i*·360/N, where its own tangential inlet stub sits (flow counter-clockwise, entering from behind). Each channel carries 1/N of the flow, so its A/R is `a_over_r_cm` divided by N.
+- Inlet names: `inlet_1` to `inlet_N` for a divided housing (`inlet` for one channel). A flange's `end` accepts them; a divided housing refuses a flange on plain `inlet`, with an error naming the valid ends.
+- `inlet_diameter_mm` (inner diameter) sets the open end of every inlet stub, which then narrows along `inlet_length_mm` to the passage. Use it to match a real flange bore instead of the size derived from A/R.
+- Checks: channels whose stubs would run into each other are refused in plain words.
+- Limits: a fit-check and casting-pattern model. The wall between channels is only the tongue gap, with no flow simulation, wastegate or vanes. Dimensions of a real housing (such as the GT2860RS) are not built in. Example: [four-channel-volute](../services/geometry/src/geometry/spec/examples/v4_4/four-channel-volute.json).

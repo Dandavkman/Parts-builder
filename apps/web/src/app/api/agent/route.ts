@@ -133,7 +133,7 @@ export async function POST(request: Request) {
           anchors: references.anchors,
           dimensions: references.dimensions,
           build: buildWithGeometryService,
-          ...(specVersion === "4.3" ? { cadTool: callCadTool } : {}),
+          ...(specVersion === "4.4" ? { cadTool: callCadTool } : {}),
           emit,
           record,
           searchesLeft: webSearchEnabled() ? Math.max(0, WEB_SEARCHES_PER_DESIGN - countWebSearches(saved)) : 0,

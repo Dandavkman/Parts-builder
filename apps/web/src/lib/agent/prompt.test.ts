@@ -4,7 +4,7 @@ import { FIXTURE_ANCHORS } from "./fixture-anchors";
 import { PART_SPEC_V1_EXAMPLES, PART_SPEC_V1_SCHEMA } from "./generated/part-spec-v1-reference";
 import { PART_SPEC_V2_1_EXAMPLES, PART_SPEC_V2_1_SCHEMA } from "./generated/part-spec-v2-1-reference";
 import { PART_SPEC_V2_EXAMPLES, PART_SPEC_V2_SCHEMA } from "./generated/part-spec-v2-reference";
-import { PART_SPEC_V4_3_EXAMPLES, PART_SPEC_V4_3_SCHEMA } from "./generated/part-spec-v4-3-reference";
+import { PART_SPEC_V4_4_EXAMPLES, PART_SPEC_V4_4_SCHEMA } from "./generated/part-spec-v4-4-reference";
 import { agentSpecVersion, buildSystemPrompt, EVERYDAY_SAFETY_RULES, VEHICLE_SAFETY_RULES } from "./prompt";
 import { parseRequest } from "./request";
 
@@ -126,8 +126,9 @@ describe("Part Spec 2.0 prompt (B1.17d)", () => {
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "3" })).toBe("1.1");
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "2.0" })).toBe("2.0");
     expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "2.1" })).toBe("2.1");
-    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "4.2" })).toBe("4.3");
-    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "4.3" })).toBe("4.3");
+    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "4.2" })).toBe("4.4");
+    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "4.3" })).toBe("4.4");
+    expect(agentSpecVersion({ DESIGN_AGENT_SPEC_VERSION: "4.4" })).toBe("4.4");
   });
 
   it("keeps the 1.1 prompt free of the body feature by default", () => {
@@ -184,22 +185,22 @@ describe("Part Spec 2.1 prompt (B1.22)", () => {
   });
 });
 
-describe("Part Spec 4.3 prompt (CAD feature tree)", () => {
-  const v43Path = new URL("../../../../../services/geometry/src/geometry/spec/part-spec.v4_3.schema.json", import.meta.url);
+describe("Part Spec 4.4 prompt (CAD feature tree)", () => {
+  const v43Path = new URL("../../../../../services/geometry/src/geometry/spec/part-spec.v4_4.schema.json", import.meta.url);
 
-  it("quotes the 4.3 schema, every example and the CAD conventions", () => {
-    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "4.3");
-    expect(prompt).toContain(JSON.stringify(PART_SPEC_V4_3_SCHEMA));
-    for (const example of PART_SPEC_V4_3_EXAMPLES) expect(prompt).toContain(JSON.stringify(example));
+  it("quotes the 4.4 schema, every example and the CAD conventions", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "4.4");
+    expect(prompt).toContain(JSON.stringify(PART_SPEC_V4_4_SCHEMA));
+    for (const example of PART_SPEC_V4_4_EXAMPLES) expect(prompt).toContain(JSON.stringify(example));
     expect(prompt).toContain("feature history");
     expect(prompt).toContain("cad_tool");
     expect(prompt).not.toContain('"spec_version": "2.1"');
   });
 
-  it("matches the schema file, every example is 4.3 and the CAD examples are included", () => {
-    expect(PART_SPEC_V4_3_SCHEMA).toEqual(JSON.parse(readFileSync(v43Path, "utf8")));
-    expect(PART_SPEC_V4_3_EXAMPLES.every((e) => e.spec_version === "4.3")).toBe(true);
-    const text = JSON.stringify(PART_SPEC_V4_3_EXAMPLES);
+  it("matches the schema file, every example is 4.4 and the CAD examples are included", () => {
+    expect(PART_SPEC_V4_4_SCHEMA).toEqual(JSON.parse(readFileSync(v43Path, "utf8")));
+    expect(PART_SPEC_V4_4_EXAMPLES.every((e) => e.spec_version === "4.4")).toBe(true);
+    const text = JSON.stringify(PART_SPEC_V4_4_EXAMPLES);
     for (const type of ["sweep", "loft", "fillet_edges", "hollow", "circular_pattern", "mirror", "draft"]) {
       expect(text, type).toContain(`"type":"${type}"`);
     }
