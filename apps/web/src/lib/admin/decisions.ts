@@ -26,6 +26,11 @@ export function decideTakedown(id: string, decision: "remove" | "dismiss" | "res
   return post(`/api/admin/takedowns/${encodeURIComponent(id)}`, { decision, note }, doFetch);
 }
 
+/** Approve (hands it to the coding agent) or reject a piece of tester feedback. */
+export function decideFeedbackAction(id: string, decision: "approve" | "reject", note: string | undefined, doFetch: typeof fetch = fetch): Promise<DecisionResult> {
+  return post(`/api/admin/feedback/${encodeURIComponent(id)}`, { decision, note }, doFetch);
+}
+
 /** Record a payout already sent to a seller (bank or transfer reference required, so it is recorded once). Moves no money. */
 export function recordPayoutAction(input: { storeId: string; amountCents: number; ref: string; note?: string }, doFetch: typeof fetch = fetch): Promise<DecisionResult> {
   return post("/api/admin/payouts", input, doFetch);

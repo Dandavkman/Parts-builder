@@ -8,6 +8,8 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 | `/api/admin/agent-failures` | GET | admin | How well the design agent is doing over the last `?days=` days (default 7, up to 90): the share of designs whose last version built, the ten most common failures with example requests, and draft benchmark cases from them. |
 | `/api/admin/ai-cost` | GET | admin | AI spend over the last `?days=` days (default 1, up to 90): total, most expensive designs and users. Prices are estimates. |
 | `/api/admin/licenses` | POST | admin | Grants a user a scan license by hand. Body: `{ ownerId, vehicleId, area, note? }`. |
+| `/api/admin/feedback` | GET | admin | Tester feedback, `?status=new` (default), `approved` or `rejected`. |
+| `/api/admin/feedback/[id]` | POST | admin | Body: `{ decision: "approve" \| "reject", note? }`. Approving opens a GitHub issue for the coding agent (needs `GITHUB_FEEDBACK_TOKEN` and `GITHUB_FEEDBACK_REPO`); without them the comment is approved and the reason is recorded. Approving again retries when no issue was created. |
 | `/api/admin/listings` | GET | admin | Listings waiting for an admin's decision. |
 | `/api/admin/listings/[id]` | POST | admin | Approves or rejects a listing. Body: `{ decision: "approve" \| "reject", note?, checks?: { notFactoryCopy, noTrademark } }`. |
 | `/api/admin/orders` | GET | admin | All orders for the admin console. `?status=` narrows to one status. |
@@ -31,6 +33,8 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 | `/api/designs/[id]/current` | POST | signed in | Body `{ version }`: makes that earlier version that built the current one (undo). |
 | `/api/designs/[id]/dimensions` | POST | signed in | The user's answer to a value the agent found online: `{ id, action: "confirm", value_mm? }` or `{ id, action: "reject" }`. Only the owner can answer, and only a confirmed value reaches the agent. / |
 | `/api/designs/[id]/edit` | POST | signed in | Slider edits. Body `{ base_version, spec }`: `spec` must be the base version's spec with only numbers changed. It is rebuilt without calling the AI and saved as a new version (`created_by` "slider") only if it builds, so a drag through invalid values leaves no failed versions behind. / |
+| `/api/designs/[id]/feedback` | GET | signed in | The signed-in user's own feedback on this design, newest first, with its status (no admin notes). |
+| `/api/designs/[id]/feedback` | POST | signed in | Body: `{ body }` (10 to 2000 characters). Saves a comment about this design for the admin to review. 10 per hour per user. |
 | `/api/designs/[id]/orders` | POST | signed in | Orders one quote. Body: `{ quoteId, shipping, confirmNotSafetyCritical, acceptFitTerms }`. Both confirmations must be true; their time is stored with the order. Answers 503 when payments are not enabled. / |
 | `/api/designs/[id]/quotes` | GET | signed in | Unexpired quotes for the design's current version, cheapest first. |
 | `/api/designs/[id]/quotes` | POST | signed in | Builds the current version, measures it, and saves one quote per capable partner and material. Body: `{ quantity }`. |

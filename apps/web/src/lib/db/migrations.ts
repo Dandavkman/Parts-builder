@@ -329,6 +329,25 @@ export const MIGRATIONS: { id: string; sql: string[] }[] = [
     id: "0021_store_white_label",
     sql: [`ALTER TABLE stores ADD COLUMN IF NOT EXISTS show_platform_brand boolean NOT NULL DEFAULT false`],
   },
+  {
+    id: "0022_feedback",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS feedback (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        owner_id text NOT NULL,
+        design_id uuid REFERENCES designs(id) ON DELETE SET NULL,
+        body text NOT NULL,
+        status text NOT NULL DEFAULT 'new',
+        admin_note text,
+        decided_by text,
+        decided_at timestamptz,
+        issue_url text,
+        dispatch_error text,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )`,
+      `CREATE INDEX IF NOT EXISTS feedback_status_created ON feedback (status, created_at)`,
+    ],
+  },
 ];
 
 /** Minimal database surface the runner needs; both the Neon and PGlite drivers fit it via drizzle. */

@@ -10,6 +10,7 @@ const SECTIONS = [
   { href: "/admin/payouts", title: "Seller payouts", hint: "What each seller is owed; record payouts you sent." },
   { href: "/admin/agent-failures", title: "Design agent failures", hint: "Success rate and the most common failures this week." },
   { href: "/admin/takedowns", title: "Takedown claims", hint: "Decide new claims and counter-notices." },
+  { href: "/admin/feedback", title: "Tester feedback", hint: "Approve or reject comments; approved ones go to the coding agent." },
   { href: "/admin/waitlist", title: "Waitlist", hint: "Who signed up, with a CSV download." },
 ];
 
