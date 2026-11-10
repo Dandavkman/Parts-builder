@@ -6,7 +6,7 @@ import type { Workspace } from "./use-workspace";
 export function DesignToolbar({ w }: { w: Workspace }) {
   const { chat, designs, newDesign, loadDesign, notice } = w;
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
       <button type="button" onClick={newDesign} disabled={chat.busy} className="rounded border border-line-strong px-3 py-1 disabled:opacity-40">
         New design
       </button>

@@ -1,9 +1,7 @@
 "use client";
 
-import { isActivity } from "../../lib/agent/chat-state";
 import { parseChatText, type Span } from "../../lib/agent/chat-text";
 import { START_CHOICES } from "./start-choices";
-import { useStickToBottom } from "./use-stick-to-bottom";
 import type { Workspace } from "./use-workspace";
 
 function Spans({ spans }: { spans: Span[] }) {
@@ -17,7 +15,7 @@ function Spans({ spans }: { spans: Span[] }) {
 /** An agent message: paragraphs, bullet lists and bold, with no HTML from the model ever inserted. */
 function AssistantText({ text }: { text: string }) {
   return (
-    <div className="mr-8 space-y-2 rounded border border-line bg-raised px-3 py-2">
+    <div className="mr-8 space-y-2 rounded bg-raised px-3 py-2">
       {parseChatText(text).map((block, i) =>
         block.type === "list" ? (
           <ul key={i} className="list-disc space-y-1 pl-5">
@@ -40,12 +38,9 @@ function AssistantText({ text }: { text: string }) {
 /** The conversation: start choices, messages, the photo tray and the message form. */
 export function ChatPanel({ w }: { w: Workspace }) {
   const { chat, startWith, photo, clearPhoto, fileRef, draftRef, choosePhoto, photoCount, draft, setDraft, send } = w;
-  const talk = chat.items.filter((item) => !isActivity(item));
-  const lastActivity = [...chat.items].reverse().find(isActivity)?.text;
-  const scroll = useStickToBottom<HTMLDivElement>(`${chat.items.length}:${chat.items.at(-1)?.text.length ?? 0}:${chat.busy}`);
   return (
-    <section className="glow-frame flex min-h-[60vh] min-w-0 flex-1 flex-col rounded border border-line lg:min-h-0">
-      <div ref={scroll.ref} onScroll={scroll.onScroll} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
+    <section className="flex h-[560px] flex-col rounded border border-line">
+      <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm" aria-live="polite">
         {chat.items.length === 0 && (
           <div className="grid gap-2 sm:grid-cols-2" aria-label="Ways to start">
             {START_CHOICES.map((choice) => (
@@ -61,7 +56,7 @@ export function ChatPanel({ w }: { w: Workspace }) {
             ))}
           </div>
         )}
-        {talk.map((item, i) =>
+        {chat.items.map((item, i) =>
           item.kind === "assistant" ? (
             <AssistantText key={i} text={item.text} />
           ) : (
@@ -69,7 +64,7 @@ export function ChatPanel({ w }: { w: Workspace }) {
             key={i}
             className={
               item.kind === "user"
-                ? "ml-8 rounded bg-contrast px-3 py-2 text-on-contrast"
+                ? "ml-8 rounded bg-primary px-3 py-2 text-on-primary"
                 : item.kind === "error"
                   ? "rounded border border-danger-line px-3 py-2 text-danger"
                   : "px-1 text-xs text-muted"
@@ -79,7 +74,7 @@ export function ChatPanel({ w }: { w: Workspace }) {
           </p>
           ),
         )}
-        {chat.busy && <p className="px-1 text-xs text-muted">Working{lastActivity ? `: ${lastActivity}` : "..."}</p>}
+        {chat.busy && <p className="px-1 text-xs text-muted">Working...</p>}
       </div>
       {photo && (
         <div className="flex items-center gap-3 border-t border-line px-3 pt-3 text-xs text-muted">
@@ -94,7 +89,6 @@ export function ChatPanel({ w }: { w: Workspace }) {
         className="flex gap-2 border-t border-line p-3"
         onSubmit={(e) => {
           e.preventDefault();
-          scroll.pin();
           void send();
         }}
       >

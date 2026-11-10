@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyEvent, initialChat, isActivity, openDesign, parseLines, sendMessage } from "./chat-state";
+import { applyEvent, initialChat, openDesign, parseLines, sendMessage } from "./chat-state";
 import type { AgentEvent } from "./types";
 
 const play = (events: AgentEvent[]) => events.reduce(applyEvent, sendMessage(initialChat, "make a plate"));
@@ -98,23 +98,6 @@ describe("materials event", () => {
 describe("openDesign", () => {
   it("replaces the page with a saved conversation", () => {
     const state = openDesign("d1", [{ kind: "user", text: "hi" }]);
-    expect(state).toEqual({ designId: "d1", items: [{ kind: "user", text: "hi" }], builtCount: 0, busy: false, materialsAdvice: null });
-  });
-});
-
-describe("materials check", () => {
-  const note = (advice: string): AgentEvent => ({ type: "materials", advice });
-  it("shows an unchanged materials result once, and again when it changes", () => {
-    const state = [note("A"), note("A"), note("B"), note("A")].reduce(applyEvent, initialChat);
-    expect(state.items.map((i) => i.kind === "status" && i.text)).toEqual(["A", "B", "A"]);
-  });
-});
-
-describe("activity split", () => {
-  it("keeps notices the user must read in the conversation", () => {
-    expect(isActivity({ kind: "status", text: "cad_tool:extrude (applied)" })).toBe(true);
-    expect(isActivity({ kind: "status", text: "I can't help with that request." })).toBe(false);
-    expect(isActivity({ kind: "status", text: "Found h = 5 mm online. Please confirm it on the right before I use it." })).toBe(false);
-    expect(isActivity({ kind: "user", text: "hi" })).toBe(false);
+    expect(state).toEqual({ designId: "d1", items: [{ kind: "user", text: "hi" }], builtCount: 0, busy: false });
   });
 });

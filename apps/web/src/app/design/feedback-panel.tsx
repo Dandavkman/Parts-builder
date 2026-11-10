@@ -2,21 +2,12 @@
 
 import { statusLabel } from "../../lib/feedback/client";
 import { useFeedback } from "./use-feedback";
-import { useOpenFlag } from "./use-open-flag";
 
-/** Optional collapsible panel: testers tell us what is wrong or missing, tied to the design they are on. */
+/** The Feedback tab: testers tell us what is wrong or missing, tied to the design they are on. */
 export function FeedbackPanel({ designId }: { designId: string | null }) {
   const f = useFeedback(designId);
-  const [open, toggle] = useOpenFlag("design.feedback.open", false);
   return (
-    <section className="mt-2 rounded border border-line text-sm" aria-label="Feedback">
-      <button type="button" onClick={toggle} aria-expanded={open} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs">
-        <span aria-hidden className="text-accent">{open ? "▾" : "▸"}</span>
-        <span className="font-caps uppercase tracking-widest text-accent">Feedback</span>
-        {!open && <span className="text-muted">Tell us what is wrong or missing</span>}
-      </button>
-      {open && (
-        <div className="max-h-72 space-y-3 overflow-y-auto border-t border-line p-3">
+    <section className="max-w-2xl space-y-4 text-sm" aria-label="Feedback">
       <p className="text-muted">Found a problem or something missing? Tell us. We read every comment, and the ones we approve get worked on.</p>
       {!f.canSend ? (
         <p className="rounded border border-line p-3 text-muted">Start a design first, so we know what you were looking at.</p>
@@ -46,8 +37,6 @@ export function FeedbackPanel({ designId }: { designId: string | null }) {
             </li>
           ))}
         </ul>
-      )}
-        </div>
       )}
     </section>
   );

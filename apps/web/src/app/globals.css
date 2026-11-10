@@ -22,8 +22,6 @@
   --primary: #e08a78;
   --on-primary: #241b17;
   --accent: #e08a78;
-  --contrast: #5cc4c4;
-  --on-contrast: #10201f;
   --card: rgb(60 44 36 / 0.55);
   --highlight: #f2e7da;
   --wash-a: #5a2e26;
@@ -53,8 +51,6 @@
   --primary: #a8473c;
   --on-primary: #fff8f0;
   --accent: #a8473c;
-  --contrast: #2a7f82;
-  --on-contrast: #f4fbfb;
   --card: rgb(255 251 244 / 0.62);
   --highlight: #ffffff;
   --wash-a: #ebc3b6;
@@ -76,8 +72,6 @@
   --color-primary: var(--primary);
   --color-on-primary: var(--on-primary);
   --color-accent: var(--accent);
-  --color-contrast: var(--contrast);
-  --color-on-contrast: var(--on-contrast);
   --color-card: var(--card);
   --color-warning-soft: var(--warning-soft);
   --color-warning-ink: var(--warning-ink);
@@ -145,9 +139,4 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: none; }
   }
-}
-
-/* Design page: a soft glow around the 3D viewer and the active panels, from the landing page's glowing icon. */
-.glow-frame {
-  box-shadow: 0 0 0 1px var(--line), 0 0 28px -8px color-mix(in srgb, var(--contrast) 45%, transparent);
 }

@@ -1,7 +1,5 @@
 "use client";
 
-import { ActivityLog } from "./activity-log";
-import { isActivity } from "../../lib/agent/chat-state";
 import { ModelViewer } from "../viewer/plate-viewer";
 import { OrderPanel } from "./order-panel";
 import { Sliders } from "./sliders";
@@ -14,8 +12,8 @@ const PART_ERROR =
 export function PartPanel({ w }: { w: Workspace }) {
   const { chat, partUrl, current, downloadUrl, pending, edits, setEdits, answerSuggestion, dimensions, spec, commitSlider, designId, versions, useVersion } = w;
   return (
-    <section className="flex min-h-0 min-w-0 flex-col lg:flex-[3]">
-      <div className="glow-frame h-[55vh] min-h-72 overflow-hidden rounded border border-line lg:h-auto lg:min-h-0 lg:flex-1">
+    <section className="flex h-[560px] flex-col">
+      <div className="min-h-0 flex-1 overflow-hidden rounded border border-line">
         {partUrl ? (
           <ModelViewer url={partUrl} errorMessage={PART_ERROR} />
         ) : (
@@ -24,10 +22,8 @@ export function PartPanel({ w }: { w: Workspace }) {
           </div>
         )}
       </div>
-      <ActivityLog items={chat.items.filter(isActivity)} busy={chat.busy} />
-      <div className="mt-2 min-h-0 space-y-0 overflow-y-auto lg:max-h-[38%] lg:shrink-0">
       {partUrl && (
-        <div className="flex gap-3 text-sm">
+        <div className="mt-2 flex gap-3 text-sm">
           <span className="text-muted">Download version {current}:</span>
           <a className="underline" href={downloadUrl("step")}>STEP</a>
           <a className="underline" href={downloadUrl("stl")}>STL</a>
@@ -90,7 +86,6 @@ export function PartPanel({ w }: { w: Workspace }) {
           ))}
         </ul>
       )}
-      </div>
     </section>
   );
 }
