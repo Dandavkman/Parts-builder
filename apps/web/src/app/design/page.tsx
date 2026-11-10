@@ -4,13 +4,12 @@ import { Workspace } from "./workspace";
 export default function DesignPage() {
   return (
     <>
-      <SiteHeader />
-      <main className="mx-auto max-w-6xl px-6 py-6">
-        <h1 className="text-2xl font-semibold">Design a part</h1>
-        <p className="mt-1 text-sm text-muted">
-          Describe a part in words, and add a photo to start from. Give one real measurement (or put
-          a card or coin next to it) so the agent can get the size right. Designs that need a car scan
-          use a stand-in panel until scans are connected.
+      <SiteHeader wide />
+      <main className="mx-auto flex w-full max-w-[1800px] flex-col px-4 pb-4 lg:h-[calc(100dvh-4.75rem)]">
+        <div className="meander" aria-hidden />
+        <h1 className="mt-2 font-caps text-sm uppercase tracking-[0.25em] text-accent">Design a part</h1>
+        <p className="mt-1 text-xs text-muted">
+          Describe a part and add a photo to start from. Give one real measurement (or put a card or coin next to it) so the agent can get the size right.
         </p>
         <Workspace />
       </main>

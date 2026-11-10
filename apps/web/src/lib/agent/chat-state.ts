@@ -12,13 +12,21 @@ export interface ChatState {
   /** Counts specs that built; the part viewer reloads when it changes. */
   builtCount: number;
   busy: boolean;
+  /** The last materials-check text shown, so an unchanged result is not repeated after every build. */
+  materialsAdvice: string | null;
 }
 
-export const initialChat: ChatState = { designId: null, items: [], builtCount: 0, busy: false };
+export const initialChat: ChatState = { designId: null, items: [], builtCount: 0, busy: false, materialsAdvice: null };
+
+/** Status lines the user must read stay in the conversation; the rest (tool calls, build attempts, checks) go to the activity log. */
+const NOTICE = /^(I can't help|I stopped|Found .+ Please confirm)/;
+export function isActivity(item: ChatItem): boolean {
+  return item.kind === "status" && !NOTICE.test(item.text);
+}
 
 /** Reopens a saved design: its transcript replaces whatever the page showed. */
 export function openDesign(designId: string, items: ChatItem[]): ChatState {
-  return { designId, items, builtCount: 0, busy: false };
+  return { ...initialChat, designId, items };
 }
 
 export function sendMessage(state: ChatState, text: string): ChatState {
@@ -54,7 +62,8 @@ export function applyEvent(state: ChatState, event: AgentEvent): ChatState {
       return { ...state, builtCount: state.builtCount + (event.ok ? 1 : 0), items: [...state.items, { kind: "status", text }, ...notes] };
     }
     case "materials":
-      return { ...state, items: [...state.items, { kind: "status", text: event.advice }] };
+      if (event.advice === state.materialsAdvice) return state;
+      return { ...state, materialsAdvice: event.advice, items: [...state.items, { kind: "status", text: event.advice }] };
     case "dimension": {
       const d = event.dimension;
       if (event.pending) {
