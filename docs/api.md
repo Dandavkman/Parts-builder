@@ -41,6 +41,7 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 | `/api/designs/[id]/tags` | GET | signed in | The cars this design is tagged for. Owner only. |
 | `/api/designs/[id]/tags` | POST | signed in | `{ vehicleId, area }`: tag the design with every car that scan covers. The user must hold the scan. |
 | `/api/designs/[id]/versions/[version]/download` | GET | signed in | Builds a saved version of the user's design as STEP, STL or GLB (`?format=`, default step). `version` is a number or `current` (the latest version that built). / |
+| `/api/health/auth` | GET | public | Public. Reports yes/no whether the Clerk keys are set, plain ASCII and from the same instance, and whether Clerk accepts the secret key. Never returns a key. 503 when something is wrong. |
 | `/api/listings/[id]/order` | POST | signed in | Buys one unit of a store listing at its retail price. Body: `{ shipping, email?, confirmNotSafetyCritical, acceptFitTerms }`. The part is re-measured and re-quoted with the cheapest partner so fulfillment has a real partner job. / |
 | `/api/orders` | GET | signed in | The signed-in user's orders, newest first. |
 | `/api/orders/[id]` | GET | signed in | One of the signed-in user's orders, with the quote it was bought on. |
