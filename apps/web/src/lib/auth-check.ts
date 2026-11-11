@@ -10,13 +10,22 @@ export interface KeyReport {
   /** Plain ASCII, no spaces, quotes or line breaks. */
   clean: boolean;
   kind: "live" | "test" | "unknown";
+  /** Where the unwanted characters are (position and Unicode code point, never the key's own characters), at most 5. */
+  badChars: { index: number; codePoint: string }[];
+  length: number;
 }
 
 function report(value: string | undefined, prefix: "pk" | "sk"): KeyReport {
-  if (!value) return { set: false, clean: false, kind: "unknown" };
-  const clean = /^[\x21-\x7e]+$/.test(value) && !/["'`]/.test(value);
+  if (!value) return { set: false, clean: false, kind: "unknown", badChars: [], length: 0 };
+  const badChars: KeyReport["badChars"] = [];
+  [...value].forEach((ch, index) => {
+    if (badChars.length < 5 && (!/^[\x21-\x7e]$/.test(ch) || /["'`]/.test(ch))) {
+      badChars.push({ index, codePoint: `U+${ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}` });
+    }
+  });
+  const clean = badChars.length === 0;
   const kind = value.startsWith(`${prefix}_live_`) ? "live" : value.startsWith(`${prefix}_test_`) ? "test" : "unknown";
-  return { set: true, clean, kind };
+  return { set: true, clean, kind, badChars, length: value.length };
 }
 
 export function checkClerkKeys(env: Env = process.env) {
