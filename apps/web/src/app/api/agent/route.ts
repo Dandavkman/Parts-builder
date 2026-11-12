@@ -20,6 +20,7 @@ import type { AgentEvent } from "../../../lib/agent/types";
 import { MESSAGES_PER_MINUTE, recentUserMessages } from "../../../lib/ai-cost";
 import { anthropicClassifier, safetyGuardOn } from "../../../lib/safety/classifier";
 import { applyVerdict } from "../../../lib/safety/store";
+import { attachScan, scanForDesign } from "../../../lib/scans/store";
 import { DatabaseNotConfigured, getDb } from "../../../lib/db/client";
 import { checkAiMessage, checkNewDesign, limitsEnforced } from "../../../lib/limits";
 import { aiMessagesUsed, countAiMessage, designCount } from "../../../lib/limits-store";
@@ -110,7 +111,11 @@ export async function POST(request: Request) {
   if (parsed.image && !(await addPhoto(db, designId, parsed.image))) {
     return Response.json({ error: "This design already has the most photos allowed." }, { status: 400 });
   }
+  if (parsed.scanId && !(await attachScan(db, designId, parsed.scanId, ownerId))) {
+    return Response.json({ error: "That scan was not found or has not finished uploading." }, { status: 400 });
+  }
   await countAiMessage(db, ownerId);
+  const scan = await scanForDesign(db, designId);
   const references = await loadReferences(db, designId);
   const history = withUserMessage(saved, parsed.message);
   const photos = await loadPhotos(db, designId);
@@ -128,7 +133,7 @@ export async function POST(request: Request) {
         await runAgent({
           turn: anthropicTurn(client),
           model: process.env.DESIGN_AGENT_MODEL || DEFAULT_MODEL,
-          system: buildSystemPrompt(references.anchors, references.dimensions, specVersion),
+          system: buildSystemPrompt(references.anchors, references.dimensions, specVersion, scan),
           history: withPhotos(history, photos),
           anchors: references.anchors,
           dimensions: references.dimensions,

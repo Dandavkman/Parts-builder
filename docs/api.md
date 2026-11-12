@@ -47,6 +47,9 @@ Every route handler in `apps/web/src/app/api`, with who may call it and what it 
 | `/api/orders/[id]` | GET | signed in | One of the signed-in user's orders, with the quote it was bought on. |
 | `/api/shop/[slug]` | GET | public | Public. A published store and its approved listings, with no owner or review details. |
 | `/api/shop/[slug]` | OPTIONS | public | Lets any website read the store (for the buy button). |
+| `/api/scans` | GET | signed in | Whether scan upload is switched on (R2 configured). `{ enabled, max_bytes }`. |
+| `/api/scans` | POST | signed in | Body: `{ filename, size_bytes }`. Records the scan and returns `{ scan_id, upload_url, content_type }`; the browser PUTs the file straight to R2 (1 hour). 503 until R2 is configured. |
+| `/api/scans/[id]/complete` | POST | signed in | Marks the upload finished. Body: `{ design_id? }` also attaches the scan to that design. |
 | `/api/stores` | GET | signed in | The signed-in user's store and its listings, or `{ store: null }`. |
 | `/api/stores` | POST | signed in | Opens a store. Body: `{ name, slug }`. It stays unpublished until the seller is verified (B4.1). |
 | `/api/stores/[id]/listings` | POST | signed in | Lists a design version in the user's own store. Body: `{ designId, quoteId, retailCents, title }`. The listing waits for review. |

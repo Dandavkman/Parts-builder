@@ -51,13 +51,20 @@ describe("library scans never reach the browser (plan rule 2)", () => {
     await expect(memoryStorage().presignGet("library/mazda-mx5-na/dash.glb", 60)).rejects.toBeInstanceOf(DownloadRefused);
   });
 
-  it("no page or API route touches file storage yet; one that does must be reviewed against rule 2", () => {
+  // Reviewed against rule 2: users uploading their OWN scans. They only presign an upload (PUT) under scans/<owner>/,
+  // never a download (GET), and never read the library/ prefix, so no library scan or full-resolution file can reach a browser.
+  const REVIEWED = ["app/api/scans/route.ts", "app/design/use-scan-upload.ts"];
+
+  it("no page or API route touches file storage unless it was reviewed against rule 2", () => {
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const name of readdirSync(dir)) {
         const p = join(dir, name);
         if (statSync(p).isDirectory()) walk(p);
-        else if (/\.(ts|tsx)$/.test(name) && !name.endsWith(".test.ts") && /lib\/storage|presignGet|ObjectStorage/.test(readFileSync(p, "utf8"))) offenders.push(p);
+        else if (/\.(ts|tsx)$/.test(name) && !name.endsWith(".test.ts") && /lib\/storage|presignGet|ObjectStorage/.test(readFileSync(p, "utf8"))) {
+          if (!REVIEWED.some((r) => p.endsWith(r))) offenders.push(p);
+          else expect(readFileSync(p, "utf8")).not.toMatch(/presignGet|LIBRARY_PREFIX|library\//);
+        }
       }
     };
     walk(join(__dirname, "../../app"));

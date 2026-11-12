@@ -58,7 +58,7 @@ Then set `SITE_URL=https://ktiso.app` (Production) and redeploy. It feeds the si
 | `DESIGN_AGENT_MODEL` | B1.8a (optional; model id for the design agent, default `claude-sonnet-5-5`) |
 | `DESIGN_AGENT_WEB_SEARCH` | B1.16 (optional; `off` stops the agent searching the web for product measurements, which costs about 1 cent per search; the Anthropic Console must allow web search for it to work, and the agent carries on without it if it does not) |
 | `DESIGN_AGENT_SPEC_VERSION` | B1.17d (optional; set to `2.0` to let the design agent write Part Spec 2.0 solid bodies such as vases, boxes and knobs, `2.1` to add blind bores and separate top and bottom round-overs (B1.22), or `4.3` (`4.2` still works and means the same) for the CAD feature tree and the step-by-step `cad_tool` (the geometry service must have `/tools`, so run `fly deploy` first). Set it only after `fly deploy` has put that Part Spec on the geometry service, otherwise builds of those specs fail; leave it empty to keep 1.1. Any other value keeps 1.1) |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | B1.1 (scan upload) |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | B1.1 (scan upload). Until all four are set, the design page's Scan button is greyed out and `POST /api/scans` answers 503. Also set a CORS rule on the bucket (see below), or the browser cannot upload. |
 | `GEOMETRY_SERVICE_URL` | B0.7 (address of the Fly.io geometry service) |
 | `LIMITS_ENFORCED` | B2.1 (optional; `1` enforces the abuse limits on AI messages and saved designs, the same for everyone. The limits in `lib/limits.ts` are placeholders until you decide them; leave empty and nobody is blocked. Replaces `PLANS_ENFORCED`; delete `PLANS_ENFORCED`, `STRIPE_PRO_PRICE_ID` and `PRO_PRICE_CONFIRMED` from Vercel if you set them) |
 | `RESEND_API_KEY` | B2.9 (optional; API key from resend.com, server-side only. With `EMAIL_FROM` it turns on order emails; without them emails are only logged) |
@@ -79,3 +79,11 @@ Then set `SITE_URL=https://ktiso.app` (Production) and redeploy. It feeds the si
 | Stripe keys | Phase 2 |
 
 Vercel's free Hobby plan is for non-commercial use. Move to the paid plan before taking real orders (Phase 2).
+
+
+## Scan upload: Cloudflare R2 setup (about 10 minutes, free tier)
+1. Cloudflare dashboard, R2: create a bucket (for example `ktiso-scans`; keep it private, no public access).
+2. R2, Manage API tokens: create a token with **Object Read & Write** limited to that bucket. Copy the Access Key ID and Secret Access Key (shown once). The Account ID is on the R2 overview page.
+3. Bucket, Settings, CORS policy: allow `PUT` from `https://ktiso.app` and `https://*.vercel.app`, with allowed headers `content-type`. For example:
+   `[{"AllowedOrigins":["https://ktiso.app","https://www.ktiso.app"],"AllowedMethods":["PUT"],"AllowedHeaders":["content-type"],"MaxAgeSeconds":3600}]`
+4. In Vercel add the four `R2_*` variables for Production (and Preview if you want to test there), paste each as one plain line, and redeploy. Check `GET /api/scans` (signed in) says `"enabled":true`.

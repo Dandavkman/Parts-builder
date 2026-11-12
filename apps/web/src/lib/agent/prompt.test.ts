@@ -79,13 +79,13 @@ describe("parseRequest", () => {
   const id = "123e4567-e89b-12d3-a456-426614174000";
 
   it("accepts a message with or without a design", () => {
-    expect(parseRequest({ message: "hi" })).toEqual({ designId: null, message: "hi", image: null });
-    expect(parseRequest({ message: "hi", design_id: id })).toEqual({ designId: id, message: "hi", image: null });
+    expect(parseRequest({ message: "hi" })).toEqual({ designId: null, message: "hi", image: null, scanId: null });
+    expect(parseRequest({ message: "hi", design_id: id })).toEqual({ designId: id, message: "hi", image: null, scanId: null });
   });
 
   it("accepts a small image and rejects bad ones", () => {
     const ok = parseRequest({ message: "hi", image: { media_type: "image/jpeg", data: "QUJD" } });
-    expect(ok).toEqual({ designId: null, message: "hi", image: { mediaType: "image/jpeg", base64: "QUJD" } });
+    expect(ok).toEqual({ designId: null, message: "hi", image: { mediaType: "image/jpeg", base64: "QUJD" }, scanId: null });
     for (const image of [
       { media_type: "image/gif", data: "QUJD" },
       { media_type: "image/png", data: "not base64!" },
@@ -207,5 +207,23 @@ describe("Part Spec 4.3 prompt (CAD feature tree)", () => {
 
   it("leaves the 2.1 prompt without the CAD conventions", () => {
     expect(buildSystemPrompt(FIXTURE_ANCHORS, [], "2.1")).not.toContain("feature history");
+  });
+});
+
+describe("attached scan", () => {
+  it("tells the agent a scan is attached but unreadable, and says nothing when there is none", () => {
+    const withScan = buildSystemPrompt(FIXTURE_ANCHORS, [], "4.3", { filename: "trunk lid.stl", sizeBytes: 250 * 1024 * 1024 });
+    expect(withScan).toContain("## Attached scan");
+    expect(withScan).toContain("about 250 MB");
+    expect(withScan).toContain("do not claim to see anything in it");
+    expect(buildSystemPrompt(FIXTURE_ANCHORS, [], "4.3")).not.toContain("## Attached scan");
+  });
+});
+
+describe("scan_id in the request", () => {
+  it("accepts a scan id and rejects anything else", () => {
+    const id = "11111111-1111-1111-1111-111111111111";
+    expect(parseRequest({ message: "hi", scan_id: id })).toMatchObject({ scanId: id });
+    expect(parseRequest({ message: "hi", scan_id: "nope" })).toBe("scan_id must be a scan id.");
   });
 });
