@@ -409,3 +409,7 @@ Testers asked to drop a scan on the design page. Postgres cannot hold scans (up 
 
 ## 2026-11-12: Viewer grid sits below the part by a size-scaled gap
 A tester saw the 1,100 mm wing "under the blue mesh". The part's flat pad rests exactly on the floor and the grid was a fixed 0.01 mm below it, too close for the depth buffer at that size, so grid lines showed through the pad. The grid now sits `max(0.3% of the longest side, 0.05 mm)` below the part and is drawn first (`renderOrder -1`). Not yet confirmed in a browser; the Owner checks it on the preview.
+
+## 2026-11-12: scan join compares as text
+
+`designs.scan_id` is text and `user_scans.id` is uuid, so the join in `scanForDesign` failed with "operator does not exist: uuid = text" and every agent message returned 500 (introduced in #124). The join now casts the uuid to text. `lib/scans/store.test.ts` runs the real query on PGlite so this cannot return unnoticed.
