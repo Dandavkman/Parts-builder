@@ -314,3 +314,13 @@ def test_golden(path: Path) -> None:
     assert summary["solids"] == expected["solids"]
     assert summary["volume_mm3"] == pytest.approx(expected["volume_mm3"], rel=1e-3)
     assert summary["bbox_mm"] == pytest.approx(expected["bbox_mm"], abs=0.05)
+
+
+def test_wing_from_outlines_is_one_curved_solid() -> None:
+    """Spline outlines on YZ and XZ planes, extruded and unioned (the photo recipe)."""
+    spec = json.loads((SPEC_DIR / "examples" / "v4_3" / "cad-wing-from-outlines.json").read_text())
+    part = build_part(spec)
+    box = part.BoundingBox()
+    assert len(part.Solids()) == 1
+    assert box.xlen == pytest.approx(1000, abs=0.1)
+    assert 140 < box.zlen < 160

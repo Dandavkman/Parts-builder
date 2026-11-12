@@ -1,0 +1,268 @@
+{
+  "spec_version": "4.3",
+  "name": "Wing from side and front outlines",
+  "features": [
+    {
+      "id": "plate_sk_l",
+      "type": "sketch",
+      "plane": {
+        "name": "YZ",
+        "offset_mm": -500
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "path",
+            "start_mm": [
+              -120,
+              0
+            ],
+            "segments": [
+              {
+                "kind": "line",
+                "to_mm": [
+                  110,
+                  0
+                ]
+              },
+              {
+                "kind": "spline",
+                "through_mm": [
+                  [
+                    130,
+                    40
+                  ],
+                  [
+                    140,
+                    110
+                  ],
+                  [
+                    132,
+                    150
+                  ]
+                ]
+              },
+              {
+                "kind": "spline",
+                "through_mm": [
+                  [
+                    60,
+                    150
+                  ],
+                  [
+                    -60,
+                    138
+                  ],
+                  [
+                    -130,
+                    122
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "plate_l",
+      "type": "extrude",
+      "sketch": "plate_sk_l",
+      "distance_mm": 6
+    },
+    {
+      "id": "plate_sk_r",
+      "type": "sketch",
+      "plane": {
+        "name": "YZ",
+        "offset_mm": 494
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "path",
+            "start_mm": [
+              -120,
+              0
+            ],
+            "segments": [
+              {
+                "kind": "line",
+                "to_mm": [
+                  110,
+                  0
+                ]
+              },
+              {
+                "kind": "spline",
+                "through_mm": [
+                  [
+                    130,
+                    40
+                  ],
+                  [
+                    140,
+                    110
+                  ],
+                  [
+                    132,
+                    150
+                  ]
+                ]
+              },
+              {
+                "kind": "spline",
+                "through_mm": [
+                  [
+                    60,
+                    150
+                  ],
+                  [
+                    -60,
+                    138
+                  ],
+                  [
+                    -130,
+                    122
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "plate_r",
+      "type": "extrude",
+      "sketch": "plate_sk_r",
+      "distance_mm": 6
+    },
+    {
+      "id": "blade_sk",
+      "type": "sketch",
+      "plane": {
+        "name": "YZ",
+        "offset_mm": -497
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "polygon",
+            "points_mm": [
+              [
+                -120,
+                95
+              ],
+              [
+                120,
+                110
+              ],
+              [
+                120,
+                114
+              ],
+              [
+                -120,
+                99
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "blade",
+      "type": "extrude",
+      "sketch": "blade_sk",
+      "distance_mm": 994
+    },
+    {
+      "id": "cradle_sk",
+      "type": "sketch",
+      "plane": {
+        "name": "XZ",
+        "offset_mm": 110
+      },
+      "shapes": [
+        {
+          "outer": {
+            "kind": "path",
+            "start_mm": [
+              -497,
+              0
+            ],
+            "segments": [
+              {
+                "kind": "spline",
+                "through_mm": [
+                  [
+                    -300,
+                    25
+                  ],
+                  [
+                    0,
+                    40
+                  ],
+                  [
+                    300,
+                    25
+                  ],
+                  [
+                    497,
+                    0
+                  ]
+                ]
+              },
+              {
+                "kind": "line",
+                "to_mm": [
+                  497,
+                  60
+                ]
+              },
+              {
+                "kind": "spline",
+                "through_mm": [
+                  [
+                    300,
+                    70
+                  ],
+                  [
+                    0,
+                    75
+                  ],
+                  [
+                    -300,
+                    70
+                  ],
+                  [
+                    -497,
+                    60
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cradle",
+      "type": "extrude",
+      "sketch": "cradle_sk",
+      "distance_mm": 10
+    },
+    {
+      "id": "wing",
+      "type": "boolean",
+      "operation": "union",
+      "target": "plate_l",
+      "tools": [
+        "plate_r",
+        "blade",
+        "cradle"
+      ]
+    }
+  ]
+}

@@ -110,6 +110,19 @@ Size: there is no fixed size limit. Build parts at the size the user needs. Afte
 Connection: a finished part should be one connected solid unless the user wants separate pieces. After each build, read the piece count. If it says the part is several separate pieces, find the piece that is not touching and make it overlap (for example run a pipe into the flange or housing it should join), then build again.
 `.trim();
 
+/** Reading a photo for shape, and which CAD operations make curved shapes (Part Spec 4.3). Added after a live test turned a curved wing into flat plates. */
+export const SHAPE_FROM_PHOTO = `
+Reading shape from a photo. Before your first build from a photo, look at it and write a short shape brief in your reply or your thinking: (1) the separate parts, with one line on each (for example "two end plates, a straight blade, a curved cradle joining the plates"); (2) the proportions as ratios of the overall span, not guessed millimeters (plate depth is about 0.28 of the span); (3) for each part, its outline seen from the side, from the front and from above, as a few rough points, saying where it is curved, where it is straight and which edges are rounded. A curved edge in the photo must be curved in the model.
+Curved shapes need curved features. Do not replace a curved outline with a flat rectangle, a straight tilt or a box. Pick the operation like this:
+- A flat part with a curved or flowing outline (an end plate, a fairing side, a bracket): a sketch on the plane that matches the view you see it from, with a "path" outline using "spline" segments, then extrude it by its thickness.
+- A curved strip, cradle or skirt whose edges curve when seen from the front or side: draw that curved outline in the sketch plane you see it in and extrude it across the part by its thickness.
+- A shape that changes from one section to another (a duct, a nose, a bottle): a loft through sketches.
+- A rim, rail, pipe or trim that follows a path: a sweep along a curve.
+- Round-overs on edges you can see in the photo: fillet_edges, after the shape is made.
+- Two views of one body (a side outline and a front outline): extrude each across the whole part and intersect them with a boolean.
+Join parts that touch in the photo by letting them overlap a little, then union them with a boolean so the result is one connected solid. If a build looks flat or boxy for what the photo shows, say so and fix it before telling the user it is done. When you describe the result, say which parts are exact, which are estimates, and which curves you simplified.
+`.trim();
+
 /** Everyday objects of known size, for scaling a photo. Real, standardized sizes only. */
 export const REFERENCE_OBJECTS = `
 Photos. A photo shows shape and proportion but not size. Take sizes only from (a) a dimension the user states, or (b) an object of known size in the same plane as the subject. Known sizes: bank or credit card 85.6 x 54.0 mm; US quarter 24.26 mm across; US penny 19.05 mm; Euro 1 coin 23.25 mm; A4 paper 210 x 297 mm; US letter paper 215.9 x 279.4 mm. If a photo is taken at an angle or the object is not in the same plane, say so, and ask for one measured dimension with ask_user. Record every size you rely on with add_dimension (set "measures" when it is an overall size of the finished part, such as overall_height, so each build is checked against it) (confidence "stated" for user numbers, "estimated" for photo readings, with how in the note), and tell the user which numbers are estimates and ask them to confirm those that matter before you build.
@@ -143,6 +156,7 @@ export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimen
     `## Safety rules\n${SAFETY_RULES}`,
     `## Materials\n${MATERIAL_LIMITS}`,
     `## Photos and sizes\n${REFERENCE_OBJECTS}`,
+    ...(specVersion === "4.3" ? [`## Reading shape from a photo\n${SHAPE_FROM_PHOTO}`] : []),
     `## Looking up measurements\n${RESEARCH_RULES}`,
     `## Anchors (millimeters)\n${anchorLines}\nCall list_anchors for full details.`,
     ...(scan ? [`## Attached scan\n${describeScan(scan)}`] : []),
