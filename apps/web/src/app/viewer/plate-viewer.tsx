@@ -108,7 +108,8 @@ function Scene({ url }: { url: string }) {
           <Model url={url} fitKey={fitKey} onMeasured={setFraming} />
         </Suspense>
         <Grid
-          position={[0, -0.01, 0]}
+          position={[0, -grid.gap_mm, 0]}
+          renderOrder={-1}
           args={[200, 200]}
           cellSize={grid.cell_mm}
           sectionSize={grid.section_mm}
