@@ -6,6 +6,7 @@ import { setAtPath, type SpecNumber } from "../../lib/agent/spec-numbers";
 import type { AgentDimension } from "../../lib/agent/types";
 import { shrinkPhoto, type ShrunkPhoto } from "../../lib/photo";
 import type { StartChoice } from "./start-choices";
+import { useScanUpload } from "./use-scan-upload";
 
 export interface DesignRow {
   id: string;
@@ -39,6 +40,8 @@ export function useWorkspace() {
   const designIdRef = useRef<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const draftRef = useRef<HTMLInputElement>(null);
+  const scanFileRef = useRef<HTMLInputElement>(null);
+  const scans = useScanUpload(() => designIdRef.current);
 
   const clearPhoto = useCallback(() => {
     setPhoto((p) => {
@@ -96,6 +99,7 @@ export function useWorkspace() {
       dimensions?: AgentDimension[];
       photoCount?: number;
       pendingDimensions?: AgentDimension[];
+      scan?: { filename: string; sizeBytes: number } | null;
     };
     setNotice(null);
     setVersions(data.versions);
@@ -104,6 +108,7 @@ export function useWorkspace() {
     setDimensions(data.dimensions ?? []);
     setPhotoCount(data.photoCount ?? 0);
     setPending(data.pendingDimensions ?? []);
+    if (reopen) scans.showExisting(data.scan ?? null);
     if (reopen) {
       designIdRef.current = id;
       setChat(openDesign(id, data.items));
@@ -133,6 +138,7 @@ export function useWorkspace() {
     setPending([]);
     setEdits({});
     setPhotoCount(0);
+    scans.clear();
     clearPhoto();
     setNotice(null);
   }
@@ -200,6 +206,7 @@ export function useWorkspace() {
           message: text,
           design_id: designIdRef.current,
           ...(attached ? { image: { media_type: attached.mediaType, data: attached.base64 } } : {}),
+          ...(scans.pendingScanId ? { scan_id: scans.pendingScanId } : {}),
         }),
       });
       if (!response.ok || !response.body) {
@@ -225,6 +232,7 @@ export function useWorkspace() {
     } catch {
       setChat((s) => applyEvent(s, { type: "error", message: "Could not reach the design agent." }));
     }
+    if (scans.pendingScanId && designIdRef.current) scans.markAttached();
     if (designIdRef.current) await loadDesign(designIdRef.current, false);
     void loadList();
   }
@@ -250,6 +258,8 @@ export function useWorkspace() {
     designId: designIdRef.current,
     fileRef,
     draftRef,
+    scanFileRef,
+    scans,
     partUrl,
     downloadUrl,
     clearPhoto,

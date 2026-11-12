@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import type { AgentAnchor, AgentDimension } from "../agent/types";
 import type { ShippingAddress } from "../orders/address";
 import type { QuoteLine } from "../quotes/engine";
-import { type AnyPgColumn, boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, bigint, boolean, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 /** Owner is the Clerk user id (or "dev" in the local bypass). A users table arrives with plans in Phase 2. */
 export const designs = pgTable("designs", {
@@ -346,5 +346,16 @@ export const takedownClaims = pgTable("takedown_claims", {
   decidedAt: timestamp("decided_at", { withTimezone: true }),
   counterText: text("counter_text"),
   counterFiledAt: timestamp("counter_filed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+});
+
+/** A scan a user uploaded themselves (not a library scan). The file lives in object storage under `storageKey`; the browser never gets the file back. status is pending until the upload finishes, then uploaded. */
+export const userScans = pgTable("user_scans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: text("owner_id").notNull(),
+  filename: text("filename").notNull(),
+  sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+  storageKey: text("storage_key").notNull(),
+  status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
 });

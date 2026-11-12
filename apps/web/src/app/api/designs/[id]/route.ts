@@ -7,6 +7,7 @@ import {
   loadPhotos,
   loadReferences,
 } from "../../../../lib/agent/store";
+import { scanForDesign } from "../../../../lib/scans/store";
 import { itemsFromHistory } from "../../../../lib/agent/transcript";
 import { DatabaseNotConfigured, getDb } from "../../../../lib/db/client";
 import { requireOwner } from "../../../../lib/require-owner";
@@ -29,13 +30,14 @@ export async function GET(
     const design = await getOwnedDesign(db, id, who.ownerId);
     if (!design)
       return Response.json({ error: "Design not found." }, { status: 404 });
-    const [versions, history, current, references, photos, pending] = await Promise.all([
+    const [versions, history, current, references, photos, pending, scan] = await Promise.all([
       listVersions(db, id),
       loadHistory(db, id),
       getOwnedVersion(db, id, who.ownerId, "current"),
       loadReferences(db, id),
       loadPhotos(db, id),
       listPendingDimensions(db, id),
+      scanForDesign(db, id),
     ]);
     return Response.json(
       {
@@ -46,6 +48,7 @@ export async function GET(
         dimensions: references.dimensions,
         photoCount: photos.length,
         pendingDimensions: pending,
+        scan: scan ? { filename: scan.filename, sizeBytes: scan.sizeBytes } : null,
       },
       { headers: { "cache-control": "private, no-store" } },
     );

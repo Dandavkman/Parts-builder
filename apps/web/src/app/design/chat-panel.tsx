@@ -39,7 +39,7 @@ function AssistantText({ text }: { text: string }) {
 
 /** The conversation: start choices, messages, the photo tray and the message form. */
 export function ChatPanel({ w }: { w: Workspace }) {
-  const { chat, startWith, photo, clearPhoto, fileRef, draftRef, choosePhoto, photoCount, draft, setDraft, send } = w;
+  const { chat, startWith, photo, clearPhoto, fileRef, scanFileRef, scans, draftRef, choosePhoto, photoCount, draft, setDraft, send } = w;
   const talk = chat.items.filter((item) => !isActivity(item));
   const lastActivity = [...chat.items].reverse().find(isActivity)?.text;
   const scroll = useStickToBottom<HTMLDivElement>(`${chat.items.length}:${chat.items.at(-1)?.text.length ?? 0}:${chat.busy}`);
@@ -90,6 +90,22 @@ export function ChatPanel({ w }: { w: Workspace }) {
           </button>
         </div>
       )}
+      {(scans.scan || scans.progress !== null || scans.error) && (
+        <div className="flex items-center gap-3 border-t border-line px-3 pt-3 text-xs text-muted" aria-live="polite">
+          {scans.progress !== null && <span>Uploading scan… {scans.progress}%</span>}
+          {scans.progress === null && scans.scan && (
+            <span>
+              Scan attached: {scans.scan.name} ({Math.max(1, Math.round(scans.scan.sizeBytes / (1024 * 1024)))} MB). The agent can't read it yet; point picking comes next.
+            </span>
+          )}
+          {scans.error && <span className="text-danger" role="alert">{scans.error}</span>}
+          {scans.scan && scans.progress === null && (
+            <button type="button" onClick={scans.clear} className="underline">
+              Hide
+            </button>
+          )}
+        </div>
+      )}
       <form
         className="flex gap-2 border-t border-line p-3"
         onSubmit={(e) => {
@@ -107,6 +123,26 @@ export function ChatPanel({ w }: { w: Workspace }) {
           className="sr-only"
           onChange={(e) => void choosePhoto(e.target.files?.[0])}
         />
+        <input
+          ref={scanFileRef}
+          type="file"
+          accept=".stl,.obj,.ply,.zip"
+          aria-label="Add a scan"
+          className="sr-only"
+          onChange={(e) => {
+            void scans.upload(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => scanFileRef.current?.click()}
+          disabled={chat.busy || scans.progress !== null || scans.enabled === false}
+          title={scans.enabled === false ? "Scan upload is not switched on yet." : `Add a scan (STL, OBJ, PLY or ZIP, up to ${scans.maxMb} MB)`}
+          className="rounded border border-line-strong px-3 py-2 text-sm disabled:opacity-40"
+        >
+          Scan
+        </button>
         <button
           type="button"
           onClick={() => fileRef.current?.click()}

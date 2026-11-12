@@ -13,6 +13,8 @@ export interface AgentRequest {
   designId: string | null;
   message: string;
   image: AgentImage | null;
+  /** An uploaded scan to attach to the design with this message. */
+  scanId: string | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,13 +33,14 @@ function parseImage(image: unknown): AgentImage | string | null {
 
 /** Checks the browser's request: one new message, an optional photo, and the design it continues (if any). */
 export function parseRequest(body: unknown): AgentRequest | string {
-  const { design_id, message, image } = (body ?? {}) as { design_id?: unknown; message?: unknown; image?: unknown };
+  const { design_id, message, image, scan_id } = (body ?? {}) as { design_id?: unknown; message?: unknown; image?: unknown; scan_id?: unknown };
   if (typeof message !== "string" || message.trim() === "") return "Send a message.";
   if (message.length > MAX_MESSAGE_CHARS) return `Messages are limited to ${MAX_MESSAGE_CHARS} characters.`;
   if (design_id !== undefined && design_id !== null && (typeof design_id !== "string" || !UUID.test(design_id))) {
     return "design_id must be a design id.";
   }
+  if (scan_id !== undefined && scan_id !== null && (typeof scan_id !== "string" || !UUID.test(scan_id))) return "scan_id must be a scan id.";
   const photo = parseImage(image);
   if (typeof photo === "string") return photo;
-  return { designId: (design_id as string | null | undefined) ?? null, message, image: photo };
+  return { designId: (design_id as string | null | undefined) ?? null, message, image: photo, scanId: (scan_id as string | null | undefined) ?? null };
 }

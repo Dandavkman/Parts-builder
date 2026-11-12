@@ -125,7 +125,13 @@ export function describeDimension(d: AgentDimension): string {
   return `- ${d.id} = ${d.value_mm} mm (${d.confidence}, from ${d.source}${where})${d.note ? `: ${d.note}` : ""}`;
 }
 
-export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimension[] = [], specVersion: SpecVersion = agentSpecVersion()): string {
+/** What the agent is told about a scan the user attached. Until scan processing and point picking exist, it is a file only: no anchors come from it. */
+export function describeScan(scan: { filename: string; sizeBytes: number }): string {
+  const mb = Math.max(1, Math.round(scan.sizeBytes / (1024 * 1024)));
+  return `The user attached a scan file ("${scan.filename}", about ${mb} MB). It has been uploaded but not processed yet, so you cannot read it and it has produced no anchors: do not claim to see anything in it. Tell the user it is attached and will be usable once scan processing and point picking are ready, and meanwhile ask for what you need another way (a tape-measure number, or a photo with a card or coin for scale).`;
+}
+
+export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimension[] = [], specVersion: SpecVersion = agentSpecVersion(), scan: { filename: string; sizeBytes: number } | null = null): string {
   const anchorLines = anchors
     .map((a) => `- ${a.id} (${a.type}) at [${a.point_mm.join(", ")}] mm${a.note ? `: ${a.note}` : ""}`)
     .join("\n");
@@ -139,6 +145,7 @@ export function buildSystemPrompt(anchors: AgentAnchor[], dimensions: AgentDimen
     `## Photos and sizes\n${REFERENCE_OBJECTS}`,
     `## Looking up measurements\n${RESEARCH_RULES}`,
     `## Anchors (millimeters)\n${anchorLines}\nCall list_anchors for full details.`,
+    ...(scan ? [`## Attached scan\n${describeScan(scan)}`] : []),
     ...(dimensions.length
       ? [
           `## Known dimensions\n${dimensions.map(describeDimension).join("\n")}\nUse these numbers in the Part Spec. "estimated" values came from a photo and are not exact: say so, and ask the user to confirm anything that matters.`,
