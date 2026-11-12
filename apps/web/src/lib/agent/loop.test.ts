@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { MAX_BUILD_ATTEMPTS, runAgent, type RunTurn } from "./loop";
+import { MAX_BUILD_ATTEMPTS, MAX_RENDERS, RENDER_NOTE, runAgent, type RunTurn } from "./loop";
 import type { AgentDimension, AgentEvent, BuildSpec } from "./types";
 
 type Block = Record<string, unknown>;
@@ -394,3 +394,59 @@ describe("runAgent with the CAD tool belt", () => {
   });
 });
 
+
+describe("pictures of the agent's own result", () => {
+  const specCalls = (n: number) => Array.from({ length: n }, (_, i) => reply([call(`c${i}`, "propose_spec", { spec: { name: "x" } })]));
+
+  function withRender(render: (() => Promise<string | null>) | undefined, n: number) {
+    const model = scripted([...specCalls(n), reply([text("Done")], "end_turn")]);
+    const saved: unknown[] = [];
+    const result = runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [{ role: "user", content: "make a wing" }],
+      anchors: FIXTURE_ANCHORS,
+      build: ok,
+      emit: () => {},
+      ...(render ? { render } : {}),
+      record: { message: async (m) => void saved.push(m), version: async () => {} },
+    });
+    return { result, requests: model.requests, saved };
+  }
+
+  const lastResult = (request: Block) => {
+    const messages = request.messages as { content: Block[] }[];
+    return (messages.at(-1)!.content[0] as { content: unknown }).content;
+  };
+
+  it("sends the model a picture and a comparison note after a good build", async () => {
+    const { result, requests } = withRender(async () => "UE5H", 1);
+    await result;
+    const content = lastResult(requests[1]) as Block[];
+    expect(content[0]).toMatchObject({ type: "text" });
+    expect(String(content[0].text)).toContain(RENDER_NOTE);
+    expect(content[1]).toMatchObject({ type: "image", source: { type: "base64", media_type: "image/png", data: "UE5H" } });
+  });
+
+  it("keeps pictures out of the saved conversation", async () => {
+    const { result, saved } = withRender(async () => "UE5H", 1);
+    await result;
+    expect(JSON.stringify(saved)).not.toContain("UE5H");
+  });
+
+  it("gives plain text when there is no renderer or it returns nothing", async () => {
+    const none = withRender(undefined, 1);
+    await none.result;
+    expect(typeof lastResult(none.requests[1])).toBe("string");
+    const failed = withRender(async () => null, 1);
+    await failed.result;
+    expect(typeof lastResult(failed.requests[1])).toBe("string");
+  });
+
+  it("stops asking for pictures after the per-message limit", async () => {
+    let calls = 0;
+    const { result } = withRender(async () => (calls++, "UE5H"), MAX_RENDERS + 2);
+    await result;
+    expect(calls).toBe(MAX_RENDERS);
+  });
+});

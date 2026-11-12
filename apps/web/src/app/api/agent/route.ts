@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { buildWithGeometryService, callCadTool } from "../../../lib/agent/geometry-client";
+import { buildWithGeometryService, callCadTool, renderEnabled, renderWithGeometryService } from "../../../lib/agent/geometry-client";
 import { anthropicTurn, DEFAULT_MODEL, runAgent } from "../../../lib/agent/loop";
 import { agentSpecVersion, buildSystemPrompt } from "../../../lib/agent/prompt";
 import { countWebSearches, WEB_SEARCHES_PER_DESIGN } from "../../../lib/agent/tools";
@@ -138,6 +138,7 @@ export async function POST(request: Request) {
           anchors: references.anchors,
           dimensions: references.dimensions,
           build: buildWithGeometryService,
+          ...(renderEnabled() ? { render: renderWithGeometryService } : {}),
           ...(specVersion === "4.3" ? { cadTool: callCadTool } : {}),
           emit,
           record,

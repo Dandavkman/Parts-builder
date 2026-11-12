@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { buildFile, callCadTool } from "./geometry-client";
+import { buildFile, callCadTool, renderEnabled, renderWithGeometryService } from "./geometry-client";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -47,5 +47,26 @@ describe("callCadTool", () => {
     expect(await callCadTool("rm", {})).toEqual({ ok: false, errors: ["There is no CAD tool called 'rm'."] });
     vi.stubGlobal("fetch", async () => new Response("no", { status: 500 }));
     await expect(callCadTool("extrude", {})).rejects.toThrow("500");
+  });
+});
+
+describe("renderWithGeometryService", () => {
+  it("returns the picture as base64, and null for anything else", async () => {
+    vi.stubGlobal("fetch", async () => new Response(new Uint8Array([137, 80, 78, 71]), { headers: { "content-type": "image/png" } }));
+    expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS)).toBe(Buffer.from([137, 80, 78, 71]).toString("base64"));
+    vi.stubGlobal("fetch", async () => new Response("nope", { status: 404 }));
+    expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS)).toBeNull();
+    vi.stubGlobal("fetch", async () => Response.json({ errors: ["bad"] }, { status: 422 }));
+    expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS)).toBeNull();
+    vi.stubGlobal("fetch", async () => {
+      throw new Error("down");
+    });
+    expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS)).toBeNull();
+  });
+
+  it("is on unless DESIGN_AGENT_RENDER is off", () => {
+    expect(renderEnabled({})).toBe(true);
+    expect(renderEnabled({ DESIGN_AGENT_RENDER: "off" })).toBe(false);
+    expect(renderEnabled({ DESIGN_AGENT_RENDER: " OFF " })).toBe(false);
   });
 });

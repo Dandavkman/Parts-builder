@@ -11,6 +11,7 @@ from geometry import __version__
 from geometry.builder import Anchor, SpecError, build_part
 from geometry.builder import export_bytes as export_part
 from geometry.demo_plate import MEDIA_TYPES, build_demo_plate, export_bytes
+from geometry.render import render_sheet
 
 app = FastAPI(title="Parts Builder geometry service", version=__version__)
 
@@ -88,6 +89,20 @@ def build(
             "X-Volume-Mm3": f"{part.Volume():.1f}",
         },
     )
+
+
+@app.post("/render", dependencies=[Depends(require_token)])
+def render(request: Annotated[BuildRequest, Body()]) -> Response:
+    """Build a Part Spec and return a PNG contact sheet: front, side, top and angled views (2 x 2).
+
+    Used by the design agent to compare its result with the user's photo. Same errors as `/build`.
+    """
+    anchors = {name: Anchor(a.point_mm, a.normal) for name, a in request.anchors.items()}
+    try:
+        part = build_part(request.spec, anchors)
+    except SpecError as error:
+        return JSONResponse(status_code=422, content={"errors": error.errors})
+    return Response(content=render_sheet(export_part(part, "stl")), media_type="image/png")
 
 
 from geometry.toolbelt_api import router as toolbelt_router  # noqa: E402  (needs require_token)

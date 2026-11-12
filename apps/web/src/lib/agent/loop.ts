@@ -8,6 +8,11 @@ import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcom
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
 export const MAX_BUILD_ATTEMPTS = 6;
 const MAX_STEPS = 14;
+/** Pictures of the agent's own result it may receive per user message (each costs about 1,000 input tokens). */
+export const MAX_RENDERS = 3;
+
+export const RENDER_NOTE =
+  "A picture of what you just built is attached: four views on one sheet, in this order: front (top left), side (top right), top (bottom left), angled (bottom right). Compare it with the user's photo. Name the biggest differences in outline, curves and proportions. If something is clearly wrong and you have attempts left, fix the biggest differences and build again; stop after 3 pictures, then tell the user what is still different.";
 
 type Message = Anthropic.Beta.BetaMessage;
 type MessageParam = Anthropic.Beta.BetaMessageParam;
@@ -69,6 +74,8 @@ export interface AgentOptions {
   searchesLeft?: number;
   /** Runs one CAD tool-belt step. When set (Part Spec 4.2), the agent gets the cad_tool. */
   cadTool?: (tool: string, args: Record<string, unknown>) => Promise<CadStepResult>;
+  /** Makes a picture of a built spec (base64 PNG) for the agent to compare with the photo. Left out, the agent gets no pictures. */
+  render?: (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<string | null>;
   /** The last spec that built, so cad_tool can carry on editing a design from an earlier message. */
   startSpec?: Record<string, unknown> | null;
 }
@@ -94,6 +101,13 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   // The spec the CAD tool belt is building up. We keep it, so the model never has to repeat it.
   let working: Record<string, unknown> | null = options.startSpec ?? null;
   let cadSteps = 0;
+  let renders = 0;
+  // Asks for a picture of a spec that just built. The picture goes to the model only; it is not saved with the conversation.
+  const pictureOf = async (spec: Record<string, unknown>): Promise<string | null> => {
+    if (!options.render || renders >= MAX_RENDERS) return null;
+    renders += 1;
+    return options.render(spec, anchors);
+  };
 
   // Web search is a Console setting; if the API says it is not available, carry on without it.
   let searchOn = (options.searchesLeft ?? 0) > 0;
@@ -165,9 +179,11 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
     }
 
     const results: Anthropic.Beta.BetaToolResultBlockParam[] = [];
+    const withPictures: Anthropic.Beta.BetaToolResultBlockParam[] = [];
     for (const call of calls) {
       const input = (call.input ?? {}) as Record<string, unknown>;
       let content: string;
+      let picture: string | null = null;
       let isError = false;
       if (call.name === "list_anchors") {
         content = JSON.stringify(dimensions.length ? { anchors, dimensions } : anchors);
@@ -239,6 +255,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
               const checks = outcome.ok ? checkBuild(result.spec, outcome.size_mm, dimensions) : [];
               const notes = [...describeBuild(outcome), ...checks];
               if (notes.length) content += `\n${notes.join("\n")}`;
+              if (outcome.ok) picture = await pictureOf(result.spec);
               emit({
                 type: "spec",
                 attempt: attempts,
@@ -279,6 +296,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
           const checks = outcome.ok ? checkBuild(spec as Record<string, unknown>, outcome.size_mm, dimensions) : [];
           content = formatBuildOutcome(outcome, checks);
           isError = !outcome.ok;
+          if (outcome.ok) picture = await pictureOf(spec as Record<string, unknown>);
           emit({
             type: "spec",
             attempt: attempts,
@@ -296,8 +314,20 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
         isError = true;
       }
       results.push({ type: "tool_result", tool_use_id: call.id, content, is_error: isError });
+      if (picture) {
+        // The model sees the picture; the saved conversation keeps only the text, so history stays small.
+        withPictures.push({
+          type: "tool_result",
+          tool_use_id: call.id,
+          content: [
+            { type: "text", text: `${content}\n${RENDER_NOTE}` },
+            { type: "image", source: { type: "base64", media_type: "image/png", data: picture } },
+          ],
+          is_error: isError,
+        });
+      } else withPictures.push(results[results.length - 1]);
     }
-    messages.push({ role: "user", content: results });
+    messages.push({ role: "user", content: withPictures });
     await options.record?.message({ role: "user", content: results });
 
     // Out of attempts with no working spec: one last reply, without tools, listing what is left.
