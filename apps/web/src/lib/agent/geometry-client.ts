@@ -75,3 +75,28 @@ export async function callCadTool(tool: string, args: Record<string, unknown>): 
   if (!response.ok) throw new Error(`The geometry service returned ${response.status}.`);
   return (await response.json()) as CadStepResult;
 }
+
+/** Four views of the built spec (front, side, top, angled) as a base64 PNG, or null when the picture cannot be made. Never throws: a missing picture must not stop a design. */
+export type RenderSheet = (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<string | null>;
+
+export const renderWithGeometryService: RenderSheet = async (spec, anchors) => {
+  try {
+    const response = await fetch(`${geometryServiceUrl()}/render`, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...geometryAuthHeaders() },
+      body: JSON.stringify({
+        spec,
+        anchors: Object.fromEntries(anchors.map((a) => [a.id, { point_mm: a.point_mm, normal: a.normal }])),
+      }),
+    });
+    if (!response.ok || !(response.headers.get("content-type") ?? "").startsWith("image/png")) return null;
+    return Buffer.from(await response.arrayBuffer()).toString("base64");
+  } catch {
+    return null;
+  }
+};
+
+/** Pictures are on unless DESIGN_AGENT_RENDER=off. An older geometry service without /render just gives no picture. */
+export function renderEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return (env.DESIGN_AGENT_RENDER ?? "").trim().toLowerCase() !== "off";
+}
