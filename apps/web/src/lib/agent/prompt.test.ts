@@ -205,6 +205,20 @@ describe("Part Spec 4.3 prompt (CAD feature tree)", () => {
     }
   });
 
+  it("tells the agent to read the shape from a photo and use curved features for curved outlines", () => {
+    const prompt = buildSystemPrompt(FIXTURE_ANCHORS, [], "4.3");
+    expect(prompt).toContain("## Reading shape from a photo");
+    expect(prompt).toContain("shape brief");
+    expect(prompt).toContain('"spline" segments');
+    expect(prompt).toContain("A curved edge in the photo must be curved in the model.");
+    expect(prompt).toContain("one connected solid");
+    expect(buildSystemPrompt(FIXTURE_ANCHORS, [], "2.1")).not.toContain("Reading shape from a photo");
+  });
+
+  it("includes a worked example of a part drawn from its side and front outlines", () => {
+    expect(JSON.stringify(PART_SPEC_V4_3_EXAMPLES)).toContain("Wing from side and front outlines");
+  });
+
   it("leaves the 2.1 prompt without the CAD conventions", () => {
     expect(buildSystemPrompt(FIXTURE_ANCHORS, [], "2.1")).not.toContain("feature history");
   });
