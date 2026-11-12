@@ -28,7 +28,9 @@ export function frameCamera(size_mm: Vec3, center_mm: Vec3, fovDeg: number, aspe
 const CELLS_MM = [1, 2, 5, 10, 20, 50, 100, 200, 500];
 
 /** Floor grid spacing that scales with the part: about 30 cells across its longest side. */
-export function gridFor(maxSide_mm: number): { cell_mm: number; section_mm: number; fade_mm: number } {
+export function gridFor(maxSide_mm: number): { cell_mm: number; section_mm: number; fade_mm: number; gap_mm: number } {
   const cell_mm = CELLS_MM.find((c) => maxSide_mm / c <= 30) ?? 1000;
-  return { cell_mm, section_mm: cell_mm * 5, fade_mm: Math.max(maxSide_mm, 50) * 8 };
+  // The grid sits a little below the part's lowest point. A gap that scales with the part keeps the
+  // depth buffer from mixing the grid into a flat pad that rests on the floor (a fixed 0.01 mm was not enough at 1 m).
+  return { cell_mm, section_mm: cell_mm * 5, fade_mm: Math.max(maxSide_mm, 50) * 8, gap_mm: Math.max(maxSide_mm * 0.003, 0.05) };
 }

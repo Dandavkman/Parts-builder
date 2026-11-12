@@ -403,3 +403,6 @@ A live test with a 1300 mm wing showed the camera losing the part after a revisi
 
 ## 2026-11-11: A public Clerk key check (`/api/health/auth`)
 A live outage looked like a blank sign-in page and slow buttons, but the real cause was a Clerk key with a non-ASCII character, which made every signed-in request fail with "unable to resolve handshake" and loop. Nothing could be tested from outside because the failure only shows once signed in. `GET /api/health/auth` reports booleans only: each key set, plain ASCII (no quotes, spaces, smart characters), live-versus-test kind, and whether Clerk's server accepts the secret key (one `/v1/jwks` call, 8 s timeout). It never returns a key. It is public on purpose, so it can be checked from anywhere, and returns 503 when something is wrong. No new env var, no schema change.
+
+## 2026-11-12: Viewer grid sits below the part by a size-scaled gap
+A tester saw the 1,100 mm wing "under the blue mesh". The part's flat pad rests exactly on the floor and the grid was a fixed 0.01 mm below it, too close for the depth buffer at that size, so grid lines showed through the pad. The grid now sits `max(0.3% of the longest side, 0.05 mm)` below the part and is drawn first (`renderOrder -1`). Not yet confirmed in a browser; the Owner checks it on the preview.

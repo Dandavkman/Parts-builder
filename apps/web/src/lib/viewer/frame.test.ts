@@ -23,4 +23,8 @@ describe("gridFor", () => {
     expect(gridFor(1300).cell_mm).toBe(50);
     expect(gridFor(1300).section_mm).toBe(250);
   });
+  it("keeps the grid below the part by a gap that grows with the part", () => {
+    expect(gridFor(1300).gap_mm).toBeCloseTo(3.9, 5);
+    expect(gridFor(10).gap_mm).toBe(0.05);
+  });
 });
