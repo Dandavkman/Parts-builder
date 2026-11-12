@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { designs, userScans } from "../db/schema";
 
@@ -31,7 +31,8 @@ export async function scanForDesign(db: Db, designId: string) {
   const [row] = await db
     .select({ id: userScans.id, filename: userScans.filename, sizeBytes: userScans.sizeBytes, status: userScans.status })
     .from(designs)
-    .innerJoin(userScans, eq(userScans.id, designs.scanId))
+    // designs.scan_id is text and user_scans.id is uuid, so compare as text.
+    .innerJoin(userScans, sql`${userScans.id}::text = ${designs.scanId}`)
     .where(eq(designs.id, designId));
   return row ?? null;
 }
