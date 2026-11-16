@@ -1,5 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import type { AgentAnchor, AgentDimension, BuildOutcome } from "./types";
+import type { AgentAnchor, AgentDimension, BuildOutcome, PhotoView } from "./types";
 
 export const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
@@ -66,6 +66,17 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
     },
   },
   {
+    name: "set_photo_view",
+    description:
+      "Say where the camera that took the user's photo stood, in your part's own frame, so the bottom right panel of every picture of your part is drawn from that same viewpoint and can be compared with the photo directly. azimuth_deg is where the camera stands seen from above: 0 in front of the part (looking along +Y, the front view), 90 at its right side (+X), 180 behind it, 270 at its left side. elevation_deg is how far above level: 0 level with the part, 30 a typical standing photo, 90 straight above. Call it before your first build from a photo, and again if the panel shows the part from the wrong side.",
+    input_schema: {
+      type: "object",
+      properties: { azimuth_deg: { type: "number" }, elevation_deg: { type: "number" } },
+      required: ["azimuth_deg", "elevation_deg"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "ask_user",
     description: "Ask the user one short clarifying question, such as the material or thickness. The turn ends until they answer.",
     input_schema: {
@@ -76,6 +87,37 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
     },
   },
 ];
+
+/** Checks the model's `set_photo_view` input. Returns the view, or a sentence the model can act on. */
+export function parsePhotoView(input: Record<string, unknown>): PhotoView | string {
+  const { azimuth_deg, elevation_deg } = input;
+  if (typeof azimuth_deg !== "number" || !Number.isFinite(azimuth_deg) || Math.abs(azimuth_deg) > 360) return "azimuth_deg must be a number from 0 to 360.";
+  if (typeof elevation_deg !== "number" || !Number.isFinite(elevation_deg) || Math.abs(elevation_deg) > 90) return "elevation_deg must be a number from -90 to 90.";
+  return { azimuth_deg: ((azimuth_deg % 360) + 360) % 360, elevation_deg };
+}
+
+/** The photo view the agent last set in a saved conversation, so later messages keep it. */
+export function lastPhotoView(history: { role?: string; content?: unknown }[]): PhotoView | null {
+  let view: PhotoView | null = null;
+  for (const { role, content } of history) {
+    if (role !== "assistant" || !Array.isArray(content)) continue;
+    for (const block of content as { type?: string; name?: string; input?: unknown }[]) {
+      if (block.type !== "tool_use" || block.name !== "set_photo_view") continue;
+      const parsed = parsePhotoView((block.input ?? {}) as Record<string, unknown>);
+      if (typeof parsed !== "string") view = parsed;
+    }
+  }
+  return view;
+}
+
+/** What the agent is told about the picture sheet it is looking at. */
+export function describeSheet(picture: { scaleBarMm?: number; fromPhotoView?: boolean }): string {
+  const fourth = picture.fromPhotoView
+    ? "your part from the photo's viewpoint (the view you set with set_photo_view)"
+    : "an angled view from the front, right and above";
+  const bar = picture.scaleBarMm ? ` Each panel is zoomed to fit on its own; the white bar at the bottom left of every panel is ${picture.scaleBarMm} mm long.` : "";
+  return `The picture of your part is four views on one sheet: front (top left), side (top right), top (bottom left), and bottom right ${fourth}.${bar}`;
+}
 
 export function distanceMm(anchors: AgentAnchor[], from: unknown, to: unknown): number | string {
   const a = anchors.find((x) => x.id === from);

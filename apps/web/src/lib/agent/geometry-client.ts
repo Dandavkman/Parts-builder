@@ -1,7 +1,7 @@
 import { geometryAuthHeaders, geometryServiceUrl } from "../geometry";
 import { stlBounds } from "./stl";
 import type { CadStepResult } from "./tools";
-import type { AgentAnchor, BuildSpec } from "./types";
+import type { AgentAnchor, BuildSpec, PartPicture, PhotoView } from "./types";
 
 export type GeometryFormat = "step" | "stl" | "glb";
 
@@ -76,10 +76,13 @@ export async function callCadTool(tool: string, args: Record<string, unknown>): 
   return (await response.json()) as CadStepResult;
 }
 
-/** Four views of the built spec (front, side, top, angled) as a base64 PNG, or null when the picture cannot be made. Never throws: a missing picture must not stop a design. */
-export type RenderSheet = (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<string | null>;
+/**
+ * Four views of the built spec (front, side, top, and an angled view or the photo's own viewpoint), or null when the
+ * picture cannot be made. Never throws: a missing picture must not stop a design.
+ */
+export type RenderSheet = (spec: Record<string, unknown>, anchors: AgentAnchor[], view?: PhotoView | null) => Promise<PartPicture | null>;
 
-export const renderWithGeometryService: RenderSheet = async (spec, anchors) => {
+export const renderWithGeometryService: RenderSheet = async (spec, anchors, view) => {
   try {
     const response = await fetch(`${geometryServiceUrl()}/render`, {
       method: "POST",
@@ -87,10 +90,18 @@ export const renderWithGeometryService: RenderSheet = async (spec, anchors) => {
       body: JSON.stringify({
         spec,
         anchors: Object.fromEntries(anchors.map((a) => [a.id, { point_mm: a.point_mm, normal: a.normal }])),
+        ...(view ? { view } : {}),
       }),
     });
     if (!response.ok || !(response.headers.get("content-type") ?? "").startsWith("image/png")) return null;
-    return Buffer.from(await response.arrayBuffer()).toString("base64");
+    // Only a geometry service that knows about views sends the scale bar; an older one ignores `view`.
+    const bar = Number(response.headers.get("x-scale-bar-mm"));
+    const current = Number.isFinite(bar) && bar > 0;
+    return {
+      data: Buffer.from(await response.arrayBuffer()).toString("base64"),
+      ...(current ? { scaleBarMm: bar } : {}),
+      fromPhotoView: current && !!view,
+    };
   } catch {
     return null;
   }

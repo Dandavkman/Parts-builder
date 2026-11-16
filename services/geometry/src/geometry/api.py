@@ -11,7 +11,7 @@ from geometry import __version__
 from geometry.builder import Anchor, SpecError, build_part
 from geometry.builder import export_bytes as export_part
 from geometry.demo_plate import MEDIA_TYPES, build_demo_plate, export_bytes
-from geometry.render import render_sheet
+from geometry.render import render_sheet, sheet_scale_bar_mm
 
 app = FastAPI(title="Parts Builder geometry service", version=__version__)
 
@@ -91,18 +91,37 @@ def build(
     )
 
 
+class ViewIn(BaseModel):
+    """Where the camera that took the user's photo stood, for the fourth panel of the sheet."""
+
+    azimuth_deg: float = Field(ge=-360, le=360)
+    elevation_deg: float = Field(ge=-90, le=90)
+
+
+class RenderRequest(BuildRequest):
+    view: ViewIn | None = None
+
+
 @app.post("/render", dependencies=[Depends(require_token)])
-def render(request: Annotated[BuildRequest, Body()]) -> Response:
+def render(request: Annotated[RenderRequest, Body()]) -> Response:
     """Build a Part Spec and return a PNG contact sheet: front, side, top and angled views (2 x 2).
 
     Used by the design agent to compare its result with the user's photo. Same errors as `/build`.
+    With `view`, the fourth panel looks from that camera position instead of the default angle.
     """
     anchors = {name: Anchor(a.point_mm, a.normal) for name, a in request.anchors.items()}
     try:
         part = build_part(request.spec, anchors)
     except SpecError as error:
         return JSONResponse(status_code=422, content={"errors": error.errors})
-    return Response(content=render_sheet(export_part(part, "stl")), media_type="image/png")
+    view = (request.view.azimuth_deg, request.view.elevation_deg) if request.view else None
+    stl = export_part(part, "stl")
+    return Response(
+        content=render_sheet(stl, view),
+        media_type="image/png",
+        # The length the white bar in each panel stands for, so views can be compared.
+        headers={"X-Scale-Bar-Mm": f"{sheet_scale_bar_mm(stl):g}"},
+    )
 
 
 from geometry.toolbelt_api import router as toolbelt_router  # noqa: E402  (needs require_token)

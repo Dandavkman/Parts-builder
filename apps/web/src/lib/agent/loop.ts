@@ -3,8 +3,9 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { checkBuild } from "./checks";
 import { describeLikeness, type CheckLikeness } from "./checker";
 import { assessMaterials, describeAdvice, recommend } from "../materials";
-import { CAD_TOOL, distanceMm, describeBuild, formatBuildOutcome, formatCadStep, MAX_CAD_STEPS, parseDimension, TOOLS, webSearchTool, type CadStepResult } from "./tools";
-import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
+import { CAD_TOOL, describeSheet, distanceMm, describeBuild, formatBuildOutcome, formatCadStep, MAX_CAD_STEPS, parseDimension, parsePhotoView, TOOLS, webSearchTool, type CadStepResult } from "./tools";
+import type { AgentImage } from "./request";
+import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, PartPicture, PhotoView, TokenUsage } from "./types";
 
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
 export const MAX_BUILD_ATTEMPTS = 6;
@@ -13,13 +14,13 @@ const MAX_STEPS = 14;
 export const MAX_RENDERS = 3;
 
 export const RENDER_NOTE =
-  "A picture of what you just built is attached: four views on one sheet, in this order: front (top left), side (top right), top (bottom left), angled (bottom right). Compare it with the user's photo. Name the biggest differences in outline, curves and proportions. If something is clearly wrong and you have attempts left, fix the biggest differences and build again; stop after 3 pictures, then tell the user what is still different.";
+  "A picture of what you just built is attached. Compare it with the user's photo. Name the biggest differences in outline, curves and proportions. If something is clearly wrong and you have attempts left, fix the biggest differences and build again; stop after 3 pictures, then tell the user what is still different.";
 
 /** Added to a follow-up message, so the agent revises the part it can see instead of rebuilding from memory. */
 export const START_NOTE =
   "This is the part as it stands now, before your changes for this message.";
 export const START_PICTURE_NOTE =
-  "A picture of it is attached: four views on one sheet, in this order: front (top left), side (top right), top (bottom left), angled (bottom right). Look at it next to the user's photo before you change anything, and change only what the user asked for plus anything that clearly does not match the photo.";
+  "A picture of it is attached. Look at it next to the user's photo before you change anything, and change only what the user asked for plus anything that clearly does not match the photo.";
 export const START_CAD_NOTE =
   "It is loaded as your working spec: carry on with cad_tool steps (inspect_part lists its features; remove_feature and new features change it). Do not call new_part unless the user wants a different part.";
 
@@ -39,8 +40,9 @@ export function agentModelFor(hasPhotos: boolean, env: Record<string, string | u
 }
 
 /** Used in place of RENDER_NOTE when the independent checker has already compared the picture with the photo. */
-export const PICTURE_NOTE =
-  "A picture of what you just built is attached: four views on one sheet, in this order: front (top left), side (top right), top (bottom left), angled (bottom right). Use it with the likeness check above.";
+export const PICTURE_NOTE = "A picture of what you just built is attached. Use it with the likeness check above.";
+export const NO_VIEW_NOTE =
+  "You have not said where the photo's camera stood. Call set_photo_view, so the bottom right panel of the next picture shows your part from the photo's viewpoint.";
 
 type Message = Anthropic.Beta.BetaMessage;
 type MessageParam = Anthropic.Beta.BetaMessageParam;
@@ -104,8 +106,12 @@ export interface AgentOptions {
   searchesLeft?: number;
   /** Runs one CAD tool-belt step. When set (Part Spec 4.2), the agent gets the cad_tool. */
   cadTool?: (tool: string, args: Record<string, unknown>) => Promise<CadStepResult>;
-  /** Makes a picture of a built spec (base64 PNG) for the agent to compare with the photo. Left out, the agent gets no pictures. */
-  render?: (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<string | null>;
+  /** Makes a picture of a built spec for the agent to compare with the photo (a base64 PNG, or one with its details). Left out, the agent gets no pictures. */
+  render?: (spec: Record<string, unknown>, anchors: AgentAnchor[], view?: PhotoView | null) => Promise<PartPicture | string | null>;
+  /** The user's photos. The first one is put right beside each picture of the part, so the two can be compared directly. */
+  photos?: AgentImage[];
+  /** Where the photo's camera stood, as the agent last set it with set_photo_view. */
+  photoView?: PhotoView | null;
   /** The last spec that built. The agent is shown a picture of it before it starts, and (when `startSpecIsCad`) cad_tool carries on editing it. */
   startSpec?: Record<string, unknown> | null;
   /** A separate request that compares each picture with the user's photos. Left out (no photos, or switched off), the agent compares for itself. */
@@ -137,16 +143,36 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   let cadSteps = 0;
   let renders = 0;
   // Asks for a picture of a spec that just built. The picture goes to the model only; it is not saved with the conversation.
-  const pictureOf = async (spec: Record<string, unknown>): Promise<string | null> => {
+  let photoView: PhotoView | null = options.photoView ?? null;
+  const photo = options.photos?.[0] ?? null;
+  const pictureOf = async (spec: Record<string, unknown>): Promise<PartPicture | null> => {
     if (!options.render || renders >= MAX_RENDERS) return null;
     renders += 1;
-    return sayPicture(await options.render(spec, anchors));
+    return sayPicture(await options.render(spec, anchors, photoView));
   };
   // The Activity log says whether the agent really got a picture, so a silent failure can be seen.
-  const sayPicture = (picture: string | null): string | null => {
-    emit({ type: "tool", name: "picture", summary: picture ? "sent to the agent" : "could not be made" });
+  const sayPicture = (made: PartPicture | string | null): PartPicture | null => {
+    const picture = typeof made === "string" ? { data: made } : made;
+    emit({
+      type: "tool",
+      name: "picture",
+      summary: !picture ? "could not be made" : picture.fromPhotoView ? "sent to the agent, with the photo's viewpoint" : "sent to the agent",
+    });
     return picture;
   };
+  // The sheet's layout, and a nudge to set the photo view when there is a photo and no view yet.
+  const aboutSheet = (picture: PartPicture): string => `${describeSheet(picture)}${photo && !photoView ? ` ${NO_VIEW_NOTE}` : ""}`;
+  // The user's photo right beside the picture of the part: far easier to compare than a photo many messages back.
+  const sideBySide = (picture: PartPicture): (Anthropic.Beta.BetaTextBlockParam | Anthropic.Beta.BetaImageBlockParam)[] => [
+    ...(photo
+      ? [
+          { type: "text" as const, text: "The user's photo:" },
+          { type: "image" as const, source: { type: "base64" as const, media_type: photo.mediaType, data: photo.base64 } },
+          { type: "text" as const, text: "Your part:" },
+        ]
+      : []),
+    { type: "image", source: { type: "base64", media_type: "image/png", data: picture.data } },
+  ];
 
   // Tokens the checker used since the last model message; saved with the next one so the cost screen counts them.
   let checkerUsage = emptyUsage();
@@ -156,9 +182,9 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
     to.cache_creation_input_tokens += from.cache_creation_input_tokens;
     to.cache_read_input_tokens += from.cache_read_input_tokens;
   };
-  const secondOpinion = async (picture: string | null): Promise<string | null> => {
+  const secondOpinion = async (picture: PartPicture | null): Promise<string | null> => {
     if (!picture || !options.checkLikeness) return null;
-    const result = await options.checkLikeness(picture);
+    const result = await options.checkLikeness(picture.data);
     const found = result?.differences.length ?? 0;
     emit({
       type: "tool",
@@ -174,15 +200,15 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   // A follow-up message: show the agent the part as it stands (this request only; it is not saved).
   const last = messages.at(-1);
   if (options.startSpec && last?.role === "user") {
-    const picture = options.render ? sayPicture(await options.render(options.startSpec, anchors)) : null;
-    const note = [START_NOTE, ...(picture ? [START_PICTURE_NOTE] : []), ...(working ? [START_CAD_NOTE] : [])].join(" ");
+    const picture = options.render ? sayPicture(await options.render(options.startSpec, anchors, photoView)) : null;
+    const note = [START_NOTE, ...(picture ? [START_PICTURE_NOTE, aboutSheet(picture)] : []), ...(working ? [START_CAD_NOTE] : [])].join(" ");
     const before: Anthropic.Beta.BetaContentBlockParam[] = typeof last.content === "string" ? [{ type: "text", text: last.content }] : last.content;
     messages[messages.length - 1] = {
       role: "user",
       content: [
         ...before,
         { type: "text", text: note },
-        ...(picture ? [{ type: "image" as const, source: { type: "base64" as const, media_type: "image/png" as const, data: picture } }] : []),
+        ...(picture ? sideBySide(picture) : []),
       ],
     };
   }
@@ -261,7 +287,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
     for (const call of calls) {
       const input = (call.input ?? {}) as Record<string, unknown>;
       let content: string;
-      let picture: string | null = null;
+      let picture: PartPicture | null = null;
       let isError = false;
       if (call.name === "list_anchors") {
         content = JSON.stringify(dimensions.length ? { anchors, dimensions } : anchors);
@@ -289,6 +315,16 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
             emit({ type: "dimension", dimension: parsed });
           }
         }
+      } else if (call.name === "set_photo_view") {
+        const parsed = parsePhotoView(input);
+        if (typeof parsed === "string") {
+          content = parsed;
+          isError = true;
+        } else {
+          photoView = parsed;
+          content = `Saved. The bottom right panel of every picture of your part is now drawn from azimuth ${parsed.azimuth_deg} and elevation ${parsed.elevation_deg} degrees. If it shows the part from a different side than the photo does, set it again.`;
+        }
+        emit({ type: "tool", name: call.name, summary: isError ? "not understood" : `${Math.round((parsed as PhotoView).azimuth_deg)} degrees around, ${Math.round((parsed as PhotoView).elevation_deg)} up` });
       } else if (call.name === "measure") {
         const d = distanceMm(anchors, input.from, input.to);
         isError = typeof d === "string";
@@ -400,8 +436,8 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
           type: "tool_result",
           tool_use_id: call.id,
           content: [
-            { type: "text", text: `${content}\n${opinion ? PICTURE_NOTE : RENDER_NOTE}` },
-            { type: "image", source: { type: "base64", media_type: "image/png", data: picture } },
+            { type: "text", text: `${content}\n${opinion ? PICTURE_NOTE : RENDER_NOTE} ${aboutSheet(picture)}` },
+            ...sideBySide(picture),
           ],
           is_error: isError,
         });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CAD_TOOL, CAD_TOOL_NAMES, countWebSearches, describeBuild, formatBuildOutcome, formatCadStep, parseDimension, WEB_SEARCHES_PER_DESIGN } from "./tools";
+import { CAD_TOOL, CAD_TOOL_NAMES, countWebSearches, describeBuild, describeSheet, lastPhotoView, parsePhotoView, formatBuildOutcome, formatCadStep, parseDimension, WEB_SEARCHES_PER_DESIGN } from "./tools";
 
 describe("parseDimension", () => {
   const base = { id: "case_width", value_mm: 74.5, note: "spec sheet" };
@@ -75,5 +75,24 @@ describe("describeBuild", () => {
 
   it("says nothing extra for older geometry services", () => {
     expect(formatBuildOutcome({ ok: true })).toBe("The spec built successfully.");
+  });
+});
+
+describe("the photo view", () => {
+  it("checks the angles and wraps the azimuth", () => {
+    expect(parsePhotoView({ azimuth_deg: -30, elevation_deg: 20 })).toEqual({ azimuth_deg: 330, elevation_deg: 20 });
+    expect(typeof parsePhotoView({ azimuth_deg: "left", elevation_deg: 20 })).toBe("string");
+    expect(typeof parsePhotoView({ azimuth_deg: 10, elevation_deg: 120 })).toBe("string");
+  });
+  it("finds the last view set in a saved conversation", () => {
+    const set = (azimuth_deg: number) => ({ role: "assistant", content: [{ type: "tool_use", name: "set_photo_view", input: { azimuth_deg, elevation_deg: 25 } }] });
+    expect(lastPhotoView([{ role: "user", content: "hi" }])).toBeNull();
+    expect(lastPhotoView([set(40), { role: "user", content: "x" }, set(210)])).toEqual({ azimuth_deg: 210, elevation_deg: 25 });
+  });
+  it("describes the sheet the agent is looking at", () => {
+    expect(describeSheet({})).toContain("an angled view");
+    const told = describeSheet({ scaleBarMm: 200, fromPhotoView: true });
+    expect(told).toContain("the photo's viewpoint");
+    expect(told).toContain("200 mm");
   });
 });

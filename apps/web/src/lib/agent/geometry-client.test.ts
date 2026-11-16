@@ -53,7 +53,11 @@ describe("callCadTool", () => {
 describe("renderWithGeometryService", () => {
   it("returns the picture as base64, and null for anything else", async () => {
     vi.stubGlobal("fetch", async () => new Response(new Uint8Array([137, 80, 78, 71]), { headers: { "content-type": "image/png" } }));
-    expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS)).toBe(Buffer.from([137, 80, 78, 71]).toString("base64"));
+    // An older geometry service: no scale bar header, and it ignores the view.
+    expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS, { azimuth_deg: 200, elevation_deg: 10 })).toEqual({
+      data: Buffer.from([137, 80, 78, 71]).toString("base64"),
+      fromPhotoView: false,
+    });
     vi.stubGlobal("fetch", async () => new Response("nope", { status: 404 }));
     expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS)).toBeNull();
     vi.stubGlobal("fetch", async () => Response.json({ errors: ["bad"] }, { status: 422 }));
@@ -62,6 +66,16 @@ describe("renderWithGeometryService", () => {
       throw new Error("down");
     });
     expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS)).toBeNull();
+  });
+
+  it("sends the photo view and reads the scale bar from a current geometry service", async () => {
+    const fetchMock = vi.fn(async () => new Response(new Uint8Array([137]), { headers: { "content-type": "image/png", "x-scale-bar-mm": "200" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const view = { azimuth_deg: 200, elevation_deg: 10 };
+    expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS, view)).toMatchObject({ scaleBarMm: 200, fromPhotoView: true });
+    expect(JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string).view).toEqual(view);
+    expect(await renderWithGeometryService({ name: "x" }, FIXTURE_ANCHORS)).toMatchObject({ scaleBarMm: 200, fromPhotoView: false });
+    expect(JSON.parse((fetchMock.mock.calls[1] as unknown as [string, RequestInit])[1].body as string).view).toBeUndefined();
   });
 
   it("is on unless DESIGN_AGENT_RENDER is off", () => {
