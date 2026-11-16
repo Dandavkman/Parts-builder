@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildWithGeometryService, callCadTool, renderEnabled, renderWithGeometryService } from "../../../lib/agent/geometry-client";
-import { anthropicTurn, DEFAULT_MODEL, runAgent } from "../../../lib/agent/loop";
+import { agentModelFor, anthropicTurn, runAgent } from "../../../lib/agent/loop";
 import { agentSpecVersion, buildSystemPrompt } from "../../../lib/agent/prompt";
 import { countWebSearches, WEB_SEARCHES_PER_DESIGN } from "../../../lib/agent/tools";
 import { parseRequest } from "../../../lib/agent/request";
@@ -8,6 +8,7 @@ import {
   addPhoto,
   createDesign,
   getOwnedDesign,
+  getOwnedVersion,
   loadHistory,
   loadPhotos,
   loadReferences,
@@ -120,6 +121,8 @@ export async function POST(request: Request) {
   const history = withUserMessage(saved, parsed.message);
   const photos = await loadPhotos(db, designId);
   const record = recorderFor(db, designId);
+  // The part as it stands, so the agent sees it and the CAD tool belt carries on from it.
+  const startSpec = saved.length ? ((await getOwnedVersion(db, designId, ownerId, "current"))?.spec ?? null) : null;
 
   const client = new Anthropic({ apiKey });
   const specVersion = agentSpecVersion();
@@ -132,13 +135,15 @@ export async function POST(request: Request) {
         await record.message({ role: "user", content: history.at(-1)!.content });
         await runAgent({
           turn: anthropicTurn(client),
-          model: process.env.DESIGN_AGENT_MODEL || DEFAULT_MODEL,
+          ...agentModelFor(photos.length > 0),
           system: buildSystemPrompt(references.anchors, references.dimensions, specVersion, scan),
           history: withPhotos(history, photos),
           anchors: references.anchors,
           dimensions: references.dimensions,
           build: buildWithGeometryService,
           ...(renderEnabled() ? { render: renderWithGeometryService } : {}),
+          startSpec,
+          startSpecIsCad: specVersion === "4.3" && /^4\./.test(String(startSpec?.spec_version ?? "")),
           ...(specVersion === "4.3" ? { cadTool: callCadTool } : {}),
           emit,
           record,

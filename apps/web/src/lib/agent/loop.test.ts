@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { MAX_BUILD_ATTEMPTS, MAX_RENDERS, RENDER_NOTE, runAgent, type RunTurn } from "./loop";
+import { agentModelFor, DEFAULT_MODEL, DEFAULT_PHOTO_MODEL, MAX_BUILD_ATTEMPTS, MAX_RENDERS, RENDER_NOTE, runAgent, START_CAD_NOTE, START_NOTE, START_PICTURE_NOTE, type RunTurn } from "./loop";
 import type { AgentDimension, AgentEvent, BuildSpec } from "./types";
 
 type Block = Record<string, unknown>;
@@ -448,5 +448,92 @@ describe("pictures of the agent's own result", () => {
     const { result } = withRender(async () => (calls++, "UE5H"), MAX_RENDERS + 2);
     await result;
     expect(calls).toBe(MAX_RENDERS);
+  });
+});
+
+describe("a follow-up message starts from the part as it stands", () => {
+  const current = { spec_version: "4.3", name: "wing", features: [] };
+
+  function followUp(extra: Partial<Parameters<typeof runAgent>[0]>, replies = [reply([text("Done")], "end_turn")]) {
+    const model = scripted(replies);
+    const events: AgentEvent[] = [];
+    const cadCalls: Block[] = [];
+    const result = runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [
+        { role: "user", content: "make a wing" },
+        { role: "assistant", content: "Done" },
+        { role: "user", content: "make the end plates curve inward" },
+      ],
+      anchors: FIXTURE_ANCHORS,
+      build: ok,
+      emit: (e) => events.push(e),
+      startSpec: current,
+      cadTool: async (tool, args) => (cadCalls.push({ tool, args }), { ok: true, spec: { ...current, features: [{ id: "f" }] } }),
+      ...extra,
+    });
+    return { result, requests: model.requests, events, cadCalls };
+  }
+  const lastUser = (request: Block) => (request.messages as { content: Block[] }[]).at(-1)!.content;
+
+  it("shows the agent a picture of the current part and says so in the activity log", async () => {
+    const { result, requests, events } = followUp({ render: async () => "UE5H" });
+    await result;
+    const content = lastUser(requests[0]);
+    expect(content[0]).toMatchObject({ type: "text", text: "make the end plates curve inward" });
+    expect(String(content[1].text)).toContain(START_NOTE);
+    expect(String(content[1].text)).toContain(START_PICTURE_NOTE);
+    expect(content[2]).toMatchObject({ type: "image", source: { data: "UE5H" } });
+    expect(events).toContainEqual({ type: "tool", name: "picture", summary: "sent to the agent" });
+  });
+
+  it("reports a picture that could not be made and still sends the note", async () => {
+    const { result, requests, events } = followUp({ render: async () => null });
+    await result;
+    const content = lastUser(requests[0]);
+    expect(content).toHaveLength(2);
+    expect(String(content[1].text)).not.toContain(START_PICTURE_NOTE);
+    expect(events).toContainEqual({ type: "tool", name: "picture", summary: "could not be made" });
+  });
+
+  it("lets cad_tool carry on from the current CAD spec, and not from an older kind of spec", async () => {
+    const step = [reply([call("a", "cad_tool", { tool: "fillet_edges", arguments: { id: "r" } })]), reply([text("Done")], "end_turn")];
+    const cad = followUp({ startSpecIsCad: true }, step);
+    await cad.result;
+    expect(String(lastUser(cad.requests[0])[1].text)).toContain(START_CAD_NOTE);
+    expect((cad.cadCalls[0].args as Block).spec).toEqual(current);
+    const old = followUp({}, step);
+    await old.result;
+    expect(String(lastUser(old.requests[0])[1].text)).not.toContain(START_CAD_NOTE);
+    expect((old.cadCalls[0].args as Block).spec).toEqual({});
+  });
+
+  it("does not count the starting picture against the per-message limit", async () => {
+    let calls = 0;
+    const builds = Array.from({ length: MAX_RENDERS }, (_, i) => reply([call(`c${i}`, "propose_spec", { spec: { name: "x" } })]));
+    const { result } = followUp({ render: async () => (calls++, "UE5H") }, [...builds, reply([text("Done")], "end_turn")]);
+    await result;
+    expect(calls).toBe(MAX_RENDERS + 1);
+  });
+});
+
+describe("agentModelFor", () => {
+  it("keeps the usual model without photos and leaves effort to the model", () => {
+    expect(agentModelFor(false, {})).toEqual({ model: DEFAULT_MODEL });
+    expect(agentModelFor(false, { DESIGN_AGENT_MODEL: "m" })).toEqual({ model: "m" });
+  });
+  it("uses the stronger model at high effort for a design with a photo", () => {
+    expect(agentModelFor(true, {})).toEqual({ model: DEFAULT_PHOTO_MODEL, effort: "high" });
+    expect(agentModelFor(true, { DESIGN_AGENT_PHOTO_MODEL: "claude-sonnet-5-5", DESIGN_AGENT_PHOTO_EFFORT: "XHigh" })).toEqual({ model: "claude-sonnet-5-5", effort: "xhigh" });
+    expect(agentModelFor(true, { DESIGN_AGENT_PHOTO_EFFORT: "lots" }).effort).toBe("high");
+  });
+  it("sends the effort with the request only when one is set", async () => {
+    const withEffort = scripted([reply([text("Hi")], "end_turn")]);
+    await runAgent({ turn: withEffort.turn, system: "s", history: [{ role: "user", content: "x" }], anchors: [], build: ok, emit: () => {}, effort: "high" });
+    expect(withEffort.requests[0].output_config).toEqual({ effort: "high" });
+    const without = scripted([reply([text("Hi")], "end_turn")]);
+    await runAgent({ turn: without.turn, system: "s", history: [{ role: "user", content: "x" }], anchors: [], build: ok, emit: () => {} });
+    expect(without.requests[0].output_config).toBeUndefined();
   });
 });

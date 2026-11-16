@@ -14,6 +14,29 @@ export const MAX_RENDERS = 3;
 export const RENDER_NOTE =
   "A picture of what you just built is attached: four views on one sheet, in this order: front (top left), side (top right), top (bottom left), angled (bottom right). Compare it with the user's photo. Name the biggest differences in outline, curves and proportions. If something is clearly wrong and you have attempts left, fix the biggest differences and build again; stop after 3 pictures, then tell the user what is still different.";
 
+/** Added to a follow-up message, so the agent revises the part it can see instead of rebuilding from memory. */
+export const START_NOTE =
+  "This is the part as it stands now, before your changes for this message.";
+export const START_PICTURE_NOTE =
+  "A picture of it is attached: four views on one sheet, in this order: front (top left), side (top right), top (bottom left), angled (bottom right). Look at it next to the user's photo before you change anything, and change only what the user asked for plus anything that clearly does not match the photo.";
+export const START_CAD_NOTE =
+  "It is loaded as your working spec: carry on with cad_tool steps (inspect_part lists its features; remove_feature and new features change it). Do not call new_part unless the user wants a different part.";
+
+export type Effort = "low" | "medium" | "high" | "xhigh" | "max";
+const EFFORTS: readonly string[] = ["low", "medium", "high", "xhigh", "max"];
+/** The model that designs from photos. Reading shape from a picture is the hardest thing the agent does, so it gets the stronger model. */
+export const DEFAULT_PHOTO_MODEL = "claude-opus-5-5";
+
+/**
+ * Which model and effort a message runs on. A design with a photo uses DESIGN_AGENT_PHOTO_MODEL (default Opus 5.5) at
+ * DESIGN_AGENT_PHOTO_EFFORT (default high); everything else stays on DESIGN_AGENT_MODEL with the model's own default effort.
+ */
+export function agentModelFor(hasPhotos: boolean, env: Record<string, string | undefined> = process.env): { model: string; effort?: Effort } {
+  if (!hasPhotos) return { model: env.DESIGN_AGENT_MODEL || DEFAULT_MODEL };
+  const effort = (env.DESIGN_AGENT_PHOTO_EFFORT ?? "").trim().toLowerCase();
+  return { model: env.DESIGN_AGENT_PHOTO_MODEL || DEFAULT_PHOTO_MODEL, effort: EFFORTS.includes(effort) ? (effort as Effort) : "high" };
+}
+
 type Message = Anthropic.Beta.BetaMessage;
 type MessageParam = Anthropic.Beta.BetaMessageParam;
 type TurnParams = Omit<Anthropic.Beta.MessageCreateParamsNonStreaming, "stream">;
@@ -58,6 +81,8 @@ export interface AgentRun {
 export interface AgentOptions {
   turn: RunTurn;
   model?: string;
+  /** How hard the model thinks (output_config.effort). Left out, the model's default applies. */
+  effort?: Effort;
   system: string;
   history: MessageParam[];
   anchors: AgentAnchor[];
@@ -76,8 +101,10 @@ export interface AgentOptions {
   cadTool?: (tool: string, args: Record<string, unknown>) => Promise<CadStepResult>;
   /** Makes a picture of a built spec (base64 PNG) for the agent to compare with the photo. Left out, the agent gets no pictures. */
   render?: (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<string | null>;
-  /** The last spec that built, so cad_tool can carry on editing a design from an earlier message. */
+  /** The last spec that built. The agent is shown a picture of it before it starts, and (when `startSpecIsCad`) cad_tool carries on editing it. */
   startSpec?: Record<string, unknown> | null;
+  /** True when `startSpec` is a CAD feature tree the tool belt can keep editing. */
+  startSpecIsCad?: boolean;
 }
 
 const emptyUsage = (): TokenUsage => ({
@@ -99,22 +126,45 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   let bestOk = false;
   let lastBuild: BuildOutcome | null = null;
   // The spec the CAD tool belt is building up. We keep it, so the model never has to repeat it.
-  let working: Record<string, unknown> | null = options.startSpec ?? null;
+  let working: Record<string, unknown> | null = (options.cadTool && options.startSpecIsCad && options.startSpec) || null;
   let cadSteps = 0;
   let renders = 0;
   // Asks for a picture of a spec that just built. The picture goes to the model only; it is not saved with the conversation.
   const pictureOf = async (spec: Record<string, unknown>): Promise<string | null> => {
     if (!options.render || renders >= MAX_RENDERS) return null;
     renders += 1;
-    return options.render(spec, anchors);
+    return sayPicture(await options.render(spec, anchors));
   };
+  // The Activity log says whether the agent really got a picture, so a silent failure can be seen.
+  const sayPicture = (picture: string | null): string | null => {
+    emit({ type: "tool", name: "picture", summary: picture ? "sent to the agent" : "could not be made" });
+    return picture;
+  };
+
+  // A follow-up message: show the agent the part as it stands (this request only; it is not saved).
+  const last = messages.at(-1);
+  if (options.startSpec && last?.role === "user") {
+    const picture = options.render ? sayPicture(await options.render(options.startSpec, anchors)) : null;
+    const note = [START_NOTE, ...(picture ? [START_PICTURE_NOTE] : []), ...(working ? [START_CAD_NOTE] : [])].join(" ");
+    const before: Anthropic.Beta.BetaContentBlockParam[] = typeof last.content === "string" ? [{ type: "text", text: last.content }] : last.content;
+    messages[messages.length - 1] = {
+      role: "user",
+      content: [
+        ...before,
+        { type: "text", text: note },
+        ...(picture ? [{ type: "image" as const, source: { type: "base64" as const, media_type: "image/png" as const, data: picture } }] : []),
+      ],
+    };
+  }
 
   // Web search is a Console setting; if the API says it is not available, carry on without it.
   let searchOn = (options.searchesLeft ?? 0) > 0;
 
   const params = (extra: Partial<TurnParams> = {}): TurnParams => ({
     model: options.model ?? DEFAULT_MODEL,
-    max_tokens: 16000,
+    // Thinking counts toward this, so leave room for it.
+    max_tokens: 32000,
+    ...(options.effort ? { output_config: { effort: options.effort } } : {}),
     // The system prompt is large and identical across turns, so cache it.
     system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
     tools: [...TOOLS, ...(options.cadTool ? [CAD_TOOL] : []), ...(searchOn ? [webSearchTool(options.searchesLeft!)] : [])],
