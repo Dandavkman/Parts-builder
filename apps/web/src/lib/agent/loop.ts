@@ -1,6 +1,7 @@
 import { lookupFastener } from "../fasteners";
 import type Anthropic from "@anthropic-ai/sdk";
 import { checkBuild } from "./checks";
+import { describeLikeness, type CheckLikeness } from "./checker";
 import { assessMaterials, describeAdvice, recommend } from "../materials";
 import { CAD_TOOL, distanceMm, describeBuild, formatBuildOutcome, formatCadStep, MAX_CAD_STEPS, parseDimension, TOOLS, webSearchTool, type CadStepResult } from "./tools";
 import type { AgentAnchor, AgentDimension, AgentEvent, AgentOutcome, BuildOutcome, BuildSpec, TokenUsage } from "./types";
@@ -36,6 +37,10 @@ export function agentModelFor(hasPhotos: boolean, env: Record<string, string | u
   const effort = (env.DESIGN_AGENT_PHOTO_EFFORT ?? "").trim().toLowerCase();
   return { model: env.DESIGN_AGENT_PHOTO_MODEL || DEFAULT_PHOTO_MODEL, effort: EFFORTS.includes(effort) ? (effort as Effort) : "high" };
 }
+
+/** Used in place of RENDER_NOTE when the independent checker has already compared the picture with the photo. */
+export const PICTURE_NOTE =
+  "A picture of what you just built is attached: four views on one sheet, in this order: front (top left), side (top right), top (bottom left), angled (bottom right). Use it with the likeness check above.";
 
 type Message = Anthropic.Beta.BetaMessage;
 type MessageParam = Anthropic.Beta.BetaMessageParam;
@@ -103,6 +108,8 @@ export interface AgentOptions {
   render?: (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<string | null>;
   /** The last spec that built. The agent is shown a picture of it before it starts, and (when `startSpecIsCad`) cad_tool carries on editing it. */
   startSpec?: Record<string, unknown> | null;
+  /** A separate request that compares each picture with the user's photos. Left out (no photos, or switched off), the agent compares for itself. */
+  checkLikeness?: CheckLikeness;
   /** True when `startSpec` is a CAD feature tree the tool belt can keep editing. */
   startSpecIsCad?: boolean;
 }
@@ -139,6 +146,29 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
   const sayPicture = (picture: string | null): string | null => {
     emit({ type: "tool", name: "picture", summary: picture ? "sent to the agent" : "could not be made" });
     return picture;
+  };
+
+  // Tokens the checker used since the last model message; saved with the next one so the cost screen counts them.
+  let checkerUsage = emptyUsage();
+  const addUsage = (to: TokenUsage, from: TokenUsage) => {
+    to.input_tokens += from.input_tokens;
+    to.output_tokens += from.output_tokens;
+    to.cache_creation_input_tokens += from.cache_creation_input_tokens;
+    to.cache_read_input_tokens += from.cache_read_input_tokens;
+  };
+  const secondOpinion = async (picture: string | null): Promise<string | null> => {
+    if (!picture || !options.checkLikeness) return null;
+    const result = await options.checkLikeness(picture);
+    const found = result?.differences.length ?? 0;
+    emit({
+      type: "tool",
+      name: "checker",
+      summary: !result ? "could not run" : result.matches ? "the shape matches the photo" : `${found} ${found === 1 ? "difference" : "differences"} from the photo`,
+    });
+    if (!result) return null;
+    addUsage(usage, result.usage);
+    addUsage(checkerUsage, result.usage);
+    return describeLikeness(result);
   };
 
   // A follow-up message: show the agent the part as it stands (this request only; it is not saved).
@@ -196,17 +226,15 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
     emit({ type: "usage", usage: { ...usage } });
     const content = message.content as Anthropic.Beta.BetaContentBlockParam[];
     messages.push({ role: "assistant", content });
-    await options.record?.message({
-      role: "assistant",
-      content,
-      model: message.model,
-      usage: {
-        input_tokens: u.input_tokens,
-        output_tokens: u.output_tokens,
-        cache_creation_input_tokens: u.cache_creation_input_tokens ?? 0,
-        cache_read_input_tokens: u.cache_read_input_tokens ?? 0,
-      },
-    });
+    const spent: TokenUsage = {
+      input_tokens: u.input_tokens,
+      output_tokens: u.output_tokens,
+      cache_creation_input_tokens: u.cache_creation_input_tokens ?? 0,
+      cache_read_input_tokens: u.cache_read_input_tokens ?? 0,
+    };
+    addUsage(spent, checkerUsage);
+    checkerUsage = emptyUsage();
+    await options.record?.message({ role: "assistant", content, model: message.model, usage: spent });
     return message;
   };
 
@@ -363,6 +391,8 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
         content = `Unknown tool ${call.name}.`;
         isError = true;
       }
+      const opinion = await secondOpinion(picture);
+      if (opinion) content += `\n${opinion}`;
       results.push({ type: "tool_result", tool_use_id: call.id, content, is_error: isError });
       if (picture) {
         // The model sees the picture; the saved conversation keeps only the text, so history stays small.
@@ -370,7 +400,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentRun> {
           type: "tool_result",
           tool_use_id: call.id,
           content: [
-            { type: "text", text: `${content}\n${RENDER_NOTE}` },
+            { type: "text", text: `${content}\n${opinion ? PICTURE_NOTE : RENDER_NOTE}` },
             { type: "image", source: { type: "base64", media_type: "image/png", data: picture } },
           ],
           is_error: isError,

@@ -37,6 +37,7 @@ const TOOL_LABELS: Record<string, string> = {
   list_anchors: "Looked at the anchors",
   measure: "Measured",
   picture: "Picture of the part for the agent",
+  checker: "Likeness check",
 };
 
 /** Applies one streamed event to the chat. Pure, so the page logic is testable without a browser. */

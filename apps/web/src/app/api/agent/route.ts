@@ -3,6 +3,7 @@ import { buildWithGeometryService, callCadTool, renderEnabled, renderWithGeometr
 import { agentModelFor, anthropicTurn, runAgent } from "../../../lib/agent/loop";
 import { agentSpecVersion, buildSystemPrompt } from "../../../lib/agent/prompt";
 import { countWebSearches, WEB_SEARCHES_PER_DESIGN } from "../../../lib/agent/tools";
+import { anthropicChecker, checkEnabled } from "../../../lib/agent/checker";
 import { parseRequest } from "../../../lib/agent/request";
 import {
   addPhoto,
@@ -142,6 +143,7 @@ export async function POST(request: Request) {
           dimensions: references.dimensions,
           build: buildWithGeometryService,
           ...(renderEnabled() ? { render: renderWithGeometryService } : {}),
+          ...(renderEnabled() && photos.length > 0 && checkEnabled() ? { checkLikeness: anthropicChecker(client, photos) } : {}),
           startSpec,
           startSpecIsCad: specVersion === "4.3" && /^4\./.test(String(startSpec?.spec_version ?? "")),
           ...(specVersion === "4.3" ? { cadTool: callCadTool } : {}),
