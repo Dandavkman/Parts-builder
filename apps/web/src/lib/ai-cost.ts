@@ -19,6 +19,7 @@ export const PRICES_ARE_ESTIMATES = true;
 
 export const MODEL_PRICES: Record<string, ModelPrice> = {
   "claude-sonnet-5-5": { inputPerMTok: 3, outputPerMTok: 15, cacheWritePerMTok: 3.75, cacheReadPerMTok: 0.3 },
+  "claude-opus-5-5": { inputPerMTok: 4, outputPerMTok: 20, cacheWritePerMTok: 5, cacheReadPerMTok: 0.2 },
   "claude-haiku-5-5": { inputPerMTok: 1, outputPerMTok: 5, cacheWritePerMTok: 1.25, cacheReadPerMTok: 0.1 },
 };
 /** Used for a model not in the table, so cost is never silently zero. */
