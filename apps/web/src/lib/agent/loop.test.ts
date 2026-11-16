@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { agentModelFor, DEFAULT_MODEL, DEFAULT_PHOTO_MODEL, MAX_BUILD_ATTEMPTS, MAX_RENDERS, PICTURE_NOTE, RENDER_NOTE, runAgent, START_CAD_NOTE, START_NOTE, START_PICTURE_NOTE, type RunTurn } from "./loop";
+import { agentModelFor, DEFAULT_MODEL, DEFAULT_PHOTO_MODEL, MAX_BUILD_ATTEMPTS, MAX_RENDERS, NO_VIEW_NOTE, PICTURE_NOTE, RENDER_NOTE, runAgent, START_CAD_NOTE, START_NOTE, START_PICTURE_NOTE, type RunTurn } from "./loop";
 import type { AgentDimension, AgentEvent, BuildSpec } from "./types";
 
 type Block = Record<string, unknown>;
@@ -592,5 +592,58 @@ describe("the independent likeness check", () => {
     const { result } = checked(async () => (calls++, null), async () => null);
     await result;
     expect(calls).toBe(0);
+  });
+});
+
+describe("the photo's viewpoint", () => {
+  const photo = { mediaType: "image/jpeg" as const, base64: "PHOTO" };
+
+  function viewed(replies: ReturnType<typeof reply>[], extra: Partial<Parameters<typeof runAgent>[0]> = {}) {
+    const model = scripted(replies);
+    const events: AgentEvent[] = [];
+    const views: unknown[] = [];
+    const result = runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [{ role: "user", content: "make this wing" }],
+      anchors: FIXTURE_ANCHORS,
+      build: ok,
+      emit: (e) => events.push(e),
+      render: async (_spec, _anchors, view) => (views.push(view ?? null), { data: "UE5H", scaleBarMm: 200, fromPhotoView: !!view }),
+      photos: [photo],
+      ...extra,
+    });
+    return { result, requests: model.requests, events, views };
+  }
+  const build = reply([call("c", "propose_spec", { spec: { name: "x" } })]);
+  const done = reply([text("Done")], "end_turn");
+  const resultOf = (request: Block) => ((request.messages as { content: Block[] }[]).at(-1)!.content[0] as { content: Block[] }).content;
+
+  it("draws later pictures from the view the agent set, and puts the photo beside the part", async () => {
+    const { result, requests, views, events } = viewed([reply([call("v", "set_photo_view", { azimuth_deg: 215, elevation_deg: 20 })]), build, done]);
+    await result;
+    expect(views).toEqual([{ azimuth_deg: 215, elevation_deg: 20 }]);
+    const content = resultOf(requests[2]);
+    expect(String(content[0].text)).toContain("the photo's viewpoint");
+    expect(String(content[0].text)).toContain("200 mm");
+    expect(String(content[0].text)).not.toContain(NO_VIEW_NOTE);
+    expect(content.filter((b) => b.type === "image").map((b) => (b.source as { data: string }).data)).toEqual(["PHOTO", "UE5H"]);
+    expect(events).toContainEqual({ type: "tool", name: "picture", summary: "sent to the agent, with the photo's viewpoint" });
+  });
+
+  it("reminds the agent to set the view when there is a photo and no view yet", async () => {
+    const { result, requests, views } = viewed([build, done]);
+    await result;
+    expect(views).toEqual([null]);
+    expect(String(resultOf(requests[1])[0].text)).toContain(NO_VIEW_NOTE);
+  });
+
+  it("starts from a view saved in an earlier message, and rejects a bad one", async () => {
+    const { result, requests, views } = viewed([reply([call("v", "set_photo_view", { azimuth_deg: 10, elevation_deg: 400 })]), build, done], {
+      photoView: { azimuth_deg: 40, elevation_deg: 30 },
+    });
+    await result;
+    expect((requests[1].messages as { content: Block[] }[]).at(-1)!.content[0]).toMatchObject({ is_error: true });
+    expect(views).toEqual([{ azimuth_deg: 40, elevation_deg: 30 }]);
   });
 });

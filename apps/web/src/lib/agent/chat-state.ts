@@ -38,6 +38,7 @@ const TOOL_LABELS: Record<string, string> = {
   measure: "Measured",
   picture: "Picture of the part for the agent",
   checker: "Likeness check",
+  set_photo_view: "Worked out where the photo was taken from",
 };
 
 /** Applies one streamed event to the chat. Pure, so the page logic is testable without a browser. */

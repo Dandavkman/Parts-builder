@@ -52,6 +52,21 @@ export type BuildOutcome =
   | { ok: true; size_mm?: [number, number, number]; solids?: number; volume_mm3?: number }
   | { ok: false; errors: string[] };
 
+/** Where the camera that took the user's photo stood, in the part's own frame. See `set_photo_view`. */
+export interface PhotoView {
+  azimuth_deg: number;
+  elevation_deg: number;
+}
+
+/** A picture of a built part: a base64 PNG sheet of four views. */
+export interface PartPicture {
+  data: string;
+  /** The length the white bar in each panel stands for, when the geometry service reports it. */
+  scaleBarMm?: number;
+  /** True when the fourth panel was drawn from the requested photo view. */
+  fromPhotoView?: boolean;
+}
+
 export type BuildSpec = (spec: Record<string, unknown>, anchors: AgentAnchor[]) => Promise<BuildOutcome>;
 
 /** Events streamed to the browser, one JSON object per line. */
