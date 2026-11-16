@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURE_ANCHORS } from "./fixture-anchors";
-import { agentModelFor, DEFAULT_MODEL, DEFAULT_PHOTO_MODEL, MAX_BUILD_ATTEMPTS, MAX_RENDERS, RENDER_NOTE, runAgent, START_CAD_NOTE, START_NOTE, START_PICTURE_NOTE, type RunTurn } from "./loop";
+import { agentModelFor, DEFAULT_MODEL, DEFAULT_PHOTO_MODEL, MAX_BUILD_ATTEMPTS, MAX_RENDERS, PICTURE_NOTE, RENDER_NOTE, runAgent, START_CAD_NOTE, START_NOTE, START_PICTURE_NOTE, type RunTurn } from "./loop";
 import type { AgentDimension, AgentEvent, BuildSpec } from "./types";
 
 type Block = Record<string, unknown>;
@@ -535,5 +535,62 @@ describe("agentModelFor", () => {
     const without = scripted([reply([text("Hi")], "end_turn")]);
     await runAgent({ turn: without.turn, system: "s", history: [{ role: "user", content: "x" }], anchors: [], build: ok, emit: () => {} });
     expect(without.requests[0].output_config).toBeUndefined();
+  });
+});
+
+describe("the independent likeness check", () => {
+  const checkUsage = { input_tokens: 1000, output_tokens: 50, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 };
+
+  function checked(check: Parameters<typeof runAgent>[0]["checkLikeness"], render: () => Promise<string | null> = async () => "UE5H") {
+    const model = scripted([reply([call("c", "propose_spec", { spec: { name: "x" } })]), reply([text("Done")], "end_turn")]);
+    const events: AgentEvent[] = [];
+    const saved: { role: string; content: unknown; usage?: unknown }[] = [];
+    const result = runAgent({
+      turn: model.turn,
+      system: "sys",
+      history: [{ role: "user", content: "make a wing" }],
+      anchors: FIXTURE_ANCHORS,
+      build: ok,
+      emit: (e) => events.push(e),
+      render,
+      checkLikeness: check,
+      record: { message: async (m) => void saved.push(m), version: async () => {} },
+    });
+    return { result, requests: model.requests, events, saved };
+  }
+  const toolResult = (request: Block) => ((request.messages as { content: Block[] }[]).at(-1)!.content[0] as { content: Block[] | string }).content;
+
+  it("gives the builder the checker's differences with the picture and keeps them in the saved conversation", async () => {
+    const { result, requests, events, saved } = checked(async () => ({ matches: false, differences: ["End plates are flat."], usage: checkUsage }));
+    const r = await result;
+    const content = toolResult(requests[1]) as Block[];
+    expect(String(content[0].text)).toContain("1. End plates are flat.");
+    expect(String(content[0].text)).toContain(PICTURE_NOTE);
+    expect(String(content[0].text)).not.toContain(RENDER_NOTE);
+    expect(JSON.stringify(saved.find((m) => m.role === "user"))).toContain("End plates are flat.");
+    expect(events).toContainEqual({ type: "tool", name: "checker", summary: "1 difference from the photo" });
+    // The checker's tokens are counted in the total and saved with the next model message.
+    expect(r.usage.input_tokens).toBe(10 + 10 + 1000);
+    expect(saved.filter((m) => m.role === "assistant").map((m) => (m.usage as { input_tokens: number }).input_tokens)).toEqual([10, 1010]);
+  });
+
+  it("says so when the shape matches", async () => {
+    const { result, events } = checked(async () => ({ matches: true, differences: [], usage: checkUsage }));
+    await result;
+    expect(events).toContainEqual({ type: "tool", name: "checker", summary: "the shape matches the photo" });
+  });
+
+  it("falls back to the agent comparing for itself when the checker cannot run", async () => {
+    const { result, requests, events } = checked(async () => null);
+    await result;
+    expect(String((toolResult(requests[1]) as Block[])[0].text)).toContain(RENDER_NOTE);
+    expect(events).toContainEqual({ type: "tool", name: "checker", summary: "could not run" });
+  });
+
+  it("does not run without a picture", async () => {
+    let calls = 0;
+    const { result } = checked(async () => (calls++, null), async () => null);
+    await result;
+    expect(calls).toBe(0);
   });
 });
